@@ -1,6 +1,6 @@
 kind = "web"
 previewPath = "/"
-title = "Luna IQ"
+title = "Luna Chat"
 version = "1.0.0"
 id = "artifacts/luna-iq"
 router = "path"
