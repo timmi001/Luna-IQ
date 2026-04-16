@@ -1,0 +1,208 @@
+Build a production-ready mobile-first web app called “Luna IQ 🌙”.
+
+This is a femtech wellness app with:
+- AI chat assistant (Coze embedded but fully integrated visually)
+- Mood tracking
+- Cycle tracking
+- Wellness dashboard
+
+Use:
+- React (Vite)
+- Tailwind CSS
+- localStorage for persistence (no backend for MVP)
+- mobile-first design
+- NO dark developer UI
+
+The app must feel like a REAL mobile femtech app (like Flo / Calm / Replika), not a chatbot or website tool.
+
+-------------------------
+🌙 CORE PRODUCT IDEA
+-------------------------
+Luna IQ is a feminine wellness companion app that helps users:
+- track mood daily
+- track menstrual cycle
+- talk to AI assistant “Luna 🌙”
+- view wellness insights
+
+Tone:
+- soft, feminine, calming
+- emotional wellness focused
+- not technical or developer-like
+
+-------------------------
+🏠 1. HOME SCREEN (APP DASHBOARD)
+-------------------------
+Create a full mobile-style home screen:
+
+Header:
+🌙 Luna IQ
+
+Greeting:
+“Good day 🌸 How are you feeling today?”
+
+Buttons (large rounded cards):
+- 💬 Talk to Luna
+- 🌸 Mood Check-in
+- 📅 Cycle Tracker
+- 📊 Wellness Dashboard
+
+Design:
+- soft pastel gradient background (#FFF7FB → #F6F0FF)
+- rounded cards (20px+ radius)
+- soft shadows
+- spaced layout like a mobile app
+- NO sidebar or website navbar
+
+-------------------------
+💬 2. AI CHAT SCREEN (COZE INTEGRATION AREA)
+-------------------------
+IMPORTANT: Create a full-screen dedicated chat page called:
+
+“Luna Chat Space 🌙”
+
+This is where Coze is embedded, BUT it must feel native.
+
+Create a layout like this:
+
+TOP BAR:
+🌙 Luna IQ Chat
+“Your wellness companion”
+
+MIDDLE:
+FULL SCREEN CHAT CONTAINER (this is the Coze slot)
+
+BOTTOM:
+(optional decorative area, no input needed)
+
+-------------------------
+🔌 COZE EMBED WRAPPER (CRITICAL FEATURE)
+-------------------------
+Inside the chat page, create a full-screen iframe container:
+
+<div style="width:100%; height:100vh; background: linear-gradient(180deg, #FFF7FB, #F6F0FF);">
+  <iframe
+    src="COZE_BOT_URL_PLACEHOLDER"
+    style="width:100%; height:100%; border:none; border-radius:0px;"
+  />
+</div>
+
+IMPORTANT:
+- This iframe must look like it is part of the app
+- No borders, no gaps, no browser feel
+- Full-screen immersive experience
+- Wrapped inside app header UI
+
+This makes Coze feel like a native AI engine inside the app.
+
+-------------------------
+🌸 3. MOOD TRACKING PAGE
+-------------------------
+Create mood check-in screen:
+
+Options:
+😢 Sad
+😐 Neutral
+🙂 Okay
+😊 Good
+😍 Amazing
+
+Optional text note input
+
+Store in localStorage:
+- date
+- mood value
+- note
+
+Display:
+- simple mood history list
+- soft card UI
+
+-------------------------
+📅 4. CYCLE TRACKER PAGE
+-------------------------
+Inputs:
+- last period start date
+- cycle length (default 28 days)
+
+Outputs:
+- current cycle phase:
+  - Menstrual
+  - Follicular
+  - Ovulation
+  - Luteal
+
+- predicted next period date
+
+Store everything in localStorage
+
+-------------------------
+📊 5. WELLNESS DASHBOARD
+-------------------------
+Show:
+- latest mood entry
+- current cycle phase
+- simple insight message
+
+Example:
+“Your energy may be lower today 🌙 take it gently.”
+
+Use soft cards and pastel styling.
+
+-------------------------
+📱 6. MOBILE APP NAVIGATION
+-------------------------
+Bottom navigation bar:
+
+- Home 🏠
+- Chat 💬
+- Mood 🌸
+- Cycle 📅
+- Insights 📊
+
+Must feel like a real mobile app navigation bar.
+
+Sticky at bottom.
+
+-------------------------
+🎨 UI DESIGN SYSTEM
+-------------------------
+Use ONLY soft feminine design:
+
+Colors:
+- #FFF7FB (background)
+- #E9E4FF (lavender)
+- #F7D6E0 (blush)
+
+Design rules:
+- rounded corners (20–28px)
+- soft shadows
+- airy spacing
+- no harsh borders
+- no dark mode
+- smooth transitions between pages
+
+-------------------------
+⚙️ TECH REQUIREMENTS
+-------------------------
+- React functional components
+- React Router for navigation
+- useState + useEffect
+- localStorage for persistence
+- clean folder structure:
+/pages
+/components
+/utils
+
+-------------------------
+🚀 FINAL OUTPUT GOAL
+-------------------------
+The final app must feel like:
+
+- a real femtech mobile app
+- not a chatbot website
+- not a developer dashboard
+- not a widget embed page
+
+Even though Coze is used for AI chat, it must feel fully integrated into the app experience.
+
+The user should NOT feel like they are using an iframe bot.

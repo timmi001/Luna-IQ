@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Luna IQ"
+version = "1.0.0"
+id = "artifacts/luna-iq"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 22769
+
+[services.development]
+run = "pnpm --filter @workspace/luna-iq run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/luna-iq", "run", "build" ]
+publicDir = "artifacts/luna-iq/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "22769"
+BASE_PATH = "/"
