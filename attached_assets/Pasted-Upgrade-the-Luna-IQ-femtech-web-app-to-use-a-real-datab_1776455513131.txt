@@ -1,0 +1,148 @@
+Upgrade the Luna IQ 🌙 femtech web app to use a real database for storing user memory instead of localStorage.
+
+Use:
+- React (Vite)
+- Supabase (database + auth)
+- Tailwind CSS
+
+-------------------------
+🧠 GOAL
+-------------------------
+
+Create a persistent user memory system where each user has their own data stored securely in a database.
+
+Users should be able to:
+- sign up / log in
+- have their own saved mood history
+- store cycle data
+- retrieve their data anytime
+
+-------------------------
+🔐 AUTHENTICATION (SUPABASE)
+-------------------------
+
+Implement authentication using Supabase Auth.
+
+Features:
+- Sign up (email + password)
+- Login
+- Logout
+- Keep user logged in (session persistence)
+
+-------------------------
+💾 DATABASE SETUP (SUPABASE)
+-------------------------
+
+Create a table called:
+
+users_data
+
+Columns:
+- id (uuid, primary key)
+- user_id (linked to auth user)
+- name (text)
+- last_mood (text)
+- mood_history (json)
+- cycle_length (integer)
+- last_period (date)
+- created_at (timestamp)
+
+-------------------------
+📊 MOOD TRACKING (DATABASE)
+-------------------------
+
+When user logs a mood:
+- insert or update record in database
+- append to mood_history array
+- update last_mood
+
+Display:
+- mood history list from database
+- latest mood
+
+-------------------------
+📅 CYCLE TRACKING (DATABASE)
+-------------------------
+
+Allow user to:
+- input last period date
+- set cycle length
+
+Store in database:
+- last_period
+- cycle_length
+
+Retrieve and display on page load.
+
+-------------------------
+🧠 MEMORY FUNCTIONS
+-------------------------
+
+Create utility functions:
+
+- getUserData(user_id)
+- saveUserData(user_id, data)
+- addMoodEntry(user_id, mood, note)
+
+All functions must interact with Supabase instead of localStorage.
+
+-------------------------
+🧠 CONTEXT GENERATION
+-------------------------
+
+Create function:
+
+buildUserContext(userData)
+
+Return:
+
+User Profile:
+- Mood: {last_mood}
+- Cycle Length: {cycle_length}
+- Last Period: {last_period}
+
+This will later be used for AI personalization.
+
+-------------------------
+💬 PERSONALIZATION USAGE
+-------------------------
+
+Use stored database data to personalize UI:
+
+Examples:
+- “You’ve been feeling low lately 🌙”
+- “Your current cycle phase may affect your energy 💕”
+
+-------------------------
+📱 UX REQUIREMENTS
+-------------------------
+
+- user must stay logged in after refresh
+- data loads automatically on login
+- UI updates instantly after changes
+- loading states must be handled
+
+-------------------------
+🧱 FILE STRUCTURE
+-------------------------
+
+/lib/supabaseClient.js
+- initialize Supabase
+
+/utils/db.js
+- all database functions
+
+/utils/context.js
+- buildUserContext()
+
+-------------------------
+🚀 FINAL GOAL
+-------------------------
+
+The app must feel like:
+- a real femtech product
+- each user has their own private data
+- memory persists across devices
+- ready for AI integration
+
+This replaces localStorage with a scalable backend system.
