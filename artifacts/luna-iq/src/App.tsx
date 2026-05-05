@@ -11,6 +11,9 @@ import Chat from "@/pages/Chat";
 import Mood from "@/pages/Mood";
 import Cycle from "@/pages/Cycle";
 import Profile from "@/pages/Profile";
+import Breathe from "@/pages/Breathe";
+import Water from "@/pages/Water";
+import Routine from "@/pages/Routine";
 
 const queryClient = new QueryClient();
 
@@ -23,6 +26,9 @@ function Router() {
         <Route path="/mood" component={Mood} />
         <Route path="/cycle" component={Cycle} />
         <Route path="/profile" component={Profile} />
+        <Route path="/breathe" component={Breathe} />
+        <Route path="/water" component={Water} />
+        <Route path="/routine" component={Routine} />
         <Route component={NotFound} />
       </Switch>
     </AnimatePresence>

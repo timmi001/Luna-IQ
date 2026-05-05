@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { Link, useLocation } from "wouter";
-import { Bell, X, MessageCircleHeart, HeartPulse, CalendarHeart, Sparkles, SendHorizonal } from "lucide-react";
+import { Bell, X, MessageCircleHeart, Wind, Droplets, ListChecks, Sparkles, SendHorizonal } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { storage } from "@/utils/storage";
 import { getCycleDetails, getPhaseColor, getPhaseMessage, CyclePhase } from "@/utils/cycle";
@@ -232,27 +232,33 @@ export default function Home() {
             </div>
           </Link>
 
-          <Link href="/mood">
-            <div className="bg-luna-peach/40 hover:bg-luna-peach/60 transition-colors rounded-3xl p-5 flex flex-col items-center justify-center text-center aspect-square cursor-pointer shadow-sm">
-              <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm mb-3 text-orange-500">
-                <HeartPulse className="w-6 h-6" />
+          <Link href="/breathe">
+            <div className="bg-sky-100/60 hover:bg-sky-100/80 transition-colors rounded-3xl p-5 flex flex-col items-center justify-center text-center aspect-square cursor-pointer shadow-sm">
+              <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm mb-3 text-sky-400">
+                <Wind className="w-6 h-6" />
               </div>
-              <h3 className="font-medium text-orange-900">Mood</h3>
-              <p className="text-xs text-orange-700/70 mt-1">Track how you feel</p>
+              <h3 className="font-medium text-sky-900">Breathe</h3>
+              <p className="text-xs text-sky-700/70 mt-1">4 · 4 · 4 calm reset</p>
             </div>
           </Link>
 
-          <Link href="/cycle">
-            <div className="bg-rose-100/60 hover:bg-rose-100/80 transition-colors rounded-3xl p-5 flex flex-col items-center justify-center text-center cursor-pointer shadow-sm col-span-2 py-4">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm text-rose-500">
-                  <CalendarHeart className="w-6 h-6" />
-                </div>
-                <div className="text-left">
-                  <h3 className="font-medium text-rose-900">Cycle Tracker</h3>
-                  <p className="text-xs text-rose-700/70 mt-0.5">Understand your rhythm</p>
-                </div>
+          <Link href="/water">
+            <div className="bg-cyan-50/80 hover:bg-cyan-100/60 transition-colors rounded-3xl p-5 flex flex-col items-center justify-center text-center aspect-square cursor-pointer shadow-sm">
+              <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm mb-3 text-cyan-500">
+                <Droplets className="w-6 h-6" />
               </div>
+              <h3 className="font-medium text-cyan-900">Water</h3>
+              <p className="text-xs text-cyan-700/70 mt-1">Stay hydrated today</p>
+            </div>
+          </Link>
+
+          <Link href="/routine">
+            <div className="bg-luna-peach/30 hover:bg-luna-peach/50 transition-colors rounded-3xl p-5 flex flex-col items-center justify-center text-center aspect-square cursor-pointer shadow-sm">
+              <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm mb-3 text-orange-400">
+                <ListChecks className="w-6 h-6" />
+              </div>
+              <h3 className="font-medium text-orange-900">Routine</h3>
+              <p className="text-xs text-orange-700/70 mt-1">Build daily habits</p>
             </div>
           </Link>
         </div>
