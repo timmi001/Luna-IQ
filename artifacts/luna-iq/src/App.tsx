@@ -14,6 +14,7 @@ import Profile from "@/pages/Profile";
 import Breathe from "@/pages/Breathe";
 import Water from "@/pages/Water";
 import Routine from "@/pages/Routine";
+import Notifications from "@/pages/Notifications";
 
 const queryClient = new QueryClient();
 
@@ -29,6 +30,7 @@ function Router() {
         <Route path="/breathe" component={Breathe} />
         <Route path="/water" component={Water} />
         <Route path="/routine" component={Routine} />
+        <Route path="/notifications" component={Notifications} />
         <Route component={NotFound} />
       </Switch>
     </AnimatePresence>

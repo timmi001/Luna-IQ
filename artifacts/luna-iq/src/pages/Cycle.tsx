@@ -1,11 +1,33 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { storage } from "@/utils/storage";
 import { getCycleDetails, CyclePhase } from "@/utils/cycle";
 import { PageTransition } from "@/components/PageTransition";
 import { useToast } from "@/hooks/use-toast";
 import { format, addDays, startOfMonth, endOfMonth, eachDayOfInterval, getDay, differenceInDays, isSameDay, isToday, isFuture } from "date-fns";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, SendHorizonal } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+
+// ── Symptom helpers ────────────────────────────────────────────────────────────
+function getTodaySymptomNote(): string {
+  try {
+    const raw = localStorage.getItem("luna_symptoms");
+    if (!raw) return "";
+    const entries = JSON.parse(raw) as { date: string; note: string }[];
+    const today = new Date().toISOString().split("T")[0];
+    return entries.find((e) => e.date === today)?.note ?? "";
+  } catch { return ""; }
+}
+function saveSymptomNote(note: string) {
+  try {
+    const raw = localStorage.getItem("luna_symptoms");
+    const entries: { date: string; note: string }[] = raw ? JSON.parse(raw) : [];
+    const today = new Date().toISOString().split("T")[0];
+    const idx = entries.findIndex((e) => e.date === today);
+    if (idx >= 0) entries[idx].note = note;
+    else entries.unshift({ date: today, note });
+    localStorage.setItem("luna_symptoms", JSON.stringify(entries));
+  } catch {}
+}
 
 // ── Phase helpers ──────────────────────────────────────────────────────────────
 function getDayPhase(date: Date, lastPeriodStart: string | null, cycleLength: number): CyclePhase {
@@ -211,6 +233,10 @@ export default function Cycle() {
   const [activeTab, setActiveTab] = useState("Cycle");
   const [flow, setFlow] = useState<string | null>(null);
   const [logDate, setLogDate] = useState(format(new Date(), "MM/dd/yyyy"));
+  const [symptomInput, setSymptomInput] = useState("");
+  const [savedNote, setSavedNote] = useState(() => getTodaySymptomNote());
+  const [showSaved, setShowSaved] = useState(false);
+  const symptomRef = useRef<HTMLInputElement>(null);
   const [moodMap] = useState<Record<string, string>>(() => {
     try {
       const moods = storage.getMoods();
@@ -229,6 +255,17 @@ export default function Cycle() {
   const ovulationStr = data.lastPeriodStart
     ? format(addDays(new Date(data.lastPeriodStart), ovulationDay), "MMM d")
     : "--";
+
+  const handleSaveSymptom = () => {
+    const trimmed = symptomInput.trim();
+    if (!trimmed) return;
+    const updated = savedNote ? `${savedNote}, ${trimmed}` : trimmed;
+    setSavedNote(updated);
+    saveSymptomNote(updated);
+    setSymptomInput("");
+    setShowSaved(true);
+    setTimeout(() => setShowSaved(false), 1600);
+  };
 
   const handleLogCycle = () => {
     if (!flow) { toast({ title: "Select a flow intensity first", variant: "destructive" }); return; }
@@ -305,6 +342,39 @@ export default function Cycle() {
                   <input value={logDate} onChange={e => setLogDate(e.target.value)} placeholder="MM/DD/YYYY"
                     className="w-full bg-muted/30 rounded-xl px-3 py-2.5 text-sm outline-none border border-border/30 focus:border-purple-300 transition-colors" />
                 </div>
+                {/* Symptoms */}
+                <div className="mb-4">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Symptoms</p>
+                    <AnimatePresence>
+                      {showSaved && (
+                        <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-[10px] text-emerald-500 font-semibold">✓ Logged</motion.span>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                  {savedNote && (
+                    <p className="text-[11px] text-foreground/70 mb-1.5 leading-relaxed bg-luna-blush/10 rounded-xl px-3 py-2 border border-luna-blush/20">{savedNote}</p>
+                  )}
+                  <div className="flex items-center gap-2 bg-muted/30 rounded-xl px-3 py-2 border border-border/30 focus-within:border-purple-300 transition-colors">
+                    <input
+                      ref={symptomRef}
+                      value={symptomInput}
+                      onChange={(e) => setSymptomInput(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === "Enter") handleSaveSymptom(); }}
+                      placeholder={savedNote ? "Add more symptoms…" : "e.g. cramps, headache, bloating…"}
+                      className="flex-1 bg-transparent text-xs text-foreground placeholder:text-muted-foreground outline-none"
+                    />
+                    <button
+                      onClick={handleSaveSymptom}
+                      disabled={!symptomInput.trim()}
+                      className="w-6 h-6 rounded-lg flex items-center justify-center transition-all disabled:opacity-30 active:scale-90"
+                      style={{ background: symptomInput.trim() ? "linear-gradient(135deg,#f9a8d4,#c4b5fd)" : "transparent" }}
+                    >
+                      <SendHorizonal className="w-3 h-3 text-white" />
+                    </button>
+                  </div>
+                </div>
+
                 <button onClick={handleLogCycle}
                   className="w-full py-3.5 rounded-2xl text-white text-sm font-semibold shadow-md active:scale-[0.98] transition-transform"
                   style={{ background: "linear-gradient(135deg,#c4b5fd,#f9a8d4)" }}>

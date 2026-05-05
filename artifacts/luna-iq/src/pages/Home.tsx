@@ -1,7 +1,7 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { Link, useLocation } from "wouter";
-import { Bell, X, MessageCircleHeart, Wind, Droplets, ListChecks, Sparkles, SendHorizonal } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { Bell, MessageCircleHeart, Wind, Droplets, ListChecks, Sparkles } from "lucide-react";
+import { motion } from "framer-motion";
 import { storage } from "@/utils/storage";
 import { getCycleDetails, getPhaseColor, getPhaseMessage, CyclePhase } from "@/utils/cycle";
 import { PageTransition } from "@/components/PageTransition";
@@ -17,13 +17,6 @@ const AVATARS = [
   { emoji: "🌻", bg: "#FEFCE8" },
 ];
 
-const NOTIFICATIONS = [
-  { icon: "💧", text: "Time to hydrate! Drink some water.", time: "now" },
-  { icon: "🌸", text: "Log your mood to keep your streak alive.", time: "1h ago" },
-  { icon: "📅", text: "Your Ovulation window starts in 2 days.", time: "3h ago" },
-  { icon: "💕", text: "You've logged 5 moods this week! Keep it up.", time: "Yesterday" },
-];
-
 function getGreeting() {
   const h = new Date().getHours();
   if (h < 12) return "Good morning";
@@ -31,43 +24,12 @@ function getGreeting() {
   return "Good evening";
 }
 
-function getTodaySymptomNote(): string {
-  try {
-    const raw = localStorage.getItem("luna_symptoms");
-    if (!raw) return "";
-    const entries = JSON.parse(raw) as { date: string; note: string }[];
-    const today = new Date().toISOString().split("T")[0];
-    return entries.find((e) => e.date === today)?.note ?? "";
-  } catch {
-    return "";
-  }
-}
-
-function saveSymptomNote(note: string) {
-  try {
-    const raw = localStorage.getItem("luna_symptoms");
-    const entries: { date: string; note: string }[] = raw ? JSON.parse(raw) : [];
-    const today = new Date().toISOString().split("T")[0];
-    const idx = entries.findIndex((e) => e.date === today);
-    if (idx >= 0) entries[idx].note = note;
-    else entries.unshift({ date: today, note });
-    localStorage.setItem("luna_symptoms", JSON.stringify(entries));
-  } catch {}
-}
-
 export default function Home() {
   const [, setLocation] = useLocation();
   const [greeting, setGreeting] = useState("");
-  const [showNotifs, setShowNotifs] = useState(false);
-  const [symptomInput, setSymptomInput] = useState("");
-  const [savedNote, setSavedNote] = useState("");
-  const [showSaved, setShowSaved] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setGreeting(getGreeting());
-    const note = getTodaySymptomNote();
-    setSavedNote(note);
   }, []);
 
   const profile = storage.getProfile();
@@ -77,20 +39,8 @@ export default function Home() {
   const avatar = AVATARS[profile.avatarIndex ?? 0] ?? AVATARS[0];
   const name = profile.nickname ? `, ${profile.nickname}` : "";
 
-  const handleSaveSymptom = () => {
-    const trimmed = symptomInput.trim();
-    if (!trimmed) return;
-    const updated = savedNote ? `${savedNote}, ${trimmed}` : trimmed;
-    setSavedNote(updated);
-    saveSymptomNote(updated);
-    setSymptomInput("");
-    setShowSaved(true);
-    setTimeout(() => setShowSaved(false), 1600);
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") handleSaveSymptom();
-  };
+  const moodEmoji = latestMood ? latestMood.mood.split(" ")[0] : "🤍";
+  const moodLabel = latestMood ? latestMood.mood.split(" ")[1] : "Not logged";
 
   return (
     <PageTransition className="flex flex-col min-h-screen">
@@ -105,7 +55,7 @@ export default function Home() {
 
         <div className="flex items-center gap-2">
           <button
-            onClick={() => setShowNotifs(true)}
+            onClick={() => setLocation("/notifications")}
             className="relative w-9 h-9 rounded-2xl bg-white shadow-sm border border-card-border flex items-center justify-center active:scale-95 transition-transform"
           >
             <Bell className="w-4 h-4 text-muted-foreground" />
@@ -123,87 +73,65 @@ export default function Home() {
 
       <main className="flex-1 px-6 pt-4 pb-28 flex flex-col gap-5">
 
-        {/* Today's Check-in — compact */}
-        <div className="bg-white rounded-2xl px-4 py-3.5 shadow-sm border border-card-border relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-24 h-24 bg-luna-lavender/20 rounded-full blur-2xl -mr-8 -mt-8 pointer-events-none" />
-          <h2 className="text-sm font-semibold text-foreground mb-2.5">Today's Check-in</h2>
+        {/* Today's Check-in */}
+        <div className="bg-white rounded-3xl p-5 shadow-sm border border-card-border relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-28 h-28 bg-luna-lavender/20 rounded-full blur-2xl -mr-8 -mt-8 pointer-events-none" />
+          <h2 className="text-base font-semibold text-foreground mb-3">Today's Check-in</h2>
 
-          {/* Mood + Cycle row */}
-          <div className="flex gap-2.5">
+          {/* Mood + Cycle — big cards */}
+          <div className="flex gap-3">
+            {/* Mood card */}
             <Link href="/mood" className="flex-1">
-              <div className="bg-luna-blush/20 rounded-2xl px-4 py-3.5 border border-luna-blush/30 flex items-center gap-3 active:scale-95 transition-transform cursor-pointer">
-                <span className="text-2xl leading-none">{latestMood ? latestMood.mood.split(" ")[0] : "🤍"}</span>
-                <div>
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold leading-none mb-1">Mood</p>
-                  <p className="text-sm font-medium leading-none">{latestMood ? latestMood.mood.split(" ")[1] : "Not logged"}</p>
-                </div>
-              </div>
+              <motion.div
+                whileTap={{ scale: 0.96 }}
+                className="bg-gradient-to-br from-luna-blush/40 to-pink-50 rounded-2xl p-4 border border-luna-blush/40 cursor-pointer flex flex-col gap-2 min-h-[96px]"
+              >
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Mood</p>
+                <span className="text-4xl leading-none">{moodEmoji}</span>
+                <p className="text-sm font-semibold text-foreground/80">{moodLabel}</p>
+              </motion.div>
             </Link>
+
+            {/* Cycle card */}
             <Link href="/cycle" className="flex-1">
-              <div className={`rounded-2xl px-4 py-3.5 border flex items-center gap-3 active:scale-95 transition-transform cursor-pointer ${phase !== "Unknown" ? getPhaseColor(phase).replace("text-", "border-").replace("bg-", "bg-opacity-20 bg-") : "bg-gray-50 border-gray-100"}`}>
-                <span className="text-2xl leading-none">🌙</span>
+              <motion.div
+                whileTap={{ scale: 0.96 }}
+                className={`rounded-2xl p-4 border cursor-pointer flex flex-col gap-2 min-h-[96px] ${
+                  phase !== "Unknown"
+                    ? getPhaseColor(phase).replace("text-", "border-").replace("bg-", "bg-opacity-30 bg-")
+                    : "bg-gray-50 border-gray-200"
+                }`}
+              >
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Cycle</p>
+                <span className="text-4xl leading-none">🌙</span>
                 <div>
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold leading-none mb-1">Cycle</p>
-                  <p className="text-sm font-semibold leading-none truncate">{phase !== "Unknown" ? `${phase} · D${currentDay}` : "Not logged"}</p>
+                  <p className="text-sm font-semibold text-foreground/80 leading-tight">
+                    {phase !== "Unknown" ? phase : "Not logged"}
+                  </p>
+                  {phase !== "Unknown" && (
+                    <p className="text-xs text-muted-foreground">Day {currentDay}</p>
+                  )}
                 </div>
-              </div>
+              </motion.div>
             </Link>
-          </div>
-
-          {/* Divider */}
-          <div className="border-t border-border/30 mt-3 mb-2.5" />
-
-          {/* Symptoms */}
-          <div className="flex items-center justify-between mb-1.5">
-            <p className="text-[9px] text-muted-foreground uppercase tracking-wider font-semibold">Symptoms</p>
-            <AnimatePresence>
-              {showSaved && (
-                <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-[9px] text-emerald-500 font-semibold">✓ Logged</motion.span>
-              )}
-            </AnimatePresence>
-          </div>
-          {savedNote && (
-            <p className="text-[11px] text-foreground/70 mb-1.5 leading-relaxed bg-luna-blush/10 rounded-lg px-2.5 py-1.5 border border-luna-blush/20">{savedNote}</p>
-          )}
-          <div className="flex items-center gap-2 bg-muted/30 rounded-xl px-3 py-1.5 border border-border/30 focus-within:border-primary/40 transition-colors">
-            <input
-              ref={inputRef}
-              value={symptomInput}
-              onChange={(e) => setSymptomInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder={savedNote ? "Add more…" : "e.g. cramps, headache…"}
-              className="flex-1 bg-transparent text-xs text-foreground placeholder:text-muted-foreground outline-none"
-            />
-            <button
-              onClick={handleSaveSymptom}
-              disabled={!symptomInput.trim()}
-              className="w-6 h-6 rounded-lg flex items-center justify-center transition-all disabled:opacity-30 active:scale-90"
-              style={{ background: symptomInput.trim() ? "linear-gradient(135deg,#f9a8d4,#c4b5fd)" : "transparent" }}
-            >
-              <SendHorizonal className="w-3 h-3 text-white" />
-            </button>
           </div>
         </div>
 
         {/* Body Wisdom Card */}
-        <div className="bg-white rounded-3xl p-6 shadow-sm border border-card-border">
-          <div className="flex items-center gap-2 mb-4">
-            <Sparkles className="w-5 h-5 text-emerald-500" />
+        <div className="bg-white rounded-3xl p-5 shadow-sm border border-card-border">
+          <div className="flex items-center gap-2 mb-3">
+            <Sparkles className="w-4 h-4 text-emerald-500" />
             <h3 className="font-semibold uppercase tracking-wider text-xs text-emerald-800">Body Wisdom</h3>
           </div>
           {phase !== "Unknown" ? (
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-2">
               <div className={`inline-flex items-center self-start px-3 py-1 rounded-full text-xs font-semibold ${getPhaseColor(phase as CyclePhase).replace("bg-", "bg-opacity-30 bg-")}`}>
                 {phase} · Day {currentDay}
               </div>
-              <p className="text-sm text-foreground leading-relaxed">
-                {getPhaseMessage(phase as CyclePhase)}
-              </p>
+              <p className="text-sm text-foreground leading-relaxed">{getPhaseMessage(phase as CyclePhase)}</p>
             </div>
           ) : (
-            <p className="text-sm text-muted-foreground">
-              Track your cycle to receive personalized body insights.
-            </p>
+            <p className="text-sm text-muted-foreground">Track your cycle to receive personalized body insights.</p>
           )}
         </div>
 
@@ -252,46 +180,6 @@ export default function Home() {
           </Link>
         </div>
       </main>
-
-      {/* Notification panel */}
-      <AnimatePresence>
-        {showNotifs && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/20 z-30"
-              onClick={() => setShowNotifs(false)}
-            />
-            <motion.div
-              initial={{ opacity: 0, y: -16, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -16, scale: 0.95 }}
-              transition={{ duration: 0.22 }}
-              className="fixed top-24 right-4 z-40 w-72 bg-white rounded-3xl shadow-lg border border-card-border overflow-hidden"
-            >
-              <div className="flex items-center justify-between px-4 py-3 border-b border-border/40">
-                <p className="text-sm font-semibold text-foreground">Notifications</p>
-                <button onClick={() => setShowNotifs(false)} className="w-6 h-6 flex items-center justify-center rounded-full bg-muted/40">
-                  <X className="w-3 h-3 text-muted-foreground" />
-                </button>
-              </div>
-              <div className="flex flex-col">
-                {NOTIFICATIONS.map((n, i) => (
-                  <div key={i} className={`flex items-start gap-3 px-4 py-3 ${i < NOTIFICATIONS.length - 1 ? "border-b border-border/30" : ""}`}>
-                    <span className="text-lg mt-0.5">{n.icon}</span>
-                    <div className="flex-1">
-                      <p className="text-xs text-foreground leading-snug">{n.text}</p>
-                      <p className="text-[10px] text-muted-foreground mt-1">{n.time}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
     </PageTransition>
   );
 }
