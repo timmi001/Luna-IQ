@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "wouter";
-import { Bell, X, MessageCircleHeart, HeartPulse, CalendarHeart, Sparkles } from "lucide-react";
+import { Bell, X, MessageCircleHeart, HeartPulse, CalendarHeart, Sparkles, Plus, Check } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { storage } from "@/utils/storage";
-import { getCycleDetails, getPhaseColor } from "@/utils/cycle";
+import { getCycleDetails, getPhaseColor, getPhaseMessage, CyclePhase } from "@/utils/cycle";
 import { PageTransition } from "@/components/PageTransition";
 
 const AVATARS = [
@@ -24,6 +24,19 @@ const NOTIFICATIONS = [
   { icon: "💕", text: "You've logged 5 moods this week! Keep it up.", time: "Yesterday" },
 ];
 
+const SYMPTOM_OPTIONS = [
+  { emoji: "🩸", label: "Cramps" },
+  { emoji: "💧", label: "Bloating" },
+  { emoji: "🤕", label: "Headache" },
+  { emoji: "😴", label: "Fatigue" },
+  { emoji: "🌡️", label: "Spotting" },
+  { emoji: "😔", label: "Mood swings" },
+  { emoji: "🤢", label: "Nausea" },
+  { emoji: "💪", label: "Breast tenderness" },
+  { emoji: "😰", label: "Acne" },
+  { emoji: "🧠", label: "Brain fog" },
+];
+
 function getGreeting() {
   const h = new Date().getHours();
   if (h < 12) return "Good morning";
@@ -31,13 +44,41 @@ function getGreeting() {
   return "Good evening";
 }
 
+function getTodaySymptoms(): string[] {
+  try {
+    const raw = localStorage.getItem("luna_symptoms");
+    if (!raw) return [];
+    const entries = JSON.parse(raw) as { date: string; symptoms: string[] }[];
+    const today = new Date().toISOString().split("T")[0];
+    const todayEntry = entries.find((e) => e.date === today);
+    return todayEntry?.symptoms ?? [];
+  } catch {
+    return [];
+  }
+}
+
+function saveSymptoms(symptoms: string[]) {
+  try {
+    const raw = localStorage.getItem("luna_symptoms");
+    const entries: { date: string; symptoms: string[] }[] = raw ? JSON.parse(raw) : [];
+    const today = new Date().toISOString().split("T")[0];
+    const idx = entries.findIndex((e) => e.date === today);
+    if (idx >= 0) entries[idx].symptoms = symptoms;
+    else entries.unshift({ date: today, symptoms });
+    localStorage.setItem("luna_symptoms", JSON.stringify(entries));
+  } catch {}
+}
+
 export default function Home() {
   const [, setLocation] = useLocation();
   const [greeting, setGreeting] = useState("");
   const [showNotifs, setShowNotifs] = useState(false);
+  const [selectedSymptoms, setSelectedSymptoms] = useState<string[]>([]);
+  const [symptomSaved, setSymptomSaved] = useState(false);
 
   useEffect(() => {
     setGreeting(getGreeting());
+    setSelectedSymptoms(getTodaySymptoms());
   }, []);
 
   const profile = storage.getProfile();
@@ -47,9 +88,20 @@ export default function Home() {
   const avatar = AVATARS[profile.avatarIndex ?? 0] ?? AVATARS[0];
   const name = profile.nickname ? `, ${profile.nickname}` : "";
 
+  const toggleSymptom = (label: string) => {
+    setSymptomSaved(false);
+    setSelectedSymptoms((prev) => {
+      const next = prev.includes(label) ? prev.filter((s) => s !== label) : [...prev, label];
+      saveSymptoms(next);
+      return next;
+    });
+    setSymptomSaved(true);
+    setTimeout(() => setSymptomSaved(false), 1500);
+  };
+
   return (
     <PageTransition className="flex flex-col min-h-screen">
-      {/* Header with notification bell + profile icon */}
+      {/* Header */}
       <header className="px-6 pt-12 pb-4 flex items-center justify-between sticky top-0 z-20 bg-background/80 backdrop-blur-md">
         <div>
           <h1 className="text-2xl font-semibold text-foreground tracking-tight flex items-center gap-2">
@@ -59,7 +111,6 @@ export default function Home() {
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Notification bell */}
           <button
             onClick={() => setShowNotifs(true)}
             className="relative w-9 h-9 rounded-2xl bg-white shadow-sm border border-card-border flex items-center justify-center active:scale-95 transition-transform"
@@ -67,8 +118,6 @@ export default function Home() {
             <Bell className="w-4 h-4 text-muted-foreground" />
             <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-rose-400" />
           </button>
-
-          {/* Profile avatar */}
           <button
             onClick={() => setLocation("/profile")}
             className="w-9 h-9 rounded-2xl flex items-center justify-center shadow-sm border border-card-border active:scale-95 transition-transform"
@@ -79,12 +128,12 @@ export default function Home() {
         </div>
       </header>
 
-      <main className="flex-1 px-6 pt-4 pb-28 flex flex-col gap-6">
-        {/* Status Card */}
+      <main className="flex-1 px-6 pt-4 pb-28 flex flex-col gap-5">
+
+        {/* Today's Check-in */}
         <div className="bg-white rounded-3xl p-6 shadow-sm border border-card-border relative overflow-hidden">
           <div className="absolute top-0 right-0 w-32 h-32 bg-luna-lavender/30 rounded-full blur-2xl -mr-10 -mt-10" />
           <h2 className="text-lg font-medium mb-4 text-foreground">Today's Check-in</h2>
-
           <div className="flex gap-4">
             <div className="flex-1 bg-luna-blush/20 rounded-2xl p-4 border border-luna-blush/30">
               <p className="text-xs text-muted-foreground mb-1 uppercase tracking-wider font-semibold">Mood</p>
@@ -93,7 +142,6 @@ export default function Home() {
                 <span className="text-sm font-medium">{latestMood ? latestMood.mood.split(" ")[1] : "Not logged"}</span>
               </div>
             </div>
-
             <div className={`flex-1 rounded-2xl p-4 border ${phase !== "Unknown" ? getPhaseColor(phase).replace("text-", "border-").replace("bg-", "bg-opacity-20 bg-") : "bg-gray-50 border-gray-100"}`}>
               <p className="text-xs text-muted-foreground mb-1 uppercase tracking-wider font-semibold">Cycle</p>
               <div className="flex flex-col">
@@ -104,9 +152,82 @@ export default function Home() {
           </div>
         </div>
 
-        <h3 className="text-lg font-medium mt-2 px-1">Your Spaces</h3>
+        {/* Symptoms Card */}
+        <div className="bg-white rounded-3xl p-5 shadow-sm border border-card-border">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <Plus className="w-4 h-4 text-rose-400" />
+              <h3 className="text-sm font-semibold text-foreground">Symptoms</h3>
+            </div>
+            <AnimatePresence>
+              {symptomSaved && (
+                <motion.span
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="flex items-center gap-1 text-[10px] text-emerald-500 font-medium"
+                >
+                  <Check className="w-3 h-3" /> Saved
+                </motion.span>
+              )}
+              {!symptomSaved && selectedSymptoms.length > 0 && (
+                <motion.span
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="text-[10px] text-muted-foreground"
+                >
+                  {selectedSymptoms.length} logged today
+                </motion.span>
+              )}
+            </AnimatePresence>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {SYMPTOM_OPTIONS.map((s) => {
+              const active = selectedSymptoms.includes(s.label);
+              return (
+                <button
+                  key={s.label}
+                  onClick={() => toggleSymptom(s.label)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all active:scale-95"
+                  style={{
+                    background: active ? "linear-gradient(135deg, #fce4ec, #f8bbd0)" : "#F9F5FF",
+                    border: active ? "1.5px solid #f48fb1" : "1.5px solid #ede9fe",
+                    color: active ? "#c2185b" : "#7c3aed",
+                  }}
+                >
+                  <span>{s.emoji}</span>
+                  {s.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
 
-        {/* Navigation Grid */}
+        {/* Body Wisdom Card */}
+        <div className="bg-white rounded-3xl p-6 shadow-sm border border-card-border">
+          <div className="flex items-center gap-2 mb-4">
+            <Sparkles className="w-5 h-5 text-emerald-500" />
+            <h3 className="font-semibold uppercase tracking-wider text-xs text-emerald-800">Body Wisdom</h3>
+          </div>
+          {phase !== "Unknown" ? (
+            <div className="flex flex-col gap-3">
+              <div className={`inline-flex items-center self-start px-3 py-1 rounded-full text-xs font-semibold ${getPhaseColor(phase as CyclePhase).replace("bg-", "bg-opacity-30 bg-")}`}>
+                {phase} · Day {currentDay}
+              </div>
+              <p className="text-sm text-foreground leading-relaxed">
+                {getPhaseMessage(phase as CyclePhase)}
+              </p>
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              Track your cycle to receive personalized body insights.
+            </p>
+          )}
+        </div>
+
+        <h3 className="text-lg font-medium px-1">Your Spaces</h3>
+
+        {/* Navigation Grid — 3 items */}
         <div className="grid grid-cols-2 gap-4">
           <Link href="/chat">
             <div className="bg-luna-lavender/40 hover:bg-luna-lavender/60 transition-colors rounded-3xl p-5 flex flex-col items-center justify-center text-center aspect-square cursor-pointer shadow-sm">
@@ -129,22 +250,16 @@ export default function Home() {
           </Link>
 
           <Link href="/cycle">
-            <div className="bg-rose-100/60 hover:bg-rose-100/80 transition-colors rounded-3xl p-5 flex flex-col items-center justify-center text-center aspect-square cursor-pointer shadow-sm">
-              <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm mb-3 text-rose-500">
-                <CalendarHeart className="w-6 h-6" />
+            <div className="bg-rose-100/60 hover:bg-rose-100/80 transition-colors rounded-3xl p-5 flex flex-col items-center justify-center text-center aspect-square cursor-pointer shadow-sm col-span-2">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm text-rose-500">
+                  <CalendarHeart className="w-6 h-6" />
+                </div>
+                <div className="text-left">
+                  <h3 className="font-medium text-rose-900">Cycle Tracker</h3>
+                  <p className="text-xs text-rose-700/70 mt-0.5">Understand your rhythm</p>
+                </div>
               </div>
-              <h3 className="font-medium text-rose-900">Cycle</h3>
-              <p className="text-xs text-rose-700/70 mt-1">Understand your rhythm</p>
-            </div>
-          </Link>
-
-          <Link href="/insights">
-            <div className="bg-luna-mint/40 hover:bg-luna-mint/60 transition-colors rounded-3xl p-5 flex flex-col items-center justify-center text-center aspect-square cursor-pointer shadow-sm">
-              <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm mb-3 text-emerald-600">
-                <Sparkles className="w-6 h-6" />
-              </div>
-              <h3 className="font-medium text-emerald-900">Insights</h3>
-              <p className="text-xs text-emerald-700/70 mt-1">Discover patterns</p>
             </div>
           </Link>
         </div>

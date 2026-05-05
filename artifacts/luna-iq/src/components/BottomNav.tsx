@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Home, MessageCircleHeart, HeartPulse, CalendarHeart, Sparkles } from "lucide-react";
+import { Home, MessageCircleHeart, HeartPulse, CalendarHeart } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
@@ -7,7 +7,6 @@ const NAV_ITEMS = [
   { icon: MessageCircleHeart, label: "Chat", href: "/chat" },
   { icon: HeartPulse, label: "Mood", href: "/mood" },
   { icon: CalendarHeart, label: "Cycle", href: "/cycle" },
-  { icon: Sparkles, label: "Insights", href: "/insights" },
 ];
 
 export function BottomNav() {

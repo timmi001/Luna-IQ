@@ -20,10 +20,17 @@ export type WaterData = {
   glasses: number;
 };
 
+export type SymptomEntry = {
+  id: string;
+  date: string;
+  symptoms: string[];
+};
+
 const MOODS_KEY = "luna_moods";
 const CYCLE_KEY = "luna_cycle";
 const PROFILE_KEY = "luna_profile";
 const WATER_KEY = "luna_water";
+const SYMPTOMS_KEY = "luna_symptoms";
 
 export const storage = {
   getMoods: (): MoodEntry[] => {
