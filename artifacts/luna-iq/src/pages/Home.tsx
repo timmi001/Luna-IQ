@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Link, useLocation } from "wouter";
-import { Bell, X, MessageCircleHeart, HeartPulse, CalendarHeart, Sparkles, Plus, Check } from "lucide-react";
+import { Bell, X, MessageCircleHeart, HeartPulse, CalendarHeart, Sparkles, SendHorizonal } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { storage } from "@/utils/storage";
 import { getCycleDetails, getPhaseColor, getPhaseMessage, CyclePhase } from "@/utils/cycle";
@@ -24,19 +24,6 @@ const NOTIFICATIONS = [
   { icon: "💕", text: "You've logged 5 moods this week! Keep it up.", time: "Yesterday" },
 ];
 
-const SYMPTOM_OPTIONS = [
-  { emoji: "🩸", label: "Cramps" },
-  { emoji: "💧", label: "Bloating" },
-  { emoji: "🤕", label: "Headache" },
-  { emoji: "😴", label: "Fatigue" },
-  { emoji: "🌡️", label: "Spotting" },
-  { emoji: "😔", label: "Mood swings" },
-  { emoji: "🤢", label: "Nausea" },
-  { emoji: "💪", label: "Breast tenderness" },
-  { emoji: "😰", label: "Acne" },
-  { emoji: "🧠", label: "Brain fog" },
-];
-
 function getGreeting() {
   const h = new Date().getHours();
   if (h < 12) return "Good morning";
@@ -44,27 +31,26 @@ function getGreeting() {
   return "Good evening";
 }
 
-function getTodaySymptoms(): string[] {
+function getTodaySymptomNote(): string {
   try {
     const raw = localStorage.getItem("luna_symptoms");
-    if (!raw) return [];
-    const entries = JSON.parse(raw) as { date: string; symptoms: string[] }[];
+    if (!raw) return "";
+    const entries = JSON.parse(raw) as { date: string; note: string }[];
     const today = new Date().toISOString().split("T")[0];
-    const todayEntry = entries.find((e) => e.date === today);
-    return todayEntry?.symptoms ?? [];
+    return entries.find((e) => e.date === today)?.note ?? "";
   } catch {
-    return [];
+    return "";
   }
 }
 
-function saveSymptoms(symptoms: string[]) {
+function saveSymptomNote(note: string) {
   try {
     const raw = localStorage.getItem("luna_symptoms");
-    const entries: { date: string; symptoms: string[] }[] = raw ? JSON.parse(raw) : [];
+    const entries: { date: string; note: string }[] = raw ? JSON.parse(raw) : [];
     const today = new Date().toISOString().split("T")[0];
     const idx = entries.findIndex((e) => e.date === today);
-    if (idx >= 0) entries[idx].symptoms = symptoms;
-    else entries.unshift({ date: today, symptoms });
+    if (idx >= 0) entries[idx].note = note;
+    else entries.unshift({ date: today, note });
     localStorage.setItem("luna_symptoms", JSON.stringify(entries));
   } catch {}
 }
@@ -73,12 +59,15 @@ export default function Home() {
   const [, setLocation] = useLocation();
   const [greeting, setGreeting] = useState("");
   const [showNotifs, setShowNotifs] = useState(false);
-  const [selectedSymptoms, setSelectedSymptoms] = useState<string[]>([]);
-  const [symptomSaved, setSymptomSaved] = useState(false);
+  const [symptomInput, setSymptomInput] = useState("");
+  const [savedNote, setSavedNote] = useState("");
+  const [showSaved, setShowSaved] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setGreeting(getGreeting());
-    setSelectedSymptoms(getTodaySymptoms());
+    const note = getTodaySymptomNote();
+    setSavedNote(note);
   }, []);
 
   const profile = storage.getProfile();
@@ -88,15 +77,19 @@ export default function Home() {
   const avatar = AVATARS[profile.avatarIndex ?? 0] ?? AVATARS[0];
   const name = profile.nickname ? `, ${profile.nickname}` : "";
 
-  const toggleSymptom = (label: string) => {
-    setSymptomSaved(false);
-    setSelectedSymptoms((prev) => {
-      const next = prev.includes(label) ? prev.filter((s) => s !== label) : [...prev, label];
-      saveSymptoms(next);
-      return next;
-    });
-    setSymptomSaved(true);
-    setTimeout(() => setSymptomSaved(false), 1500);
+  const handleSaveSymptom = () => {
+    const trimmed = symptomInput.trim();
+    if (!trimmed) return;
+    const updated = savedNote ? `${savedNote}, ${trimmed}` : trimmed;
+    setSavedNote(updated);
+    saveSymptomNote(updated);
+    setSymptomInput("");
+    setShowSaved(true);
+    setTimeout(() => setShowSaved(false), 1600);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") handleSaveSymptom();
   };
 
   return (
@@ -130,10 +123,12 @@ export default function Home() {
 
       <main className="flex-1 px-6 pt-4 pb-28 flex flex-col gap-5">
 
-        {/* Today's Check-in */}
+        {/* Today's Check-in — includes Mood, Cycle, and Symptoms */}
         <div className="bg-white rounded-3xl p-6 shadow-sm border border-card-border relative overflow-hidden">
           <div className="absolute top-0 right-0 w-32 h-32 bg-luna-lavender/30 rounded-full blur-2xl -mr-10 -mt-10" />
           <h2 className="text-lg font-medium mb-4 text-foreground">Today's Check-in</h2>
+
+          {/* Mood + Cycle row */}
           <div className="flex gap-4">
             <div className="flex-1 bg-luna-blush/20 rounded-2xl p-4 border border-luna-blush/30">
               <p className="text-xs text-muted-foreground mb-1 uppercase tracking-wider font-semibold">Mood</p>
@@ -150,56 +145,54 @@ export default function Home() {
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Symptoms Card */}
-        <div className="bg-white rounded-3xl p-5 shadow-sm border border-card-border">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <Plus className="w-4 h-4 text-rose-400" />
-              <h3 className="text-sm font-semibold text-foreground">Symptoms</h3>
+          {/* Divider */}
+          <div className="border-t border-border/30 mt-4 mb-3" />
+
+          {/* Symptoms section */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">Symptoms</p>
+              <AnimatePresence>
+                {showSaved && (
+                  <motion.span
+                    initial={{ opacity: 0, y: -4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                    className="text-[10px] text-emerald-500 font-semibold"
+                  >
+                    ✓ Logged
+                  </motion.span>
+                )}
+              </AnimatePresence>
             </div>
-            <AnimatePresence>
-              {symptomSaved && (
-                <motion.span
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="flex items-center gap-1 text-[10px] text-emerald-500 font-medium"
-                >
-                  <Check className="w-3 h-3" /> Saved
-                </motion.span>
-              )}
-              {!symptomSaved && selectedSymptoms.length > 0 && (
-                <motion.span
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="text-[10px] text-muted-foreground"
-                >
-                  {selectedSymptoms.length} logged today
-                </motion.span>
-              )}
-            </AnimatePresence>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {SYMPTOM_OPTIONS.map((s) => {
-              const active = selectedSymptoms.includes(s.label);
-              return (
-                <button
-                  key={s.label}
-                  onClick={() => toggleSymptom(s.label)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all active:scale-95"
-                  style={{
-                    background: active ? "linear-gradient(135deg, #fce4ec, #f8bbd0)" : "#F9F5FF",
-                    border: active ? "1.5px solid #f48fb1" : "1.5px solid #ede9fe",
-                    color: active ? "#c2185b" : "#7c3aed",
-                  }}
-                >
-                  <span>{s.emoji}</span>
-                  {s.label}
-                </button>
-              );
-            })}
+
+            {/* Saved note display */}
+            {savedNote && (
+              <p className="text-xs text-foreground/80 mb-2 leading-relaxed bg-luna-blush/10 rounded-xl px-3 py-2 border border-luna-blush/20">
+                {savedNote}
+              </p>
+            )}
+
+            {/* Text input */}
+            <div className="flex items-center gap-2 bg-muted/30 rounded-2xl px-3 py-2 border border-border/30 focus-within:border-primary/40 transition-colors">
+              <input
+                ref={inputRef}
+                value={symptomInput}
+                onChange={(e) => setSymptomInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder={savedNote ? "Add more symptoms…" : "e.g. cramps, headache, fatigue…"}
+                className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
+              />
+              <button
+                onClick={handleSaveSymptom}
+                disabled={!symptomInput.trim()}
+                className="w-7 h-7 rounded-xl flex items-center justify-center transition-all disabled:opacity-30 active:scale-90"
+                style={{ background: symptomInput.trim() ? "linear-gradient(135deg,#f9a8d4,#c4b5fd)" : "transparent" }}
+              >
+                <SendHorizonal className="w-3.5 h-3.5 text-white" />
+              </button>
+            </div>
           </div>
         </div>
 
@@ -227,7 +220,7 @@ export default function Home() {
 
         <h3 className="text-lg font-medium px-1">Your Spaces</h3>
 
-        {/* Navigation Grid — 3 items */}
+        {/* Navigation Grid */}
         <div className="grid grid-cols-2 gap-4">
           <Link href="/chat">
             <div className="bg-luna-lavender/40 hover:bg-luna-lavender/60 transition-colors rounded-3xl p-5 flex flex-col items-center justify-center text-center aspect-square cursor-pointer shadow-sm">
@@ -250,7 +243,7 @@ export default function Home() {
           </Link>
 
           <Link href="/cycle">
-            <div className="bg-rose-100/60 hover:bg-rose-100/80 transition-colors rounded-3xl p-5 flex flex-col items-center justify-center text-center aspect-square cursor-pointer shadow-sm col-span-2">
+            <div className="bg-rose-100/60 hover:bg-rose-100/80 transition-colors rounded-3xl p-5 flex flex-col items-center justify-center text-center cursor-pointer shadow-sm col-span-2 py-4">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm text-rose-500">
                   <CalendarHeart className="w-6 h-6" />
