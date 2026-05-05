@@ -4,7 +4,6 @@ import { getCycleDetails, getPhaseMessage, CyclePhase } from "@/utils/cycle";
 import { PageTransition } from "@/components/PageTransition";
 import { useToast } from "@/hooks/use-toast";
 import { format, addDays } from "date-fns";
-import { Menu, CalendarDays } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 // ─── SVG Ring helpers ──────────────────────────────────────────────────────────
@@ -34,7 +33,7 @@ const FLOW_OPTIONS = [
   { label: "Heavy", emoji: "❗" },
 ];
 
-const TABS = ["Overview", "Cycle", "Insights", "Energy", "Mood"];
+const TABS = ["Cycle", "Energy", "Mood"];
 
 // Energy curve data (28 points approximating a realistic cycle energy curve)
 const ENERGY_DATA = [
@@ -71,7 +70,7 @@ function EnergyChart({ cycleLength, currentDay }: { cycleLength: number; current
 export default function Cycle() {
   const { toast } = useToast();
   const [data, setData] = useState(storage.getCycle());
-  const [activeTab, setActiveTab] = useState("Overview");
+  const [activeTab, setActiveTab] = useState("Cycle");
   const [flow, setFlow] = useState<string | null>(null);
   const [logDate, setLogDate] = useState(format(new Date(), "MM/dd/yyyy"));
   const [showLogModal, setShowLogModal] = useState(false);
@@ -147,16 +146,9 @@ export default function Cycle() {
   return (
     <PageTransition className="flex flex-col min-h-screen bg-[#faf8ff]">
       {/* Header */}
-      <header className="px-5 pt-12 pb-3 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <button className="w-8 h-8 flex items-center justify-center rounded-xl bg-white shadow-sm border border-card-border">
-            <Menu className="w-4 h-4 text-muted-foreground" />
-          </button>
-          <h1 className="text-xl font-semibold text-foreground">Tracker</h1>
-        </div>
-        <button className="w-8 h-8 flex items-center justify-center rounded-xl bg-white shadow-sm border border-card-border">
-          <CalendarDays className="w-4 h-4 text-muted-foreground" />
-        </button>
+      <header className="px-5 pt-12 pb-3">
+        <h1 className="text-2xl font-semibold text-foreground">My Cycle</h1>
+        <p className="text-sm text-muted-foreground mt-0.5">Track and understand your rhythm</p>
       </header>
 
       {/* Tabs */}
@@ -180,97 +172,6 @@ export default function Cycle() {
       <main className="flex-1 px-5 pb-28 flex flex-col gap-4 overflow-y-auto">
 
         <AnimatePresence mode="wait">
-          {/* ── OVERVIEW ── */}
-          {activeTab === "Overview" && (
-            <motion.div key="overview" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="flex flex-col gap-4">
-
-              {/* Phase ring card */}
-              <div className="bg-white rounded-3xl p-5 shadow-sm border border-card-border">
-                <div className="flex items-start gap-4">
-                  {/* SVG Ring */}
-                  <svg width="220" height="220" viewBox="0 0 220 220" className="flex-shrink-0">
-                    {/* Background track */}
-                    <circle cx={CX} cy={CY} r={(R_OUTER + R_INNER) / 2} fill="none" stroke="#f3f4f6" strokeWidth={R_OUTER - R_INNER} />
-                    {/* Phase segments */}
-                    {segments.map((seg) => (
-                      <path
-                        key={seg.label}
-                        d={arcPath(CX, CY, (R_OUTER + R_INNER) / 2, seg.start, seg.end - 1)}
-                        fill="none"
-                        stroke={seg.color}
-                        strokeWidth={R_OUTER - R_INNER}
-                        strokeLinecap="butt"
-                        opacity="0.85"
-                      />
-                    ))}
-                    {/* Phase labels */}
-                    {segments.map((seg) => {
-                      const mid = (seg.start + seg.end) / 2;
-                      const lp = polarToCartesian(CX, CY, R_OUTER + 10, mid);
-                      return (
-                        <text key={seg.label + "l"} x={lp.x} y={lp.y} textAnchor="middle" dominantBaseline="middle" fontSize="7" fontWeight="600" fill={seg.textColor} opacity="0.9">
-                          {seg.label}
-                        </text>
-                      );
-                    })}
-                    {/* Today dot */}
-                    {phase !== "Unknown" && (() => {
-                      const dp = polarToCartesian(CX, CY, R_DOT, dayAngle);
-                      return (
-                        <>
-                          <circle cx={dp.x} cy={dp.y} r="7" fill="white" stroke="#7c3aed" strokeWidth="2" />
-                          <circle cx={dp.x} cy={dp.y} r="3.5" fill="#7c3aed" />
-                        </>
-                      );
-                    })()}
-                    {/* Centre text */}
-                    <text x={CX} y={CY - 10} textAnchor="middle" fontSize="11" fontWeight="700" fill="#1f2937">{phase !== "Unknown" ? phase : "Not set"}</text>
-                    <text x={CX} y={CY + 6} textAnchor="middle" fontSize="9" fill="#9ca3af">
-                      {phase !== "Unknown" ? `Day ${currentDay} of ${cycleLen}` : "Log to start"}
-                    </text>
-                  </svg>
-
-                  {/* Phase info */}
-                  <div className="flex-1 flex flex-col gap-2 pt-2">
-                    {segments.map((seg) => (
-                      <div key={seg.label} className="flex items-center gap-2">
-                        <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: seg.color }} />
-                        <span className="text-[10px] text-muted-foreground">{seg.label}</span>
-                        <span className="text-[10px] text-muted-foreground ml-auto">{seg.days}d</span>
-                      </div>
-                    ))}
-                    {phase !== "Unknown" && (
-                      <div className="mt-1 rounded-xl p-2 border border-purple-100 bg-purple-50/40">
-                        <p className="text-[10px] text-purple-700 leading-relaxed">{phaseDescriptions[phase]}</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Stats row */}
-              <div className="grid grid-cols-4 gap-2">
-                {[
-                  { label: "Period Days", value: `${periodDays}d` },
-                  { label: "Ovulation", value: ovulationStr },
-                  { label: "Cycle Length", value: `${cycleLen}d` },
-                  { label: "Next Period", value: nextPeriodStr },
-                ].map((s) => (
-                  <div key={s.label} className="bg-white rounded-2xl p-2.5 border border-card-border shadow-sm text-center">
-                    <p className="text-sm font-bold text-foreground">{s.value}</p>
-                    <p className="text-[9px] text-muted-foreground mt-0.5 leading-tight">{s.label}</p>
-                  </div>
-                ))}
-              </div>
-
-              {/* Phase description */}
-              <div className="bg-white rounded-2xl px-4 py-3 border border-card-border shadow-sm">
-                <p className="text-xs font-semibold text-foreground mb-1">✨ Body wisdom</p>
-                <p className="text-xs text-muted-foreground leading-relaxed">{phaseDescriptions[phase ?? "Unknown"]}</p>
-              </div>
-            </motion.div>
-          )}
-
           {/* ── CYCLE TAB ── */}
           {activeTab === "Cycle" && (
             <motion.div key="cycle" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="flex flex-col gap-4">
@@ -332,24 +233,6 @@ export default function Cycle() {
                   ))}
                 </div>
               </div>
-            </motion.div>
-          )}
-
-          {/* ── INSIGHTS TAB ── */}
-          {activeTab === "Insights" && (
-            <motion.div key="insights" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="flex flex-col gap-4">
-              {segments.map((seg) => (
-                <div key={seg.label} className="bg-white rounded-2xl p-4 border border-card-border shadow-sm">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="w-3 h-3 rounded-full" style={{ background: seg.color }} />
-                    <p className="text-sm font-semibold" style={{ color: seg.textColor }}>{seg.label} Phase</p>
-                    <span className="ml-auto text-[10px] text-muted-foreground">Days {
-                      seg.label === "Menstrual" ? "1–5" : seg.label === "Follicular" ? "6–13" : seg.label === "Ovulation" ? "14–16" : "17–28"
-                    }</span>
-                  </div>
-                  <p className="text-xs text-muted-foreground leading-relaxed">{phaseDescriptions[seg.label]}</p>
-                </div>
-              ))}
             </motion.div>
           )}
 
