@@ -130,20 +130,24 @@ export default function Home() {
 
           {/* Mood + Cycle row */}
           <div className="flex gap-2.5">
-            <div className="flex-1 bg-luna-blush/20 rounded-2xl px-4 py-3.5 border border-luna-blush/30 flex items-center gap-3">
-              <span className="text-2xl leading-none">{latestMood ? latestMood.mood.split(" ")[0] : "🤍"}</span>
-              <div>
-                <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold leading-none mb-1">Mood</p>
-                <p className="text-sm font-medium leading-none">{latestMood ? latestMood.mood.split(" ")[1] : "Not logged"}</p>
+            <Link href="/mood" className="flex-1">
+              <div className="bg-luna-blush/20 rounded-2xl px-4 py-3.5 border border-luna-blush/30 flex items-center gap-3 active:scale-95 transition-transform cursor-pointer">
+                <span className="text-2xl leading-none">{latestMood ? latestMood.mood.split(" ")[0] : "🤍"}</span>
+                <div>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold leading-none mb-1">Mood</p>
+                  <p className="text-sm font-medium leading-none">{latestMood ? latestMood.mood.split(" ")[1] : "Not logged"}</p>
+                </div>
               </div>
-            </div>
-            <div className={`flex-1 rounded-2xl px-4 py-3.5 border flex items-center gap-3 ${phase !== "Unknown" ? getPhaseColor(phase).replace("text-", "border-").replace("bg-", "bg-opacity-20 bg-") : "bg-gray-50 border-gray-100"}`}>
-              <span className="text-2xl leading-none">🌙</span>
-              <div>
-                <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold leading-none mb-1">Cycle</p>
-                <p className="text-sm font-semibold leading-none truncate">{phase !== "Unknown" ? `${phase} · D${currentDay}` : "Not logged"}</p>
+            </Link>
+            <Link href="/cycle" className="flex-1">
+              <div className={`rounded-2xl px-4 py-3.5 border flex items-center gap-3 active:scale-95 transition-transform cursor-pointer ${phase !== "Unknown" ? getPhaseColor(phase).replace("text-", "border-").replace("bg-", "bg-opacity-20 bg-") : "bg-gray-50 border-gray-100"}`}>
+                <span className="text-2xl leading-none">🌙</span>
+                <div>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold leading-none mb-1">Cycle</p>
+                  <p className="text-sm font-semibold leading-none truncate">{phase !== "Unknown" ? `${phase} · D${currentDay}` : "Not logged"}</p>
+                </div>
               </div>
-            </div>
+            </Link>
           </div>
 
           {/* Divider */}
