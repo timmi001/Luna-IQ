@@ -123,76 +123,61 @@ export default function Home() {
 
       <main className="flex-1 px-6 pt-4 pb-28 flex flex-col gap-5">
 
-        {/* Today's Check-in — includes Mood, Cycle, and Symptoms */}
-        <div className="bg-white rounded-3xl p-6 shadow-sm border border-card-border relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-luna-lavender/30 rounded-full blur-2xl -mr-10 -mt-10" />
-          <h2 className="text-lg font-medium mb-4 text-foreground">Today's Check-in</h2>
+        {/* Today's Check-in — compact */}
+        <div className="bg-white rounded-2xl px-4 py-3.5 shadow-sm border border-card-border relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-luna-lavender/20 rounded-full blur-2xl -mr-8 -mt-8 pointer-events-none" />
+          <h2 className="text-sm font-semibold text-foreground mb-2.5">Today's Check-in</h2>
 
           {/* Mood + Cycle row */}
-          <div className="flex gap-4">
-            <div className="flex-1 bg-luna-blush/20 rounded-2xl p-4 border border-luna-blush/30">
-              <p className="text-xs text-muted-foreground mb-1 uppercase tracking-wider font-semibold">Mood</p>
-              <div className="flex items-center gap-2">
-                <span className="text-2xl">{latestMood ? latestMood.mood.split(" ")[0] : "🤍"}</span>
-                <span className="text-sm font-medium">{latestMood ? latestMood.mood.split(" ")[1] : "Not logged"}</span>
+          <div className="flex gap-2.5">
+            <div className="flex-1 bg-luna-blush/20 rounded-xl px-3 py-2.5 border border-luna-blush/30 flex items-center gap-2">
+              <span className="text-xl leading-none">{latestMood ? latestMood.mood.split(" ")[0] : "🤍"}</span>
+              <div>
+                <p className="text-[9px] text-muted-foreground uppercase tracking-wider font-semibold leading-none mb-0.5">Mood</p>
+                <p className="text-xs font-medium leading-none">{latestMood ? latestMood.mood.split(" ")[1] : "Not logged"}</p>
               </div>
             </div>
-            <div className={`flex-1 rounded-2xl p-4 border ${phase !== "Unknown" ? getPhaseColor(phase).replace("text-", "border-").replace("bg-", "bg-opacity-20 bg-") : "bg-gray-50 border-gray-100"}`}>
-              <p className="text-xs text-muted-foreground mb-1 uppercase tracking-wider font-semibold">Cycle</p>
-              <div className="flex flex-col">
-                <span className="text-sm font-semibold truncate">{phase !== "Unknown" ? phase : "Not logged"}</span>
-                <span className="text-xs opacity-80">{phase !== "Unknown" ? `Day ${currentDay}` : "--"}</span>
+            <div className={`flex-1 rounded-xl px-3 py-2.5 border flex items-center gap-2 ${phase !== "Unknown" ? getPhaseColor(phase).replace("text-", "border-").replace("bg-", "bg-opacity-20 bg-") : "bg-gray-50 border-gray-100"}`}>
+              <span className="text-xl leading-none">🌙</span>
+              <div>
+                <p className="text-[9px] text-muted-foreground uppercase tracking-wider font-semibold leading-none mb-0.5">Cycle</p>
+                <p className="text-xs font-semibold leading-none truncate">{phase !== "Unknown" ? `${phase} · D${currentDay}` : "Not logged"}</p>
               </div>
             </div>
           </div>
 
           {/* Divider */}
-          <div className="border-t border-border/30 mt-4 mb-3" />
+          <div className="border-t border-border/30 mt-3 mb-2.5" />
 
-          {/* Symptoms section */}
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">Symptoms</p>
-              <AnimatePresence>
-                {showSaved && (
-                  <motion.span
-                    initial={{ opacity: 0, y: -4 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0 }}
-                    className="text-[10px] text-emerald-500 font-semibold"
-                  >
-                    ✓ Logged
-                  </motion.span>
-                )}
-              </AnimatePresence>
-            </div>
-
-            {/* Saved note display */}
-            {savedNote && (
-              <p className="text-xs text-foreground/80 mb-2 leading-relaxed bg-luna-blush/10 rounded-xl px-3 py-2 border border-luna-blush/20">
-                {savedNote}
-              </p>
-            )}
-
-            {/* Text input */}
-            <div className="flex items-center gap-2 bg-muted/30 rounded-2xl px-3 py-2 border border-border/30 focus-within:border-primary/40 transition-colors">
-              <input
-                ref={inputRef}
-                value={symptomInput}
-                onChange={(e) => setSymptomInput(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder={savedNote ? "Add more symptoms…" : "e.g. cramps, headache, fatigue…"}
-                className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
-              />
-              <button
-                onClick={handleSaveSymptom}
-                disabled={!symptomInput.trim()}
-                className="w-7 h-7 rounded-xl flex items-center justify-center transition-all disabled:opacity-30 active:scale-90"
-                style={{ background: symptomInput.trim() ? "linear-gradient(135deg,#f9a8d4,#c4b5fd)" : "transparent" }}
-              >
-                <SendHorizonal className="w-3.5 h-3.5 text-white" />
-              </button>
-            </div>
+          {/* Symptoms */}
+          <div className="flex items-center justify-between mb-1.5">
+            <p className="text-[9px] text-muted-foreground uppercase tracking-wider font-semibold">Symptoms</p>
+            <AnimatePresence>
+              {showSaved && (
+                <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-[9px] text-emerald-500 font-semibold">✓ Logged</motion.span>
+              )}
+            </AnimatePresence>
+          </div>
+          {savedNote && (
+            <p className="text-[11px] text-foreground/70 mb-1.5 leading-relaxed bg-luna-blush/10 rounded-lg px-2.5 py-1.5 border border-luna-blush/20">{savedNote}</p>
+          )}
+          <div className="flex items-center gap-2 bg-muted/30 rounded-xl px-3 py-1.5 border border-border/30 focus-within:border-primary/40 transition-colors">
+            <input
+              ref={inputRef}
+              value={symptomInput}
+              onChange={(e) => setSymptomInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder={savedNote ? "Add more…" : "e.g. cramps, headache…"}
+              className="flex-1 bg-transparent text-xs text-foreground placeholder:text-muted-foreground outline-none"
+            />
+            <button
+              onClick={handleSaveSymptom}
+              disabled={!symptomInput.trim()}
+              className="w-6 h-6 rounded-lg flex items-center justify-center transition-all disabled:opacity-30 active:scale-90"
+              style={{ background: symptomInput.trim() ? "linear-gradient(135deg,#f9a8d4,#c4b5fd)" : "transparent" }}
+            >
+              <SendHorizonal className="w-3 h-3 text-white" />
+            </button>
           </div>
         </div>
 
