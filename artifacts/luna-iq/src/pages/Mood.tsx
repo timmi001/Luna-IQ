@@ -12,113 +12,216 @@ const MOODS = [
   {
     emoji: "🌟",
     label: "Radiant",
-    petalColor: "#FDE68A",
-    petalDark: "#FCD34D",
-    center: "#FEF9C3",
-    ring: "#FCA5A5",
+    petalBase: "#FEF08A",
+    petalMid: "#FDE047",
+    petalTip: "#EAB308",
+    petalHighlight: "#FEFCE8",
+    centerInner: "#FFFBEB",
+    centerOuter: "#F59E0B",
     textColor: "#92400E",
+    bg: "#FEFCE8",
   },
   {
     emoji: "😄",
     label: "Happy",
-    petalColor: "#F9A8D4",
-    petalDark: "#F472B6",
-    center: "#FCE7F3",
-    ring: "#F9A8D4",
-    textColor: "#9D174D",
+    petalBase: "#FBCFE8",
+    petalMid: "#F9A8D4",
+    petalTip: "#EC4899",
+    petalHighlight: "#FDF2F8",
+    centerInner: "#FFF0F9",
+    centerOuter: "#F472B6",
+    textColor: "#831843",
+    bg: "#FDF2F8",
   },
   {
     emoji: "😌",
     label: "Calm",
-    petalColor: "#6EE7B7",
-    petalDark: "#34D399",
-    center: "#D1FAE5",
-    ring: "#6EE7B7",
-    textColor: "#065F46",
+    petalBase: "#A7F3D0",
+    petalMid: "#6EE7B7",
+    petalTip: "#10B981",
+    petalHighlight: "#F0FDF4",
+    centerInner: "#ECFDF5",
+    centerOuter: "#34D399",
+    textColor: "#064E3B",
+    bg: "#F0FDF4",
   },
   {
     emoji: "😴",
     label: "Tired",
-    petalColor: "#C4B5FD",
-    petalDark: "#A78BFA",
-    center: "#EDE9FE",
-    ring: "#C4B5FD",
-    textColor: "#4C1D95",
+    petalBase: "#DDD6FE",
+    petalMid: "#C4B5FD",
+    petalTip: "#7C3AED",
+    petalHighlight: "#F5F3FF",
+    centerInner: "#FAF5FF",
+    centerOuter: "#A78BFA",
+    textColor: "#3B0764",
+    bg: "#F5F3FF",
   },
   {
     emoji: "😢",
     label: "Sad",
-    petalColor: "#93C5FD",
-    petalDark: "#60A5FA",
-    center: "#DBEAFE",
-    ring: "#93C5FD",
+    petalBase: "#BFDBFE",
+    petalMid: "#93C5FD",
+    petalTip: "#2563EB",
+    petalHighlight: "#EFF6FF",
+    centerInner: "#EFF6FF",
+    centerOuter: "#60A5FA",
     textColor: "#1E3A8A",
+    bg: "#EFF6FF",
   },
   {
     emoji: "😰",
     label: "Anxious",
-    petalColor: "#FCA5A5",
-    petalDark: "#F87171",
-    center: "#FEE2E2",
-    ring: "#FCA5A5",
+    petalBase: "#FECACA",
+    petalMid: "#FCA5A5",
+    petalTip: "#DC2626",
+    petalHighlight: "#FEF2F2",
+    centerInner: "#FFF5F5",
+    centerOuter: "#F87171",
     textColor: "#7F1D1D",
+    bg: "#FEF2F2",
   },
   {
     emoji: "😤",
     label: "Irritated",
-    petalColor: "#FDBA74",
-    petalDark: "#FB923C",
-    center: "#FEF3C7",
-    ring: "#FDBA74",
+    petalBase: "#FED7AA",
+    petalMid: "#FDBA74",
+    petalTip: "#EA580C",
+    petalHighlight: "#FFF7ED",
+    centerInner: "#FFFBEB",
+    centerOuter: "#FB923C",
     textColor: "#7C2D12",
+    bg: "#FFF7ED",
   },
 ];
 
-type Mood = typeof MOODS[number];
+type Mood = (typeof MOODS)[number];
 
-function FlowerButton({ mood, isSelected, onClick }: { mood: Mood; isSelected: boolean; onClick: () => void }) {
-  const op = isSelected ? 1 : 0.55;
-  const scale = isSelected ? 1 : 0.95;
+/* ── Realistic 5-petal flower SVG ─────────────────────────────────── */
+function RealisticFlower({ mood, isSelected, size = 72 }: { mood: Mood; isSelected: boolean; size?: number }) {
+  const id = mood.label.toLowerCase();
+  const op = isSelected ? 1 : 0.72;
+
+  // Petal path: rounded at tip, tapers to base. Drawn pointing straight up (–Y).
+  // viewBox is –50 –50 100 100 so (0,0) is centre.
+  const petalPath = "M 0,10 C -6,8 -16,-2 -16,-22 C -16,-40 -8,-52 0,-54 C 8,-52 16,-40 16,-22 C 16,-2 6,8 0,10";
+  const veinPath = "M 0,8 Q 0,-20 0,-52";
 
   return (
-    <motion.button
-      whileTap={{ scale: 0.88 }}
-      animate={{ scale }}
-      transition={{ type: "spring", stiffness: 300, damping: 20 }}
-      onClick={onClick}
-      className="flex flex-col items-center gap-1.5 focus:outline-none"
+    <svg
+      viewBox="-50 -50 100 100"
+      width={size}
+      height={size}
+      style={{ overflow: "visible", display: "block" }}
     >
-      <div className="relative w-[68px] h-[68px]">
-        <svg viewBox="0 0 100 100" className="absolute inset-0 w-full h-full">
-          {/* 8-petal flower: 4 axis + 4 diagonal */}
-          {/* Cardinal petals */}
-          <ellipse cx="50" cy="20" rx="13" ry="20" fill={mood.petalColor} opacity={op} />
-          <ellipse cx="80" cy="50" rx="20" ry="13" fill={mood.petalColor} opacity={op} />
-          <ellipse cx="50" cy="80" rx="13" ry="20" fill={mood.petalColor} opacity={op} />
-          <ellipse cx="20" cy="50" rx="20" ry="13" fill={mood.petalColor} opacity={op} />
-          {/* Diagonal petals */}
-          <ellipse cx="71" cy="29" rx="13" ry="20" fill={mood.petalDark} opacity={op * 0.75} transform="rotate(-45 71 29)" />
-          <ellipse cx="71" cy="71" rx="13" ry="20" fill={mood.petalDark} opacity={op * 0.75} transform="rotate(45 71 71)" />
-          <ellipse cx="29" cy="71" rx="13" ry="20" fill={mood.petalDark} opacity={op * 0.75} transform="rotate(-45 29 71)" />
-          <ellipse cx="29" cy="29" rx="13" ry="20" fill={mood.petalDark} opacity={op * 0.75} transform="rotate(45 29 29)" />
-          {/* Center disc */}
-          <circle cx="50" cy="50" r="27" fill={mood.center} />
-          {/* Selected ring */}
-          {isSelected && (
-            <circle cx="50" cy="50" r="27" fill="none" stroke={mood.petalDark} strokeWidth="2.5" />
-          )}
-        </svg>
-        {/* Emoji */}
+      <defs>
+        {/* Petal gradient: bright at tip, softer at base */}
+        <linearGradient id={`pg-${id}`} x1="0" y1="1" x2="0" y2="0" gradientUnits="objectBoundingBox">
+          <stop offset="0%" stopColor={mood.petalHighlight} stopOpacity="0.9" />
+          <stop offset="40%" stopColor={mood.petalBase} />
+          <stop offset="75%" stopColor={mood.petalMid} />
+          <stop offset="100%" stopColor={mood.petalTip} />
+        </linearGradient>
+
+        {/* Center gradient: soft glow */}
+        <radialGradient id={`cg-${id}`} cx="38%" cy="35%" r="65%">
+          <stop offset="0%" stopColor={mood.centerInner} />
+          <stop offset="55%" stopColor={mood.centerOuter} stopOpacity="0.85" />
+          <stop offset="100%" stopColor={mood.petalTip} stopOpacity="0.6" />
+        </radialGradient>
+
+        {/* Petal shadow for depth */}
+        <radialGradient id={`ps-${id}`} cx="50%" cy="110%" r="70%">
+          <stop offset="0%" stopColor={mood.petalTip} stopOpacity="0.25" />
+          <stop offset="100%" stopColor={mood.petalTip} stopOpacity="0" />
+        </radialGradient>
+
+        {/* Soft drop shadow filter */}
+        <filter id={`f-${id}`} x="-20%" y="-20%" width="140%" height="140%">
+          <feDropShadow dx="0" dy="1.5" stdDeviation="2" floodColor={mood.petalTip} floodOpacity={isSelected ? 0.35 : 0.15} />
+        </filter>
+      </defs>
+
+      <g opacity={op} filter={`url(#f-${id})`}>
+        {/* 5 petals at 72° intervals */}
+        {[0, 72, 144, 216, 288].map((angle) => (
+          <g key={angle} transform={`rotate(${angle})`}>
+            {/* Main petal body */}
+            <path d={petalPath} fill={`url(#pg-${id})`} />
+            {/* Shadow overlay at base of petal for depth */}
+            <path d={petalPath} fill={`url(#ps-${id})`} />
+            {/* Centre vein line */}
+            <path
+              d={veinPath}
+              fill="none"
+              stroke={mood.petalTip}
+              strokeWidth="0.8"
+              strokeOpacity="0.3"
+              strokeLinecap="round"
+            />
+            {/* Highlight line along one side */}
+            <path
+              d="M 0,8 C -4,5 -10,-8 -9,-28"
+              fill="none"
+              stroke="white"
+              strokeWidth="1.2"
+              strokeOpacity="0.45"
+              strokeLinecap="round"
+            />
+          </g>
+        ))}
+
+        {/* Pollen centre disc */}
+        <circle cx="0" cy="0" r="17" fill={`url(#cg-${id})`} />
+
+        {/* Pollen texture dots */}
+        {[0, 60, 120, 180, 240, 300].map((a) => {
+          const rx = 9 * Math.cos((a * Math.PI) / 180);
+          const ry = 9 * Math.sin((a * Math.PI) / 180);
+          return <circle key={a} cx={rx} cy={ry} r="1.8" fill={mood.petalTip} opacity="0.4" />;
+        })}
+        {/* Inner pollen ring */}
+        {[30, 90, 150, 210, 270, 330].map((a) => {
+          const rx = 5 * Math.cos((a * Math.PI) / 180);
+          const ry = 5 * Math.sin((a * Math.PI) / 180);
+          return <circle key={a} cx={rx} cy={ry} r="1.2" fill={mood.petalTip} opacity="0.3" />;
+        })}
+
+        {/* Centre highlight */}
+        <circle cx="-4" cy="-4" r="5" fill="white" opacity="0.35" />
+
+        {/* Selected glow ring */}
+        {isSelected && (
+          <circle cx="0" cy="0" r="18" fill="none" stroke={mood.petalTip} strokeWidth="2" strokeOpacity="0.6" />
+        )}
+      </g>
+    </svg>
+  );
+}
+
+/* ── Flower button ────────────────────────────────────────────────── */
+function FlowerButton({ mood, isSelected, onClick }: { mood: Mood; isSelected: boolean; onClick: () => void }) {
+  return (
+    <motion.button
+      whileTap={{ scale: 0.86 }}
+      animate={{ scale: isSelected ? 1.08 : 1 }}
+      transition={{ type: "spring", stiffness: 320, damping: 22 }}
+      onClick={onClick}
+      className="flex flex-col items-center gap-1.5 focus:outline-none relative"
+    >
+      <div className="relative">
+        <RealisticFlower mood={mood} isSelected={isSelected} />
+        {/* Emoji overlaid on centre */}
         <span
-          className="absolute inset-0 flex items-center justify-center select-none"
-          style={{ fontSize: isSelected ? 26 : 22 }}
+          className="absolute inset-0 flex items-center justify-center select-none pointer-events-none"
+          style={{ fontSize: isSelected ? 22 : 19, lineHeight: 1 }}
         >
           {mood.emoji}
         </span>
       </div>
       <span
-        className="text-[11px] font-semibold tracking-tight"
-        style={{ color: isSelected ? mood.textColor : "#9ca3af" }}
+        className="text-[10.5px] font-semibold tracking-tight"
+        style={{ color: isSelected ? mood.textColor : "#aaa" }}
       >
         {mood.label}
       </span>
@@ -126,6 +229,7 @@ function FlowerButton({ mood, isSelected, onClick }: { mood: Mood; isSelected: b
   );
 }
 
+/* ── Page ─────────────────────────────────────────────────────────── */
 export default function Mood() {
   const [selectedMood, setSelectedMood] = useState<string | null>(null);
   const [note, setNote] = useState("");
@@ -147,14 +251,14 @@ export default function Mood() {
     <PageTransition className="flex flex-col min-h-screen">
       <AppHeader title="How are you?" subtitle="Take a deep breath and check in." />
 
-      <main className="flex-1 px-5 pt-2 pb-28 flex flex-col gap-6">
+      <main className="flex-1 px-5 pt-2 pb-28 flex flex-col gap-5">
 
         {/* Flower mood picker */}
         <section className="bg-white rounded-3xl p-5 shadow-sm border border-card-border">
-          <p className="text-xs text-muted-foreground text-center mb-5 font-medium">Tap your mood</p>
+          <p className="text-xs text-muted-foreground text-center mb-4 font-medium">Tap to express your mood</p>
 
           {/* Row 1: 4 moods */}
-          <div className="flex justify-around mb-4">
+          <div className="flex justify-around mb-3">
             {MOODS.slice(0, 4).map((m) => (
               <FlowerButton
                 key={m.label}
@@ -165,7 +269,7 @@ export default function Mood() {
             ))}
           </div>
 
-          {/* Row 2: 3 moods centered */}
+          {/* Row 2: 3 moods centred */}
           <div className="flex justify-around px-8">
             {MOODS.slice(4).map((m) => (
               <FlowerButton
@@ -177,15 +281,15 @@ export default function Mood() {
             ))}
           </div>
 
-          {/* Selected mood label */}
+          {/* Selection banner */}
           <AnimatePresence>
             {selected && (
               <motion.div
-                initial={{ opacity: 0, y: 6 }}
+                initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -4 }}
-                className="mt-5 py-2.5 rounded-2xl text-center text-sm font-semibold"
-                style={{ background: selected.center, color: selected.textColor }}
+                className="mt-4 py-2.5 rounded-2xl text-center text-sm font-semibold"
+                style={{ background: selected.bg, color: selected.textColor }}
               >
                 {selected.emoji} Feeling {selected.label.toLowerCase()} today
               </motion.div>
@@ -193,19 +297,18 @@ export default function Mood() {
           </AnimatePresence>
         </section>
 
-        {/* Note Input */}
+        {/* Note */}
         <section className="flex flex-col gap-3">
           <div className="bg-white rounded-3xl p-5 shadow-sm border border-card-border focus-within:ring-2 ring-primary/20 transition-all">
             <Textarea
               placeholder="Add a gentle note about your day… (optional)"
-              className="min-h-[90px] border-0 focus-visible:ring-0 resize-none px-0 py-0 text-sm bg-transparent placeholder:text-muted-foreground/70"
+              className="min-h-[88px] border-0 focus-visible:ring-0 resize-none px-0 py-0 text-sm bg-transparent placeholder:text-muted-foreground/70"
               value={note}
               onChange={(e) => setNote(e.target.value)}
             />
           </div>
-
           <Button
-            className="w-full rounded-2xl h-13 text-sm font-semibold shadow-sm hover:shadow-md transition-all active:scale-[0.98]"
+            className="w-full rounded-2xl h-12 text-sm font-semibold shadow-sm hover:shadow-md transition-all active:scale-[0.98]"
             disabled={!selectedMood}
             onClick={handleSave}
           >
@@ -221,21 +324,21 @@ export default function Mood() {
               {history.map((entry) => {
                 const emoji = entry.mood.split(" ")[0];
                 const label = entry.mood.split(" ")[1];
-                const moodMeta = MOODS.find((m) => m.label === label);
+                const meta = MOODS.find((m) => m.label === label);
                 return (
                   <div
                     key={entry.id}
-                    className="bg-white/70 backdrop-blur-sm rounded-2xl p-3.5 border border-white/80 flex gap-3 items-center shadow-sm"
+                    className="bg-white/80 backdrop-blur-sm rounded-2xl p-3.5 border border-white/80 flex gap-3 items-center shadow-sm"
                   >
                     <div
                       className="w-11 h-11 rounded-2xl flex items-center justify-center text-xl flex-shrink-0"
-                      style={{ background: moodMeta?.center ?? "#f3f4f6" }}
+                      style={{ background: meta?.bg ?? "#f3f4f6" }}
                     >
                       {emoji}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex justify-between items-baseline mb-0.5">
-                        <span className="font-semibold text-sm text-foreground">{label}</span>
+                        <span className="font-semibold text-sm" style={{ color: meta?.textColor ?? "#374151" }}>{label}</span>
                         <span className="text-[10px] text-muted-foreground">
                           {format(new Date(entry.date), "MMM d, h:mm a")}
                         </span>
