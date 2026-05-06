@@ -1,6 +1,6 @@
 import { genai } from "../lib/gemini.js";
-import { db, lunaLogsTable } from "@workspace/db";
-import { eq, desc } from "drizzle-orm";
+import { db, lunaLogsTable, lunaInsightsTable } from "@workspace/db";
+import { eq, desc, and } from "drizzle-orm";
 
 const LUNA_SYSTEM_PROMPT = `You are Luna, a gentle and emotionally intelligent wellness companion designed for women in Nigeria and Africa. You help users understand their menstrual cycle, mood patterns, and body signals.
 
@@ -29,6 +29,13 @@ IMPORTANT RULES:
 - Always remind users you are not a medical professional when relevant
 - Never be alarmist
 - Focus on patterns, not predictions`;
+
+type InsightResult = {
+  insight: string;
+  pattern: string | null;
+  suggestion: string;
+  reassurance: string;
+};
 
 function detectPatterns(logs: Array<{ mood: string; cyclePhase: string; symptoms: unknown }>): string {
   if (logs.length < 3) return "";
@@ -61,14 +68,24 @@ function detectPatterns(logs: Array<{ mood: string; cyclePhase: string; symptoms
   return parts.join(". ");
 }
 
-export async function generateInsight(userId: string): Promise<{
-  insight: string;
-  pattern: string | null;
-  suggestion: string;
-  reassurance: string;
-}> {
-  const thirtyDaysAgo = new Date();
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+export async function getTodayInsight(userId: string): Promise<InsightResult | null> {
+  const today = new Date().toISOString().split("T")[0]!;
+  const rows = await db
+    .select()
+    .from(lunaInsightsTable)
+    .where(and(eq(lunaInsightsTable.userId, userId), eq(lunaInsightsTable.date, today)))
+    .limit(1);
+
+  if (rows.length === 0) return null;
+  return rows[0]!.insightData as InsightResult;
+}
+
+export async function generateInsight(userId: string): Promise<InsightResult> {
+  const today = new Date().toISOString().split("T")[0]!;
+
+  // Return cached insight if one already exists for today
+  const cached = await getTodayInsight(userId);
+  if (cached) return cached;
 
   const logs = await db
     .select()
@@ -78,19 +95,19 @@ export async function generateInsight(userId: string): Promise<{
     .limit(30);
 
   if (logs.length === 0) {
-    return {
+    const fallback: InsightResult = {
       insight: "Start logging your cycle and mood to receive personalized insights.",
       pattern: null,
       suggestion: "Try logging your mood and symptoms daily for at least a week.",
       reassurance: "Every small step toward self-awareness is meaningful. You've got this! 🌸",
     };
+    return fallback;
   }
 
   const latest = logs[0]!;
   const patterns = detectPatterns(logs);
   const latestSymptoms = Array.isArray(latest.symptoms) ? (latest.symptoms as string[]) : [];
 
-  // Build a readable recent-history summary (last 7 entries)
   const recentSummary = logs.slice(0, 7).map((l) => {
     const syms = Array.isArray(l.symptoms) ? (l.symptoms as string[]).join(", ") : "none";
     return `• ${l.date} — Phase: ${l.cyclePhase} (Day ${l.dayOfCycle ?? "?"}) | Mood: ${l.mood} | Symptoms: ${syms || "none"}`;
@@ -133,28 +150,33 @@ Respond in this EXACT JSON format (no markdown, no extra text):
     config: { maxOutputTokens: 8192, responseMimeType: "application/json" },
   });
 
+  let result: InsightResult;
   try {
     const text = response.text ?? "{}";
-    const parsed = JSON.parse(text) as {
-      insight?: string;
-      pattern?: string | null;
-      suggestion?: string;
-      reassurance?: string;
-    };
-    return {
+    const parsed = JSON.parse(text) as Partial<InsightResult>;
+    result = {
       insight: parsed.insight ?? "I see you've been tracking your wellness journey.",
       pattern: parsed.pattern ?? null,
       suggestion: parsed.suggestion ?? "Take a moment to rest and listen to your body.",
       reassurance: parsed.reassurance ?? "You're doing great. 🌸",
     };
   } catch {
-    return {
+    result = {
       insight: "I see you've been tracking your wellness journey.",
       pattern: patterns || null,
       suggestion: "Take a moment to rest and listen to your body.",
       reassurance: "You're doing great. 🌸",
     };
   }
+
+  // Persist so subsequent requests today reuse this insight
+  await db.insert(lunaInsightsTable).values({
+    userId,
+    date: today,
+    insightData: result,
+  });
+
+  return result;
 }
 
 export async function getRecentLogsContext(userId: string): Promise<string> {

@@ -2,7 +2,7 @@ import { Router } from "express";
 import { db, lunaLogsTable } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
 import { genai } from "../../lib/gemini.js";
-import { generateInsight, getRecentLogsContext, LUNA_SYSTEM_PROMPT } from "../../services/luna.js";
+import { generateInsight, getTodayInsight, getRecentLogsContext, LUNA_SYSTEM_PROMPT } from "../../services/luna.js";
 import { z } from "zod";
 
 const router = Router();
@@ -54,6 +54,13 @@ router.get("/logs/:userId", async (req, res) => {
     .where(eq(lunaLogsTable.userId, userId))
     .orderBy(desc(lunaLogsTable.date));
   res.json(logs);
+});
+
+router.get("/today-insight/:userId", async (req, res) => {
+  const { userId } = req.params;
+  if (!userId) { res.status(400).json({ error: "userId required" }); return; }
+  const insight = await getTodayInsight(userId);
+  res.json({ insight });
 });
 
 function isRateLimit(err: unknown): boolean {

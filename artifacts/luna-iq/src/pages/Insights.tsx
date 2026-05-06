@@ -69,11 +69,25 @@ export default function Insights() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchInsight = async () => {
+  // Load cached insight instantly, only call Gemini if none exists for today
+  const loadInsight = async (forceRefresh = false) => {
     setLoading(true);
     setError(null);
     try {
-      // Sync today's cycle + mood state so insight is always up to date
+      // Check for a cached insight first (unless user pressed refresh)
+      if (!forceRefresh) {
+        const cacheRes = await fetch(`${BASE}/api/luna/today-insight/guest`);
+        if (cacheRes.ok) {
+          const { insight: cached } = await cacheRes.json() as { insight: Insight | null };
+          if (cached) {
+            setAiInsight(cached);
+            setLoading(false);
+            return;
+          }
+        }
+      }
+
+      // No cache — sync today's data then ask Gemini (once per day)
       await syncTodayToBackend();
 
       const res = await fetch(`${BASE}/api/luna/generate-insight`, {
@@ -82,7 +96,7 @@ export default function Insights() {
         body: JSON.stringify({ userId: "guest" }),
       });
       if (res.status === 429) {
-        setError("Luna is taking a short rest. Please try again in a moment.");
+        setError("Luna is taking a short rest — daily AI limit reached. Check back tomorrow!");
         return;
       }
       if (!res.ok) throw new Error("Failed to fetch insight");
@@ -95,8 +109,10 @@ export default function Insights() {
     }
   };
 
+  const fetchInsight = () => loadInsight(false);
+
   useEffect(() => {
-    fetchInsight();
+    loadInsight(false);
   }, []);
 
   return (

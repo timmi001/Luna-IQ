@@ -1,0 +1,119 @@
+You are updating an existing Node.js + Express backend for a femtech app called “Luna”.
+
+The system already:
+- stores user logs
+- connects to Gemini API
+- generates insights
+
+---
+
+### 🎯 NEW REQUIREMENT
+
+Modify the system so that:
+
+👉 Each user can only get ONE generated insight per day  
+👉 Insights must be STORED and REUSED  
+👉 Gemini must NOT be called multiple times for the same day  
+
+---
+
+## 🧱 DATABASE UPDATE
+
+Create a new table:
+
+Insights:
+- id
+- user_id
+- date (YYYY-MM-DD)
+- insight_text
+- created_at
+
+---
+
+## 🔌 UPDATE ENDPOINT: POST /generate-insight
+
+### New logic:
+
+1. Get today's date
+
+2. Check database:
+   - Is there already an insight for this user today?
+
+3. IF insight EXISTS:
+   - Return the saved insight
+   - DO NOT call Gemini
+
+4. IF insight DOES NOT exist:
+   - Fetch latest log
+   - Fetch past logs (last 30 days)
+   - Run pattern detection
+   - Generate insight using Gemini
+   - Save insight in database
+   - Return insight
+
+---
+
+## 💻 EXAMPLE LOGIC
+
+Pseudo:
+
+const today = new Date().toISOString().split("T")[0];
+
+const existing = await db.insights.findOne({
+  user_id: userId,
+  date: today
+});
+
+if (existing) {
+  return existing.insight_text;
+}
+
+// else generate new insight
+const response = await generateLunaResponse(prompt);
+
+await db.insights.insert({
+  user_id: userId,
+  date: today,
+  insight_text: response
+});
+
+return response;
+
+---
+
+## 🧠 IMPORTANT RULES
+
+- NEVER call Gemini if insight already exists today
+- ALWAYS store generated insights
+- Date must be based on user’s current day (not server errors)
+- Keep insight format:
+  - Insight
+  - Pattern
+  - Suggestion
+  - Reassurance
+
+---
+
+## 🧩 OPTIONAL (GOOD UX)
+
+Also create:
+
+GET /today-insight/:userId
+
+- Returns today's insight if it exists
+- If not, returns null
+
+---
+
+## 🎯 FINAL GOAL
+
+The system should:
+
+- Generate insight ONLY once per day per user
+- Reuse stored insight on reload
+- Reduce API usage
+- Improve consistency for users
+
+---
+
+Ensure everything works correctly.
