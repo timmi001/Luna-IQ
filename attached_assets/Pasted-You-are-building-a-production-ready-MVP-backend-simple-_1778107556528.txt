@@ -1,0 +1,210 @@
+You are building a production-ready MVP backend + simple frontend for a femtech app called “Luna”.
+
+Luna is an AI-powered cycle wellness companion that:
+- collects user logs (cycle, mood, symptoms)
+- stores user history
+- generates personalized insights using Gemini API
+- provides a contextual chat companion based on user data
+
+---
+
+### 🧠 CORE OBJECTIVE
+
+Build a working system where:
+1. Users log daily data
+2. The system stores logs in a database
+3. The system fetches past logs
+4. Gemini generates personalized insights using both current + past data
+5. Users can chat with Luna and receive contextual responses
+
+---
+
+## 📦 TECH STACK
+
+- Node.js + Express
+- PostgreSQL (or in-memory DB for MVP)
+- Gemini API (use environment variable GEMINI_API_KEY)
+- Basic frontend (React or simple HTML)
+
+---
+
+## 🧱 DATA MODELS
+
+Create the following:
+
+User:
+- id
+- name (optional)
+- cycleLength (optional)
+- createdAt
+
+Log:
+- id
+- userId
+- date
+- cyclePhase (Menstrual, Follicular, Ovulatory, Luteal)
+- dayOfCycle
+- mood (string)
+- symptoms (array of strings)
+
+---
+
+## 🔌 API ENDPOINTS
+
+### 1. POST /log
+- Save user daily log
+- Input:
+  - userId
+  - cyclePhase
+  - dayOfCycle
+  - mood
+  - symptoms
+
+---
+
+### 2. GET /logs/:userId
+- Return all logs for a user
+
+---
+
+### 3. POST /generate-insight
+- Input:
+  - userId
+- Fetch:
+  - latest log
+  - last 30 days logs
+- Run simple pattern detection (see below)
+- Send structured prompt to Gemini
+- Return:
+  - insight
+  - pattern
+  - suggestion
+  - reassurance
+
+---
+
+### 4. POST /chat
+- Input:
+  - userId
+  - message
+- Fetch:
+  - last 7 logs
+- Send context + message to Gemini
+- Return response
+
+---
+
+## 🧠 PATTERN DETECTION (IMPORTANT)
+
+Before calling Gemini, implement simple logic:
+
+- Count repeated moods (e.g., "low" mood appears multiple times)
+- Detect repeated symptoms in specific cycle phases
+
+Return something like:
+"User often feels low in the luteal phase"
+
+Pass this into the prompt as:
+Detected patterns: ...
+
+---
+
+## 🤖 GEMINI INTEGRATION
+
+Create a reusable function:
+
+generateLunaResponse(prompt)
+
+Use:
+model: "gemini-2.5-flash"
+
+---
+
+## 🧠 PROMPT STRUCTURE
+
+For insight generation:
+
+You are Luna, a gentle and emotionally supportive wellness companion.
+
+User current data:
+- Cycle Phase: ...
+- Day: ...
+- Mood: ...
+- Symptoms: ...
+
+Detected patterns:
+...
+
+Past logs summary:
+...
+
+Generate:
+1. Insight (1–2 sentences)
+2. Pattern awareness
+3. Gentle suggestion
+4. Emotional reassurance
+
+Keep tone soft, human, and non-medical.
+
+---
+
+For chat:
+
+You are Luna, a warm and supportive companion.
+
+User recent logs:
+...
+
+User message:
+...
+
+Respond naturally, emotionally aware, and personalized.
+
+---
+
+## 🧩 FRONTEND (BASIC UI)
+
+Create a simple UI with:
+
+1. Log form:
+   - cycle phase
+   - day
+   - mood
+   - symptoms
+   - submit button
+
+2. Insight display section
+
+3. Chat UI:
+   - message input
+   - send button
+   - message list
+
+Connect UI to backend endpoints.
+
+---
+
+## 🔐 ENVIRONMENT VARIABLES
+
+Use:
+GEMINI_API_KEY
+
+DO NOT hardcode API keys.
+
+---
+
+## 🎯 FINAL GOAL
+
+The system should:
+
+- Accept user logs
+- Store user data
+- Detect simple patterns
+- Generate personalized insights using Gemini
+- Allow users to chat with Luna using context
+
+Everything must run locally and be testable.
+
+---
+
+Build this step-by-step and ensure all endpoints work correctly.

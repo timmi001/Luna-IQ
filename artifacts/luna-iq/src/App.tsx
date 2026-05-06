@@ -10,6 +10,7 @@ import Home from "@/pages/Home";
 import Chat from "@/pages/Chat";
 import Mood from "@/pages/Mood";
 import Cycle from "@/pages/Cycle";
+import Insights from "@/pages/Insights";
 import Profile from "@/pages/Profile";
 import Breathe from "@/pages/Breathe";
 import Water from "@/pages/Water";
@@ -26,6 +27,7 @@ function Router() {
         <Route path="/chat" component={Chat} />
         <Route path="/mood" component={Mood} />
         <Route path="/cycle" component={Cycle} />
+        <Route path="/insights" component={Insights} />
         <Route path="/profile" component={Profile} />
         <Route path="/breathe" component={Breathe} />
         <Route path="/water" component={Water} />

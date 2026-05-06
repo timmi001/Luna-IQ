@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { storage, MoodEntry } from "@/utils/storage";
+import { getCycleDetails } from "@/utils/cycle";
 import { AppHeader } from "@/components/AppHeader";
 import { PageTransition } from "@/components/PageTransition";
 import { Button } from "@/components/ui/button";
@@ -7,6 +8,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { motion, AnimatePresence } from "framer-motion";
+
+const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 const MOODS = [
   {
@@ -236,13 +239,45 @@ export default function Mood() {
   const [history, setHistory] = useState<MoodEntry[]>(storage.getMoods().slice(0, 7));
   const { toast } = useToast();
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!selectedMood) return;
     const newMood = storage.addMood({ date: new Date().toISOString(), mood: selectedMood, note });
     setHistory((prev) => [newMood, ...prev].slice(0, 7));
     setSelectedMood(null);
     setNote("");
     toast({ title: "Mood logged 🌸", description: "Your feelings have been safely recorded." });
+
+    // Mirror to backend so AI can use it for insights & chat
+    try {
+      const cycleData = storage.getCycle();
+      const { phase, currentDay } = getCycleDetails(cycleData.lastPeriodStart, cycleData.cycleLength);
+      const symptoms: string[] = (() => {
+        try {
+          const raw = localStorage.getItem("luna_symptoms");
+          if (!raw) return [];
+          const entries = JSON.parse(raw) as { date: string; note: string }[];
+          const today = new Date().toISOString().split("T")[0];
+          const entry = entries.find((e) => e.date === today);
+          if (!entry?.note) return [];
+          return entry.note.split(",").map((s) => s.trim()).filter(Boolean);
+        } catch { return []; }
+      })();
+
+      await fetch(`${BASE}/api/luna/log`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: "guest",
+          date: new Date().toISOString().split("T")[0],
+          cyclePhase: phase === "Unknown" ? "Follicular" : phase,
+          dayOfCycle: currentDay > 0 ? currentDay : undefined,
+          mood: selectedMood,
+          symptoms,
+        }),
+      });
+    } catch {
+      // Silently ignore — local save already succeeded
+    }
   };
 
   const selected = MOODS.find((m) => `${m.emoji} ${m.label}` === selectedMood);
