@@ -56,11 +56,24 @@ router.get("/logs/:userId", async (req, res) => {
   res.json(logs);
 });
 
+function isRateLimit(err: unknown): boolean {
+  const msg = err instanceof Error ? err.message : String(err);
+  return msg.includes("429") || msg.includes("RESOURCE_EXHAUSTED") || msg.includes("quota");
+}
+
 router.post("/generate-insight", async (req, res) => {
   const parsed = InsightBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: "userId required" }); return; }
-  const result = await generateInsight(parsed.data.userId);
-  res.json(result);
+  try {
+    const result = await generateInsight(parsed.data.userId);
+    res.json(result);
+  } catch (err) {
+    if (isRateLimit(err)) {
+      res.status(429).json({ error: "rate_limit", message: "Luna is resting for a moment. Please try again shortly." });
+    } else {
+      res.status(500).json({ error: "ai_error", message: "Luna couldn't generate an insight right now." });
+    }
+  }
 });
 
 router.post("/chat", async (req, res) => {
@@ -89,21 +102,30 @@ ${recentContext}`;
     { role: "user" as const, parts: [{ text: message }] },
   ];
 
-  const stream = await genai.models.generateContentStream({
-    model: "gemini-2.5-flash",
-    contents: chatMessages,
-    config: { maxOutputTokens: 8192 },
-  });
+  try {
+    const stream = await genai.models.generateContentStream({
+      model: "gemini-2.5-flash",
+      contents: chatMessages,
+      config: { maxOutputTokens: 8192 },
+    });
 
-  for await (const chunk of stream) {
-    const text = chunk.text;
-    if (text) {
-      res.write(`data: ${JSON.stringify({ content: text })}\n\n`);
+    for await (const chunk of stream) {
+      const text = chunk.text;
+      if (text) {
+        res.write(`data: ${JSON.stringify({ content: text })}\n\n`);
+      }
     }
-  }
 
-  res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
-  res.end();
+    res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
+    res.end();
+  } catch (err) {
+    const msg = isRateLimit(err)
+      ? "I'm resting for a moment, my dear. Please try again in a little while. 🌸"
+      : "Something went wrong on my end. Please try again shortly.";
+    res.write(`data: ${JSON.stringify({ content: msg })}\n\n`);
+    res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
+    res.end();
+  }
 });
 
 export default router;

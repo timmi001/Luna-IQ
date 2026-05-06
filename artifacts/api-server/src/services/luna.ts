@@ -88,26 +88,43 @@ export async function generateInsight(userId: string): Promise<{
 
   const latest = logs[0]!;
   const patterns = detectPatterns(logs);
-  const symptoms = Array.isArray(latest.symptoms) ? (latest.symptoms as string[]) : [];
+  const latestSymptoms = Array.isArray(latest.symptoms) ? (latest.symptoms as string[]) : [];
+
+  // Build a readable recent-history summary (last 7 entries)
+  const recentSummary = logs.slice(0, 7).map((l) => {
+    const syms = Array.isArray(l.symptoms) ? (l.symptoms as string[]).join(", ") : "none";
+    return `• ${l.date} — Phase: ${l.cyclePhase} (Day ${l.dayOfCycle ?? "?"}) | Mood: ${l.mood} | Symptoms: ${syms || "none"}`;
+  }).join("\n");
 
   const prompt = `${LUNA_SYSTEM_PROMPT}
 
-User's current data:
+The user has been logging their health data. Use ALL of the information below to write a personalized, specific insight — not a generic one.
+
+TODAY'S DATA:
 - Cycle phase: ${latest.cyclePhase}
 - Day of cycle: ${latest.dayOfCycle ?? "unknown"}
 - Mood: ${latest.mood}
-- Symptoms: ${symptoms.length ? symptoms.join(", ") : "none logged"}
+- Symptoms logged: ${latestSymptoms.length ? latestSymptoms.join(", ") : "none"}
 - Date: ${latest.date}
 
-Past 30-day patterns:
-${patterns || "Not enough data for patterns yet."}
+RECENT LOG HISTORY (last 7 entries):
+${recentSummary}
+
+DETECTED PATTERNS:
+${patterns || "Not enough data for patterns yet — base insight on today's data."}
+
+INSTRUCTIONS:
+- Reference specific things from their logs (mention their actual mood, actual symptoms, actual cycle phase)
+- If they have symptoms like cramps, bloating, flow intensity — acknowledge it by name
+- If their mood has been low or anxious multiple times — acknowledge that gently
+- Keep suggestions simple and realistic for a busy woman's daily life
 
 Respond in this EXACT JSON format (no markdown, no extra text):
 {
-  "insight": "A warm, personalized insight about their current phase and how it relates to their logged mood and symptoms (2-3 sentences)",
-  "pattern": "A detected pattern from their history, or null if insufficient data",
-  "suggestion": "One gentle, actionable self-care suggestion for their current phase (1-2 sentences)",
-  "reassurance": "A short, warm closing message (1 sentence, end with an emoji)"
+  "insight": "A warm, specific insight that directly references their logged mood and symptoms today (2-3 sentences)",
+  "pattern": "A specific pattern noticed from their log history (e.g. 'You tend to feel tired in your luteal phase'), or null if fewer than 3 logs",
+  "suggestion": "One practical, simple self-care suggestion based on their current phase and symptoms (1-2 sentences)",
+  "reassurance": "A short, warm closing message in a relatable African tone (1 sentence, end with an emoji)"
 }`;
 
   const response = await genai.models.generateContent({

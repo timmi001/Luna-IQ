@@ -9,6 +9,49 @@ import { motion, AnimatePresence } from "framer-motion";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
+async function syncTodayToBackend() {
+  try {
+    const cycleData = storage.getCycle();
+    const { phase, currentDay } = getCycleDetails(cycleData.lastPeriodStart, cycleData.cycleLength);
+    const latestMood = storage.getLatestMood();
+    const today = new Date().toISOString().split("T")[0];
+
+    // Only sync if cycle is set up
+    if (phase === "Unknown") return;
+
+    // Gather today's symptoms from localStorage
+    const symptoms: string[] = (() => {
+      try {
+        const raw = localStorage.getItem("luna_symptoms");
+        if (!raw) return [];
+        const entries = JSON.parse(raw) as { date: string; note: string }[];
+        const entry = entries.find((e) => e.date === today);
+        if (!entry?.note) return [];
+        return entry.note.split(",").map((s) => s.trim()).filter(Boolean);
+      } catch { return []; }
+    })();
+
+    // Latest mood if logged today
+    const moodToday =
+      latestMood && latestMood.date.startsWith(today) ? latestMood.mood : "neutral";
+
+    await fetch(`${BASE}/api/luna/log`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        userId: "guest",
+        date: today,
+        cyclePhase: phase,
+        dayOfCycle: currentDay,
+        mood: moodToday,
+        symptoms,
+      }),
+    });
+  } catch {
+    // Non-critical — insight will still generate from past logs
+  }
+}
+
 type Insight = {
   insight: string;
   pattern: string | null;
@@ -30,11 +73,18 @@ export default function Insights() {
     setLoading(true);
     setError(null);
     try {
+      // Sync today's cycle + mood state so insight is always up to date
+      await syncTodayToBackend();
+
       const res = await fetch(`${BASE}/api/luna/generate-insight`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId: "guest" }),
       });
+      if (res.status === 429) {
+        setError("Luna is taking a short rest. Please try again in a moment.");
+        return;
+      }
       if (!res.ok) throw new Error("Failed to fetch insight");
       const data = await res.json() as Insight;
       setAiInsight(data);

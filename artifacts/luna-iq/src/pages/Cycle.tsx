@@ -1,11 +1,14 @@
 import { useState, useMemo, useRef } from "react";
 import { storage } from "@/utils/storage";
 import { getCycleDetails, CyclePhase } from "@/utils/cycle";
+
 import { PageTransition } from "@/components/PageTransition";
 import { useToast } from "@/hooks/use-toast";
 import { format, addDays, startOfMonth, endOfMonth, eachDayOfInterval, getDay, differenceInDays, isSameDay, isToday, isFuture } from "date-fns";
 import { ChevronLeft, ChevronRight, SendHorizonal } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+
+const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 // ── Symptom helpers ────────────────────────────────────────────────────────────
 function getTodaySymptomNote(): string {
@@ -267,7 +270,7 @@ export default function Cycle() {
     setTimeout(() => setShowSaved(false), 1600);
   };
 
-  const handleLogCycle = () => {
+  const handleLogCycle = async () => {
     if (!flow) { toast({ title: "Select a flow intensity first", variant: "destructive" }); return; }
     const parts = logDate.split("/");
     let iso = "";
@@ -279,6 +282,30 @@ export default function Cycle() {
     storage.saveCycle(updated);
     setData(updated);
     toast({ title: "Cycle logged 🌸", description: `${flow} flow on ${logDate}` });
+
+    // Build symptom list from flow + any noted symptoms
+    const symptomList = [
+      `Flow: ${flow}`,
+      ...savedNote.split(",").map((s) => s.trim()).filter(Boolean),
+    ];
+
+    // The logged date is the period start → Menstrual phase, day 1
+    try {
+      await fetch(`${BASE}/api/luna/log`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: "guest",
+          date: iso,
+          cyclePhase: "Menstrual",
+          dayOfCycle: 1,
+          mood: "neutral",
+          symptoms: symptomList,
+        }),
+      });
+    } catch {
+      // Silently ignore — local save already succeeded
+    }
   };
 
   const calendarDays = useMemo(() => {
