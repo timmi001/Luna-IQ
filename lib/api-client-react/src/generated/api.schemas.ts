@@ -8,3 +8,87 @@
 export interface HealthStatus {
   status: string;
 }
+
+export interface GeminiConversation {
+  id: number;
+  title: string;
+  createdAt: string;
+}
+
+export interface GeminiMessage {
+  id: number;
+  conversationId: number;
+  role: string;
+  content: string;
+  createdAt: string;
+}
+
+export interface CreateGeminiConversationBody {
+  title: string;
+}
+
+export interface SendGeminiMessageBody {
+  content: string;
+}
+
+export interface GeminiConversationWithMessages {
+  id: number;
+  title: string;
+  createdAt: string;
+  messages: GeminiMessage[];
+}
+
+export interface GenerateGeminiImageBody {
+  prompt: string;
+}
+
+export interface GenerateGeminiImageResponse {
+  b64_json: string;
+  mimeType: string;
+}
+
+export interface GeminiError {
+  error: string;
+}
+
+export interface LunaLog {
+  id: number;
+  userId: string;
+  date: string;
+  cyclePhase: string;
+  dayOfCycle?: number | null;
+  mood: string;
+  symptoms: string[];
+  createdAt: string;
+}
+
+export interface SaveLunaLogBody {
+  userId: string;
+  date: string;
+  cyclePhase: string;
+  dayOfCycle?: number;
+  mood: string;
+  symptoms: string[];
+}
+
+export interface GenerateLunaInsightBody {
+  userId: string;
+}
+
+export interface LunaInsightResponse {
+  insight: string;
+  pattern?: string | null;
+  suggestion: string;
+  reassurance: string;
+}
+
+export type LunaChatBodyConversationHistoryItem = {
+  role: string;
+  content: string;
+};
+
+export interface LunaChatBody {
+  userId: string;
+  message: string;
+  conversationHistory?: LunaChatBodyConversationHistoryItem[];
+}

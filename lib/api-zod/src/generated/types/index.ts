@@ -6,4 +6,18 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from "./createGeminiConversationBody";
+export * from "./geminiConversation";
+export * from "./geminiConversationWithMessages";
+export * from "./geminiError";
+export * from "./geminiMessage";
+export * from "./generateGeminiImageBody";
+export * from "./generateGeminiImageResponse";
+export * from "./generateLunaInsightBody";
 export * from "./healthStatus";
+export * from "./lunaChatBody";
+export * from "./lunaChatBodyConversationHistoryItem";
+export * from "./lunaInsightResponse";
+export * from "./lunaLog";
+export * from "./saveLunaLogBody";
+export * from "./sendGeminiMessageBody";

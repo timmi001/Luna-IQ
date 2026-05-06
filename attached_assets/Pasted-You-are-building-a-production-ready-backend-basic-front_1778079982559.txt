@@ -1,0 +1,186 @@
+You are building a production-ready backend + basic frontend structure for a femtech app called “Luna”.
+
+Luna is an AI-powered cycle wellness companion that:
+- collects user cycle, mood, and symptom logs
+- generates personalized insights using Gemini API
+- provides a chat-based AI companion
+
+---
+
+### 🧠 CORE REQUIREMENTS
+
+Build a Node.js + Express backend with:
+
+1. Gemini API integration
+2. PostgreSQL (or simple in-memory DB for MVP)
+3. Clean API structure
+4. Scalable architecture
+
+---
+
+### 📦 FEATURES TO BUILD
+
+#### 1. USER DATA MODEL
+
+Create a user system with:
+
+User:
+- id
+- name (optional)
+- cycleLength (optional)
+- createdAt
+
+Logs:
+- userId
+- date
+- cyclePhase (Menstrual, Follicular, Ovulatory, Luteal)
+- dayOfCycle
+- mood (string)
+- symptoms (array of strings)
+
+---
+
+#### 2. ENDPOINTS
+
+Create the following API routes:
+
+POST /log
+- Save a user’s daily log (cycle, mood, symptoms)
+
+GET /logs/:userId
+- Retrieve user logs
+
+POST /generate-insight
+- Input:
+  - userId
+- Fetch:
+  - latest log
+  - past logs (last 30 days)
+- Send structured prompt to Gemini
+- Return:
+  - insight
+  - pattern (if any)
+  - suggestion
+  - reassurance
+
+POST /chat
+- Input:
+  - userId
+  - message
+- Fetch:
+  - recent logs
+  - optional conversation context
+- Send to Gemini
+- Return response
+
+---
+
+#### 3. GEMINI INTEGRATION
+
+Use Gemini API.
+
+Create a reusable function:
+
+generateLunaResponse(prompt)
+
+System prompt must enforce:
+
+- soft tone
+- emotionally supportive
+- non-medical
+- short responses
+- structured output:
+  1. Insight
+  2. Pattern (if exists)
+  3. Suggestion
+  4. Reassurance
+
+---
+
+#### 4. PROMPT STRUCTURE
+
+Always send:
+
+- current user log
+- summarized past patterns
+- optional conversation context
+
+Example:
+
+User current data:
+Cycle: Luteal
+Mood: low
+Symptoms: fatigue
+
+Past patterns:
+User often feels low before period.
+
+---
+
+#### 5. SIMPLE PATTERN DETECTION (BACKEND)
+
+Before calling Gemini:
+
+- detect repeated moods
+- detect repeated symptoms per cycle phase
+
+Pass this into prompt as:
+"Detected patterns: ..."
+
+---
+
+#### 6. PROJECT STRUCTURE
+
+/backend
+  /routes
+  /controllers
+  /services (Gemini logic)
+  /models
+  /utils
+
+Keep code clean and modular.
+
+---
+
+#### 7. FRONTEND (BASIC)
+
+Create a minimal frontend (React or simple HTML):
+
+- Chat UI (input + message display)
+- Log input form (cycle, mood, symptoms)
+- Button to generate insight
+
+Connect frontend to backend endpoints.
+
+---
+
+#### 8. ENV SETUP
+
+Use .env for:
+GEMINI_API_KEY
+
+---
+
+#### 9. PRIORITIES
+
+Focus on:
+- working API
+- clean structure
+- real data flow
+- Gemini working correctly
+
+Do NOT overcomplicate UI.
+
+---
+
+### 🎯 GOAL
+
+By the end:
+- Users can log data
+- Users get AI-generated insights
+- Users can chat with Luna
+- System stores and uses history
+
+---
+
+Build this step-by-step and ensure everything runs locally.
