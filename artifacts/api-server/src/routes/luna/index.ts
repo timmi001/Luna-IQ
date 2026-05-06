@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db, lunaLogsTable } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
-import { ai } from "@workspace/integrations-gemini-ai";
+import { genai } from "../../lib/gemini.js";
 import { generateInsight, getRecentLogsContext, LUNA_SYSTEM_PROMPT } from "../../services/luna.js";
 import { z } from "zod";
 
@@ -89,7 +89,7 @@ ${recentContext}`;
     { role: "user" as const, parts: [{ text: message }] },
   ];
 
-  const stream = await ai.models.generateContentStream({
+  const stream = await genai.models.generateContentStream({
     model: "gemini-2.5-flash",
     contents: chatMessages,
     config: { maxOutputTokens: 8192 },

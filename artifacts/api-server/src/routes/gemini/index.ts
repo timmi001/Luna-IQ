@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db, conversations as conversationsTable, messages as messagesTable } from "@workspace/db";
 import { eq, asc } from "drizzle-orm";
-import { ai } from "@workspace/integrations-gemini-ai";
+import { genai } from "../../lib/gemini.js";
 import { z } from "zod";
 
 const router = Router();
@@ -61,7 +61,7 @@ router.post("/conversations/:id/messages", async (req, res) => {
   res.setHeader("Connection", "keep-alive");
 
   let fullResponse = "";
-  const stream = await ai.models.generateContentStream({
+  const stream = await genai.models.generateContentStream({
     model: "gemini-2.5-flash",
     contents: history.map((m) => ({
       role: (m.role === "assistant" ? "model" : "user") as "user" | "model",

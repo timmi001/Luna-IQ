@@ -1,4 +1,4 @@
-import { ai } from "@workspace/integrations-gemini-ai";
+import { genai } from "../lib/gemini.js";
 import { db, lunaLogsTable } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
 
@@ -98,7 +98,7 @@ Respond in this EXACT JSON format (no markdown, no extra text):
   "reassurance": "A short, warm closing message (1 sentence, end with an emoji)"
 }`;
 
-  const response = await ai.models.generateContent({
+  const response = await genai.models.generateContent({
     model: "gemini-2.5-flash",
     contents: [{ role: "user", parts: [{ text: prompt }] }],
     config: { maxOutputTokens: 8192, responseMimeType: "application/json" },
