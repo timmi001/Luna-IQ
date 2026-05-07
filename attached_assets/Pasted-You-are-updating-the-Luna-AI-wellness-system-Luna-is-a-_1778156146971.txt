@@ -1,0 +1,208 @@
+You are updating the Luna AI wellness system.
+
+Luna is a cycle wellness companion powered by Gemini API.
+
+The system already:
+- stores user logs
+- generates AI insights
+- supports chat
+
+---
+
+🎯 NEW REQUIREMENT
+
+Implement a “Daily Insight System” with lightweight same-day updates.
+
+The goal is:
+
+- Users receive ONLY ONE main AI-generated insight per day
+- Minor logs added later the same day should NOT regenerate the full insight
+- Same-day updates should be short, supportive, and lightweight
+- Gemini API usage must be optimized
+- NO insights should ever be generated if the user has not logged data
+- The system should encourage logging if no logs exist
+
+---
+
+## 🧱 DATABASE REQUIREMENTS
+
+Create or update:
+
+### Insights Table
+Fields:
+- id
+- user_id
+- date
+- insight_text
+- created_at
+
+### Daily Update Table (optional)
+Fields:
+- id
+- user_id
+- date
+- update_text
+- created_at
+
+---
+
+## 🔌 DAILY INSIGHT LOGIC
+
+When user logs data:
+
+### STEP 1:
+Check if today's insight already exists.
+
+---
+
+### IF NO INSIGHT EXISTS TODAY:
+Generate ONE full personalized insight using Gemini.
+
+The insight must include:
+1. Insight
+2. Pattern awareness
+3. Gentle suggestion
+4. Emotional reassurance
+
+Save it in the database.
+
+Return it to the frontend.
+
+---
+
+### IF INSIGHT ALREADY EXISTS TODAY:
+
+DO NOT regenerate the full insight.
+
+Instead:
+
+Analyze whether the new log is:
+- minor
+OR
+- significant
+
+---
+
+## 🧠 SIGNIFICANT CHANGE RULES
+
+Treat as significant if:
+- symptoms become severe
+- mood changes drastically
+- multiple new symptoms are added
+- emotional state worsens noticeably
+
+Example:
+- calm → anxious
+- mild cramps → severe cramps + fatigue
+
+---
+
+## 🧠 IF CHANGE IS MINOR
+
+DO NOT call Gemini.
+
+Return a lightweight supportive response using backend logic.
+
+Examples:
+- "Noted 💜"
+- "Take things gently today."
+- "Your body may need extra rest tonight."
+
+These should be short and emotionally supportive.
+
+---
+
+## 🧠 IF CHANGE IS SIGNIFICANT
+
+Call Gemini to generate a SHORT same-day update.
+
+This is NOT a full insight rewrite.
+
+It should:
+- acknowledge the change
+- feel supportive
+- remain concise (1–3 sentences)
+
+Example:
+"I noticed your symptoms became stronger later today. Your body may need extra care and rest tonight 💜"
+
+Store update if needed.
+
+---
+
+## 🚫 NO RANDOM INSIGHTS RULE
+
+VERY IMPORTANT:
+
+If a user has NOT logged:
+- mood
+- symptoms
+- cycle data
+OR there is no meaningful daily log,
+
+THEN:
+
+- DO NOT generate any insight
+- DO NOT hallucinate patterns
+- DO NOT create fake wellness updates
+
+Instead:
+
+Return a gentle logging encouragement message.
+
+Examples:
+- "I’d love to understand how you’re feeling today 💜"
+- "Log today’s mood or symptoms so I can support you better."
+- "Once you add today’s log, I’ll be able to give you personalized insights."
+
+These responses should feel:
+- soft
+- supportive
+- non-pushy
+- emotionally warm
+
+---
+
+## 🤖 GEMINI PROMPT RULES
+
+For full daily insights:
+- warm
+- emotionally intelligent
+- non-medical
+- concise
+- personalized
+
+For same-day updates:
+- very short
+- emotionally aware
+- supportive
+- no repeated long explanations
+
+For users with no logs:
+- encourage logging gently
+- never generate fake insights
+
+---
+
+## 🧩 FRONTEND BEHAVIOR
+
+Frontend should:
+- show ONE main daily insight card
+- optionally show small update messages below it
+- avoid replacing the main insight repeatedly
+- show a “Log Today” CTA if no logs exist
+
+---
+
+## 🎯 FINAL GOAL
+
+The system should:
+- generate only one main insight per day
+- avoid excessive Gemini calls
+- provide stable emotional experience
+- allow lightweight supportive updates during the same day
+- never generate insights without user logs
+- gently encourage logging when data is missing
+- feel calm, intelligent, and personal
+
+Ensure all logic works correctly and efficiently.

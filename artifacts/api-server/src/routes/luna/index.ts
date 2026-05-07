@@ -2,7 +2,14 @@ import { Router } from "express";
 import { db, lunaLogsTable } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
 import { genai } from "../../lib/gemini.js";
-import { generateInsight, getTodayInsight, getRecentLogsContext, LUNA_SYSTEM_PROMPT } from "../../services/luna.js";
+import {
+  generateInsight,
+  getTodayInsight,
+  getTodayUpdates,
+  processDailyUpdate,
+  getRecentLogsContext,
+  LUNA_SYSTEM_PROMPT,
+} from "../../services/luna.js";
 import { z } from "zod";
 
 const router = Router();
@@ -24,6 +31,12 @@ const ChatBody = z.object({
   conversationHistory: z.array(z.object({ role: z.string(), content: z.string() })).optional(),
 });
 
+function isRateLimit(err: unknown): boolean {
+  const msg = err instanceof Error ? err.message : String(err);
+  return msg.includes("429") || msg.includes("RESOURCE_EXHAUSTED") || msg.includes("quota");
+}
+
+// ── POST /log — save log, trigger same-day update if insight exists ────────────
 router.post("/log", async (req, res) => {
   const parsed = SaveLogBody.safeParse(req.body);
   if (!parsed.success) {
@@ -31,6 +44,7 @@ router.post("/log", async (req, res) => {
     return;
   }
   const data = parsed.data;
+
   const [saved] = await db
     .insert(lunaLogsTable)
     .values({
@@ -42,9 +56,29 @@ router.post("/log", async (req, res) => {
       symptoms: data.symptoms,
     })
     .returning();
-  res.status(201).json(saved);
+
+  // If today's insight already exists, process a lightweight same-day update
+  const existingInsight = await getTodayInsight(data.userId);
+  let dailyUpdate: { text: string; severity: string } | null = null;
+
+  if (existingInsight && !existingInsight.isEncouragement) {
+    try {
+      dailyUpdate = await processDailyUpdate(data.userId, {
+        mood: data.mood,
+        cyclePhase: data.cyclePhase,
+        symptoms: data.symptoms,
+        dayOfCycle: data.dayOfCycle ?? null,
+        date: data.date,
+      }, existingInsight);
+    } catch {
+      // Non-critical — log saved regardless
+    }
+  }
+
+  res.status(201).json({ log: saved, update: dailyUpdate });
 });
 
+// ── GET /logs/:userId ──────────────────────────────────────────────────────────
 router.get("/logs/:userId", async (req, res) => {
   const { userId } = req.params;
   if (!userId) { res.status(400).json({ error: "userId required" }); return; }
@@ -56,6 +90,7 @@ router.get("/logs/:userId", async (req, res) => {
   res.json(logs);
 });
 
+// ── GET /today-insight/:userId — return cached insight or null ─────────────────
 router.get("/today-insight/:userId", async (req, res) => {
   const { userId } = req.params;
   if (!userId) { res.status(400).json({ error: "userId required" }); return; }
@@ -63,11 +98,15 @@ router.get("/today-insight/:userId", async (req, res) => {
   res.json({ insight });
 });
 
-function isRateLimit(err: unknown): boolean {
-  const msg = err instanceof Error ? err.message : String(err);
-  return msg.includes("429") || msg.includes("RESOURCE_EXHAUSTED") || msg.includes("quota");
-}
+// ── GET /today-updates/:userId — return same-day updates ──────────────────────
+router.get("/today-updates/:userId", async (req, res) => {
+  const { userId } = req.params;
+  if (!userId) { res.status(400).json({ error: "userId required" }); return; }
+  const updates = await getTodayUpdates(userId);
+  res.json({ updates });
+});
 
+// ── POST /generate-insight — generate (or return cached) daily insight ─────────
 router.post("/generate-insight", async (req, res) => {
   const parsed = InsightBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: "userId required" }); return; }
@@ -83,6 +122,7 @@ router.post("/generate-insight", async (req, res) => {
   }
 });
 
+// ── POST /chat — streaming chat ────────────────────────────────────────────────
 router.post("/chat", async (req, res) => {
   const parsed = ChatBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: "Invalid request body" }); return; }

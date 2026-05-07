@@ -1,8 +1,8 @@
 import { genai } from "../lib/gemini.js";
-import { db, lunaLogsTable, lunaInsightsTable } from "@workspace/db";
+import { db, lunaLogsTable, lunaInsightsTable, lunaDailyUpdatesTable } from "@workspace/db";
 import { eq, desc, and } from "drizzle-orm";
 
-const LUNA_SYSTEM_PROMPT = `You are Luna, a gentle and emotionally intelligent wellness companion designed for women in Nigeria and Africa. You help users understand their menstrual cycle, mood patterns, and body signals.
+export const LUNA_SYSTEM_PROMPT = `You are Luna, a gentle and emotionally intelligent wellness companion designed for women in Nigeria and Africa. You help users understand their menstrual cycle, mood patterns, and body signals.
 
 Your tone should be:
 - Simple and clear — no complicated words or medical jargon
@@ -30,14 +30,60 @@ IMPORTANT RULES:
 - Never be alarmist
 - Focus on patterns, not predictions`;
 
-type InsightResult = {
+// ── Types ──────────────────────────────────────────────────────────────────────
+
+export type InsightResult = {
   insight: string;
   pattern: string | null;
   suggestion: string;
   reassurance: string;
+  isEncouragement?: boolean;
 };
 
-function detectPatterns(logs: Array<{ mood: string; cyclePhase: string; symptoms: unknown }>): string {
+export type DailyUpdateResult = {
+  text: string;
+  severity: "minor" | "significant";
+};
+
+type LogEntry = {
+  mood: string;
+  cyclePhase: string;
+  symptoms: unknown;
+  dayOfCycle?: number | null;
+  date: string;
+};
+
+// ── Mood severity (higher = more distressed) ──────────────────────────────────
+
+const MOOD_SEVERITY: Record<string, number> = {
+  "🌟 Radiant": 0,
+  "😄 Happy": 1,
+  "😌 Calm": 2,
+  "😴 Tired": 3,
+  "😢 Sad": 4,
+  "😤 Irritated": 4,
+  "😰 Anxious": 5,
+};
+
+function moodSeverity(mood: string): number {
+  for (const [key, val] of Object.entries(MOOD_SEVERITY)) {
+    if (mood.includes(key.split(" ")[1]!)) return val;
+  }
+  return 2; // default: neutral
+}
+
+const SEVERE_SYMPTOMS = new Set([
+  "severe cramps", "heavy bleeding", "heavy flow", "migraine", "fainting",
+  "vomiting", "fever", "severe pain", "chest pain", "dizziness",
+]);
+
+function isSevereSymptom(s: string): boolean {
+  return SEVERE_SYMPTOMS.has(s.toLowerCase()) || s.toLowerCase().includes("severe");
+}
+
+// ── Pattern detection ─────────────────────────────────────────────────────────
+
+function detectPatterns(logs: LogEntry[]): string {
   if (logs.length < 3) return "";
   const moodCounts: Record<string, number> = {};
   const symptomCounts: Record<string, number> = {};
@@ -54,19 +100,64 @@ function detectPatterns(logs: Array<{ mood: string; cyclePhase: string; symptoms
   }
 
   const dominantMood = Object.entries(moodCounts).sort((a, b) => b[1] - a[1])[0];
-  const repeatedSymptoms = Object.entries(symptomCounts)
-    .filter(([, c]) => c >= 2)
-    .map(([s]) => s);
-
+  const repeatedSymptoms = Object.entries(symptomCounts).filter(([, c]) => c >= 2).map(([s]) => s);
   const parts: string[] = [];
   if (dominantMood) parts.push(`Dominant mood: ${dominantMood[0]} (${dominantMood[1]} times)`);
   if (repeatedSymptoms.length) parts.push(`Recurring symptoms: ${repeatedSymptoms.join(", ")}`);
   const phaseEntries = Object.entries(phaseSymptoms).filter(([, s]) => s.length > 0);
   if (phaseEntries.length) {
-    parts.push(`Phase-specific patterns: ${phaseEntries.map(([p, s]) => `${p}: ${[...new Set(s)].join(", ")}`).join(" | ")}`);
+    parts.push(`Phase-specific: ${phaseEntries.map(([p, s]) => `${p}: ${[...new Set(s)].join(", ")}`).join(" | ")}`);
   }
   return parts.join(". ");
 }
+
+// ── Minor static update messages ──────────────────────────────────────────────
+
+const MINOR_UPDATES = [
+  "Noted 💜 I'm keeping track of how you're doing.",
+  "Take things gently today, my dear.",
+  "Your body may need a little extra rest tonight.",
+  "I hear you. Small steps today are more than enough.",
+  "Thank you for checking in — I'm always here for you. 🌸",
+  "Keep drinking water and being kind to yourself today.",
+];
+
+function pickMinorUpdate(log: LogEntry): string {
+  const syms = Array.isArray(log.symptoms) ? (log.symptoms as string[]) : [];
+  if (syms.length > 0) return "Noted 💜 I've logged your symptoms. Be gentle with yourself today.";
+  const sev = moodSeverity(log.mood);
+  if (sev >= 4) return "I hear you. Small steps today are more than enough. 💜";
+  if (sev >= 3) return "Your body may need a little extra rest tonight. Take care, dear.";
+  return MINOR_UPDATES[Math.floor(Math.random() * MINOR_UPDATES.length)]!;
+}
+
+// ── Significance detection ────────────────────────────────────────────────────
+
+function detectChangeSignificance(
+  prevLog: LogEntry | null,
+  newLog: LogEntry,
+): "minor" | "significant" {
+  const newSyms = Array.isArray(newLog.symptoms) ? (newLog.symptoms as string[]) : [];
+  const prevSyms = prevLog && Array.isArray(prevLog.symptoms) ? (prevLog.symptoms as string[]) : [];
+  const addedSyms = newSyms.filter((s) => !prevSyms.includes(s));
+
+  // Severe symptom added
+  if (addedSyms.some(isSevereSymptom)) return "significant";
+
+  // 3+ new symptoms added at once
+  if (addedSyms.length >= 3) return "significant";
+
+  // Mood worsened by 2+ levels
+  if (prevLog) {
+    const prevSev = moodSeverity(prevLog.mood);
+    const newSev = moodSeverity(newLog.mood);
+    if (newSev - prevSev >= 2) return "significant";
+  }
+
+  return "minor";
+}
+
+// ── DB helpers ────────────────────────────────────────────────────────────────
 
 export async function getTodayInsight(userId: string): Promise<InsightResult | null> {
   const today = new Date().toISOString().split("T")[0]!;
@@ -75,10 +166,21 @@ export async function getTodayInsight(userId: string): Promise<InsightResult | n
     .from(lunaInsightsTable)
     .where(and(eq(lunaInsightsTable.userId, userId), eq(lunaInsightsTable.date, today)))
     .limit(1);
-
   if (rows.length === 0) return null;
   return rows[0]!.insightData as InsightResult;
 }
+
+export async function getTodayUpdates(userId: string): Promise<DailyUpdateResult[]> {
+  const today = new Date().toISOString().split("T")[0]!;
+  const rows = await db
+    .select()
+    .from(lunaDailyUpdatesTable)
+    .where(and(eq(lunaDailyUpdatesTable.userId, userId), eq(lunaDailyUpdatesTable.date, today)))
+    .orderBy(desc(lunaDailyUpdatesTable.createdAt));
+  return rows.map((r) => ({ text: r.updateText, severity: r.severity as "minor" | "significant" }));
+}
+
+// ── Main insight generation ───────────────────────────────────────────────────
 
 export async function generateInsight(userId: string): Promise<InsightResult> {
   const today = new Date().toISOString().split("T")[0]!;
@@ -87,6 +189,7 @@ export async function generateInsight(userId: string): Promise<InsightResult> {
   const cached = await getTodayInsight(userId);
   if (cached) return cached;
 
+  // Fetch recent logs
   const logs = await db
     .select()
     .from(lunaLogsTable)
@@ -94,14 +197,27 @@ export async function generateInsight(userId: string): Promise<InsightResult> {
     .orderBy(desc(lunaLogsTable.date))
     .limit(30);
 
+  // RULE: Never generate insights without real user logs
   if (logs.length === 0) {
-    const fallback: InsightResult = {
-      insight: "Start logging your cycle and mood to receive personalized insights.",
+    return {
+      insight: "I'd love to understand how you're feeling today 💜",
       pattern: null,
-      suggestion: "Try logging your mood and symptoms daily for at least a week.",
-      reassurance: "Every small step toward self-awareness is meaningful. You've got this! 🌸",
+      suggestion: "Log today's mood or symptoms so I can support you better.",
+      reassurance: "Once you add today's log, I'll be able to give you personalised insights.",
+      isEncouragement: true,
     };
-    return fallback;
+  }
+
+  // Check if there is actually a log for today
+  const hasLogToday = logs.some((l) => l.date === today);
+  if (!hasLogToday) {
+    return {
+      insight: "I see you've been on this journey for a while — that means a lot 💜",
+      pattern: null,
+      suggestion: "Add today's mood or cycle update so your insight stays fresh and accurate.",
+      reassurance: "I'll be right here when you're ready to check in.",
+      isEncouragement: true,
+    };
   }
 
   const latest = logs[0]!;
@@ -131,15 +247,15 @@ DETECTED PATTERNS:
 ${patterns || "Not enough data for patterns yet — base insight on today's data."}
 
 INSTRUCTIONS:
-- Reference specific things from their logs (mention their actual mood, actual symptoms, actual cycle phase)
-- If they have symptoms like cramps, bloating, flow intensity — acknowledge it by name
+- Reference specific things from their logs (mention their actual mood, actual symptoms, actual cycle phase by name)
+- If they have symptoms like cramps, bloating, fatigue — acknowledge it by name
 - If their mood has been low or anxious multiple times — acknowledge that gently
-- Keep suggestions simple and realistic for a busy woman's daily life
+- Keep suggestions simple and realistic for a busy African woman's daily life
 
 Respond in this EXACT JSON format (no markdown, no extra text):
 {
   "insight": "A warm, specific insight that directly references their logged mood and symptoms today (2-3 sentences)",
-  "pattern": "A specific pattern noticed from their log history (e.g. 'You tend to feel tired in your luteal phase'), or null if fewer than 3 logs",
+  "pattern": "A specific pattern noticed from their log history, or null if fewer than 3 logs",
   "suggestion": "One practical, simple self-care suggestion based on their current phase and symptoms (1-2 sentences)",
   "reassurance": "A short, warm closing message in a relatable African tone (1 sentence, end with an emoji)"
 }`;
@@ -147,7 +263,7 @@ Respond in this EXACT JSON format (no markdown, no extra text):
   const response = await genai.models.generateContent({
     model: "gemini-2.5-flash",
     contents: [{ role: "user", parts: [{ text: prompt }] }],
-    config: { maxOutputTokens: 8192, responseMimeType: "application/json" },
+    config: { maxOutputTokens: 4096, responseMimeType: "application/json" },
   });
 
   let result: InsightResult;
@@ -170,14 +286,90 @@ Respond in this EXACT JSON format (no markdown, no extra text):
   }
 
   // Persist so subsequent requests today reuse this insight
-  await db.insert(lunaInsightsTable).values({
-    userId,
-    date: today,
-    insightData: result,
-  });
+  await db.insert(lunaInsightsTable).values({ userId, date: today, insightData: result });
 
   return result;
 }
+
+// ── Same-day update logic ─────────────────────────────────────────────────────
+
+export async function processDailyUpdate(
+  userId: string,
+  newLog: LogEntry,
+  existingInsight: InsightResult,
+): Promise<DailyUpdateResult> {
+  const today = new Date().toISOString().split("T")[0]!;
+
+  // Fetch the previous log for today (if any) to compare
+  const prevLogs = await db
+    .select()
+    .from(lunaLogsTable)
+    .where(and(eq(lunaLogsTable.userId, userId), eq(lunaLogsTable.date, today)))
+    .orderBy(desc(lunaLogsTable.createdAt))
+    .limit(2);
+
+  // prevLogs[0] is the one just inserted, prevLogs[1] is the one before it
+  const prevLog = prevLogs.length >= 2 ? prevLogs[1]! : null;
+
+  const severity = detectChangeSignificance(prevLog, newLog);
+
+  let updateText: string;
+
+  if (severity === "minor") {
+    updateText = pickMinorUpdate(newLog);
+  } else {
+    // Significant change — call Gemini for a short update
+    const newSyms = Array.isArray(newLog.symptoms) ? (newLog.symptoms as string[]) : [];
+    const prevSyms = prevLog && Array.isArray(prevLog.symptoms) ? (prevLog.symptoms as string[]) : [];
+    const addedSyms = newSyms.filter((s) => !prevSyms.includes(s));
+
+    const changeDesc = [
+      prevLog ? `Mood changed from ${prevLog.mood} to ${newLog.mood}` : `Current mood: ${newLog.mood}`,
+      addedSyms.length ? `New symptoms added: ${addedSyms.join(", ")}` : null,
+    ].filter(Boolean).join(". ");
+
+    const prompt = `${LUNA_SYSTEM_PROMPT}
+
+A user has just logged a significant wellness change during the day. Write a SHORT, warm, supportive update — 1 to 3 sentences only. Do NOT rewrite the full daily insight. Just acknowledge what changed and offer gentle encouragement.
+
+Their existing today's insight already covers: "${existingInsight.insight}"
+
+What changed now: ${changeDesc}
+Current cycle phase: ${newLog.cyclePhase}
+
+Rules:
+- Very short (1-3 sentences max)
+- Warm and personal
+- Acknowledge the specific change by name
+- No medical advice
+- End with one emoji
+
+Respond with ONLY the update text, no JSON, no markdown.`;
+
+    try {
+      const response = await genai.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: [{ role: "user", parts: [{ text: prompt }] }],
+        config: { maxOutputTokens: 512 },
+      });
+      updateText = response.text?.trim() ?? pickMinorUpdate(newLog);
+    } catch {
+      updateText = "I noticed something changed for you today. Please be extra gentle with yourself. 💜";
+    }
+  }
+
+  // Store the update
+  await db.insert(lunaDailyUpdatesTable).values({
+    userId,
+    date: today,
+    updateText,
+    severity,
+  });
+
+  return { text: updateText, severity };
+}
+
+// ── Recent logs context for chat ──────────────────────────────────────────────
 
 export async function getRecentLogsContext(userId: string): Promise<string> {
   const logs = await db
@@ -194,5 +386,3 @@ export async function getRecentLogsContext(userId: string): Promise<string> {
     return `[${l.date}] Phase: ${l.cyclePhase}, Mood: ${l.mood}, Symptoms: ${syms}`;
   }).join("\n");
 }
-
-export { LUNA_SYSTEM_PROMPT };
