@@ -369,20 +369,3 @@ Respond with ONLY the update text, no JSON, no markdown.`;
   return { text: updateText, severity };
 }
 
-// ── Recent logs context for chat ──────────────────────────────────────────────
-
-export async function getRecentLogsContext(userId: string): Promise<string> {
-  const logs = await db
-    .select()
-    .from(lunaLogsTable)
-    .where(eq(lunaLogsTable.userId, userId))
-    .orderBy(desc(lunaLogsTable.date))
-    .limit(7);
-
-  if (logs.length === 0) return "No logs yet.";
-
-  return logs.map((l) => {
-    const syms = Array.isArray(l.symptoms) ? (l.symptoms as string[]).join(", ") : "none";
-    return `[${l.date}] Phase: ${l.cyclePhase}, Mood: ${l.mood}, Symptoms: ${syms}`;
-  }).join("\n");
-}
