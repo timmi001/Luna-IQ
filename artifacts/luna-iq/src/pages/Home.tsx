@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { Link, useLocation } from "wouter";
 import { Bell, MessageCircleHeart, Wind, Droplets, ListChecks, Sparkles, X, Lightbulb, Heart, Zap, PlusCircle, ChevronRight } from "lucide-react";
+import { MOODS, MoodFlower } from "@/components/MoodFlower";
 import { motion, AnimatePresence } from "framer-motion";
 import { storage } from "@/utils/storage";
 import { getCycleDetails, getPhaseColor, CyclePhase } from "@/utils/cycle";
@@ -387,7 +388,18 @@ export default function Home() {
                   className="bg-gradient-to-br from-luna-blush/60 to-pink-100 rounded-2xl p-4 border border-luna-blush/60 cursor-pointer flex flex-col gap-2 min-h-[96px]"
                 >
                   <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Mood</p>
-                  <span className="text-4xl leading-none">{moodEmoji}</span>
+                  {latestMood ? (
+                    <div className="-ml-1 -mt-1">
+                      <MoodFlower
+                        mood={MOODS.find((m) => m.label === moodLabel) ?? MOODS[0]!}
+                        isSelected={false}
+                        size={56}
+                        emojiSize={20}
+                      />
+                    </div>
+                  ) : (
+                    <span className="text-4xl leading-none">🤍</span>
+                  )}
                   <p className="text-sm font-semibold text-foreground/80">{moodLabel}</p>
                 </motion.div>
               </Link>
