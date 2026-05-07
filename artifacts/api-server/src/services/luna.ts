@@ -1,4 +1,5 @@
-import { genai } from "../lib/gemini.js";
+import { getGenAI, withTimeout, withRetry } from "../lib/gemini.js";
+import { logger } from "../lib/logger.js";
 import { db, lunaLogsTable, lunaInsightsTable, lunaDailyUpdatesTable } from "@workspace/db";
 import { eq, desc, and } from "drizzle-orm";
 
@@ -53,7 +54,16 @@ type LogEntry = {
   date: string;
 };
 
-// ── Mood severity (higher = more distressed) ──────────────────────────────────
+// ── Fallback insight returned when Gemini is unavailable ──────────────────────
+
+const FALLBACK_INSIGHT: InsightResult = {
+  insight: "I'm here with you. Your body is doing its best today. 💜",
+  pattern: null,
+  suggestion: "Drink some water, take a gentle breath, and be kind to yourself.",
+  reassurance: "I'll have more personalised insights for you soon. 🌸",
+};
+
+// ── Mood severity ─────────────────────────────────────────────────────────────
 
 const MOOD_SEVERITY: Record<string, number> = {
   "🌟 Radiant": 0,
@@ -69,7 +79,7 @@ function moodSeverity(mood: string): number {
   for (const [key, val] of Object.entries(MOOD_SEVERITY)) {
     if (mood.includes(key.split(" ")[1]!)) return val;
   }
-  return 2; // default: neutral
+  return 2;
 }
 
 const SEVERE_SYMPTOMS = new Set([
@@ -92,11 +102,9 @@ function detectPatterns(logs: LogEntry[]): string {
   for (const log of logs) {
     moodCounts[log.mood] = (moodCounts[log.mood] ?? 0) + 1;
     const syms = Array.isArray(log.symptoms) ? (log.symptoms as string[]) : [];
-    for (const s of syms) {
-      symptomCounts[s] = (symptomCounts[s] ?? 0) + 1;
-    }
+    for (const s of syms) symptomCounts[s] = (symptomCounts[s] ?? 0) + 1;
     if (!phaseSymptoms[log.cyclePhase]) phaseSymptoms[log.cyclePhase] = [];
-    phaseSymptoms[log.cyclePhase].push(...syms);
+    phaseSymptoms[log.cyclePhase]!.push(...syms);
   }
 
   const dominantMood = Object.entries(moodCounts).sort((a, b) => b[1] - a[1])[0];
@@ -111,7 +119,7 @@ function detectPatterns(logs: LogEntry[]): string {
   return parts.join(". ");
 }
 
-// ── Minor static update messages ──────────────────────────────────────────────
+// ── Minor update messages ─────────────────────────────────────────────────────
 
 const MINOR_UPDATES = [
   "Noted 💜 I'm keeping track of how you're doing.",
@@ -133,27 +141,18 @@ function pickMinorUpdate(log: LogEntry): string {
 
 // ── Significance detection ────────────────────────────────────────────────────
 
-function detectChangeSignificance(
-  prevLog: LogEntry | null,
-  newLog: LogEntry,
-): "minor" | "significant" {
+function detectChangeSignificance(prevLog: LogEntry | null, newLog: LogEntry): "minor" | "significant" {
   const newSyms = Array.isArray(newLog.symptoms) ? (newLog.symptoms as string[]) : [];
   const prevSyms = prevLog && Array.isArray(prevLog.symptoms) ? (prevLog.symptoms as string[]) : [];
   const addedSyms = newSyms.filter((s) => !prevSyms.includes(s));
 
-  // Severe symptom added
   if (addedSyms.some(isSevereSymptom)) return "significant";
-
-  // 3+ new symptoms added at once
   if (addedSyms.length >= 3) return "significant";
-
-  // Mood worsened by 2+ levels
   if (prevLog) {
     const prevSev = moodSeverity(prevLog.mood);
     const newSev = moodSeverity(newLog.mood);
     if (newSev - prevSev >= 2) return "significant";
   }
-
   return "minor";
 }
 
@@ -180,24 +179,51 @@ export async function getTodayUpdates(userId: string): Promise<DailyUpdateResult
   return rows.map((r) => ({ text: r.updateText, severity: r.severity as "minor" | "significant" }));
 }
 
+// ── In-flight deduplication — prevents concurrent Gemini calls per user ───────
+const insightInFlight = new Map<string, Promise<InsightResult>>();
+
 // ── Main insight generation ───────────────────────────────────────────────────
 
 export async function generateInsight(userId: string): Promise<InsightResult> {
+  // Return cached insight if one already exists for today
+  try {
+    const cached = await getTodayInsight(userId);
+    if (cached) return cached;
+  } catch (dbErr) {
+    logger.error({ err: dbErr }, "DB error reading cached insight");
+  }
+
+  // Dedup: if a generation is already in-flight for this user, share the promise
+  const existing = insightInFlight.get(userId);
+  if (existing) {
+    logger.info({ userId }, "Insight already generating — reusing in-flight promise");
+    return existing;
+  }
+
+  const promise = _generateInsightWork(userId).finally(() => {
+    insightInFlight.delete(userId);
+  });
+
+  insightInFlight.set(userId, promise);
+  return promise;
+}
+
+async function _generateInsightWork(userId: string): Promise<InsightResult> {
   const today = new Date().toISOString().split("T")[0]!;
 
-  // Return cached insight if one already exists for today
-  const cached = await getTodayInsight(userId);
-  if (cached) return cached;
+  let logs: typeof lunaLogsTable.$inferSelect[] = [];
+  try {
+    logs = await db
+      .select()
+      .from(lunaLogsTable)
+      .where(eq(lunaLogsTable.userId, userId))
+      .orderBy(desc(lunaLogsTable.date))
+      .limit(30);
+  } catch (dbErr) {
+    logger.error({ err: dbErr }, "DB error fetching logs for insight");
+    return FALLBACK_INSIGHT;
+  }
 
-  // Fetch recent logs
-  const logs = await db
-    .select()
-    .from(lunaLogsTable)
-    .where(eq(lunaLogsTable.userId, userId))
-    .orderBy(desc(lunaLogsTable.date))
-    .limit(30);
-
-  // RULE: Never generate insights without real user logs
   if (logs.length === 0) {
     return {
       insight: "I'd love to understand how you're feeling today 💜",
@@ -208,7 +234,6 @@ export async function generateInsight(userId: string): Promise<InsightResult> {
     };
   }
 
-  // Check if there is actually a log for today
   const hasLogToday = logs.some((l) => l.date === today);
   if (!hasLogToday) {
     return {
@@ -221,7 +246,7 @@ export async function generateInsight(userId: string): Promise<InsightResult> {
   }
 
   const latest = logs[0]!;
-  const patterns = detectPatterns(logs);
+  const patterns = detectPatterns(logs as LogEntry[]);
   const latestSymptoms = Array.isArray(latest.symptoms) ? (latest.symptoms as string[]) : [];
 
   const recentSummary = logs.slice(0, 7).map((l) => {
@@ -260,33 +285,46 @@ Respond in this EXACT JSON format (no markdown, no extra text):
   "reassurance": "A short, warm closing message in a relatable African tone (1 sentence, end with an emoji)"
 }`;
 
-  const response = await genai.models.generateContent({
-    model: "gemini-2.5-flash",
-    contents: [{ role: "user", parts: [{ text: prompt }] }],
-    config: { maxOutputTokens: 4096, responseMimeType: "application/json" },
-  });
-
   let result: InsightResult;
   try {
+    const response = await withRetry(
+      () => withTimeout(
+        getGenAI().models.generateContent({
+          model: "gemini-2.5-flash",
+          contents: [{ role: "user", parts: [{ text: prompt }] }],
+          config: { maxOutputTokens: 4096, responseMimeType: "application/json" },
+        }),
+        30_000,
+        "generateInsight",
+      ),
+      "generateInsight",
+    );
+
     const text = response.text ?? "{}";
     const parsed = JSON.parse(text) as Partial<InsightResult>;
     result = {
-      insight: parsed.insight ?? "I see you've been tracking your wellness journey.",
-      pattern: parsed.pattern ?? null,
-      suggestion: parsed.suggestion ?? "Take a moment to rest and listen to your body.",
+      insight:     parsed.insight     ?? "I see you've been tracking your wellness journey.",
+      pattern:     parsed.pattern     ?? null,
+      suggestion:  parsed.suggestion  ?? "Take a moment to rest and listen to your body.",
       reassurance: parsed.reassurance ?? "You're doing great. 🌸",
     };
-  } catch {
-    result = {
-      insight: "I see you've been tracking your wellness journey.",
+  } catch (err) {
+    logger.error({ err, userId }, "Gemini insight generation failed");
+    // Return a graceful fallback — do NOT throw so the server stays up
+    return {
+      insight: "I'm here with you, my dear. I wasn't able to generate your full insight right now.",
       pattern: patterns || null,
-      suggestion: "Take a moment to rest and listen to your body.",
-      reassurance: "You're doing great. 🌸",
+      suggestion: "Take a gentle moment for yourself today. Drink some water and breathe.",
+      reassurance: "I'll try again for you soon. 💜",
     };
   }
 
   // Persist so subsequent requests today reuse this insight
-  await db.insert(lunaInsightsTable).values({ userId, date: today, insightData: result });
+  try {
+    await db.insert(lunaInsightsTable).values({ userId, date: today, insightData: result });
+  } catch (dbErr) {
+    logger.error({ err: dbErr }, "DB error persisting insight — returning result anyway");
+  }
 
   return result;
 }
@@ -300,17 +338,19 @@ export async function processDailyUpdate(
 ): Promise<DailyUpdateResult> {
   const today = new Date().toISOString().split("T")[0]!;
 
-  // Fetch the previous log for today (if any) to compare
-  const prevLogs = await db
-    .select()
-    .from(lunaLogsTable)
-    .where(and(eq(lunaLogsTable.userId, userId), eq(lunaLogsTable.date, today)))
-    .orderBy(desc(lunaLogsTable.createdAt))
-    .limit(2);
+  let prevLogs: typeof lunaLogsTable.$inferSelect[] = [];
+  try {
+    prevLogs = await db
+      .select()
+      .from(lunaLogsTable)
+      .where(and(eq(lunaLogsTable.userId, userId), eq(lunaLogsTable.date, today)))
+      .orderBy(desc(lunaLogsTable.createdAt))
+      .limit(2);
+  } catch (dbErr) {
+    logger.error({ err: dbErr }, "DB error fetching prev logs for daily update");
+  }
 
-  // prevLogs[0] is the one just inserted, prevLogs[1] is the one before it
-  const prevLog = prevLogs.length >= 2 ? prevLogs[1]! : null;
-
+  const prevLog = prevLogs.length >= 2 ? (prevLogs[1]! as unknown as LogEntry) : null;
   const severity = detectChangeSignificance(prevLog, newLog);
 
   let updateText: string;
@@ -318,8 +358,7 @@ export async function processDailyUpdate(
   if (severity === "minor") {
     updateText = pickMinorUpdate(newLog);
   } else {
-    // Significant change — call Gemini for a short update
-    const newSyms = Array.isArray(newLog.symptoms) ? (newLog.symptoms as string[]) : [];
+    const newSyms  = Array.isArray(newLog.symptoms)   ? (newLog.symptoms   as string[]) : [];
     const prevSyms = prevLog && Array.isArray(prevLog.symptoms) ? (prevLog.symptoms as string[]) : [];
     const addedSyms = newSyms.filter((s) => !prevSyms.includes(s));
 
@@ -347,25 +386,30 @@ Rules:
 Respond with ONLY the update text, no JSON, no markdown.`;
 
     try {
-      const response = await genai.models.generateContent({
-        model: "gemini-2.5-flash",
-        contents: [{ role: "user", parts: [{ text: prompt }] }],
-        config: { maxOutputTokens: 512 },
-      });
+      const response = await withRetry(
+        () => withTimeout(
+          getGenAI().models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: [{ role: "user", parts: [{ text: prompt }] }],
+            config: { maxOutputTokens: 512 },
+          }),
+          20_000,
+          "processDailyUpdate",
+        ),
+        "processDailyUpdate",
+      );
       updateText = response.text?.trim() ?? pickMinorUpdate(newLog);
-    } catch {
+    } catch (err) {
+      logger.warn({ err, userId }, "Gemini daily update failed — using static fallback");
       updateText = "I noticed something changed for you today. Please be extra gentle with yourself. 💜";
     }
   }
 
-  // Store the update
-  await db.insert(lunaDailyUpdatesTable).values({
-    userId,
-    date: today,
-    updateText,
-    severity,
-  });
+  try {
+    await db.insert(lunaDailyUpdatesTable).values({ userId, date: today, updateText, severity });
+  } catch (dbErr) {
+    logger.error({ err: dbErr }, "DB error persisting daily update");
+  }
 
   return { text: updateText, severity };
 }
-

@@ -7,6 +7,8 @@ import {
   getTodayUpdates,
   processDailyUpdate,
 } from "../../services/luna.js";
+import { logger } from "../../lib/logger.js";
+import { isRateLimit } from "../../lib/gemini.js";
 import { z } from "zod";
 
 const router = Router();
@@ -22,12 +24,7 @@ const SaveLogBody = z.object({
 
 const InsightBody = z.object({ userId: z.string() });
 
-function isRateLimit(err: unknown): boolean {
-  const msg = err instanceof Error ? err.message : String(err);
-  return msg.includes("429") || msg.includes("RESOURCE_EXHAUSTED") || msg.includes("quota");
-}
-
-// ── POST /log — save log, trigger same-day update if insight exists ────────────
+// ── POST /log ─────────────────────────────────────────────────────────────────
 router.post("/log", async (req, res) => {
   const parsed = SaveLogBody.safeParse(req.body);
   if (!parsed.success) {
@@ -36,91 +33,101 @@ router.post("/log", async (req, res) => {
   }
   const data = parsed.data;
 
-  const [saved] = await db
-    .insert(lunaLogsTable)
-    .values({
-      userId: data.userId,
-      date: data.date,
-      cyclePhase: data.cyclePhase,
-      dayOfCycle: data.dayOfCycle ?? null,
-      mood: data.mood,
-      symptoms: data.symptoms,
-    })
-    .returning();
+  let saved: typeof lunaLogsTable.$inferSelect | undefined;
+  try {
+    [saved] = await db
+      .insert(lunaLogsTable)
+      .values({
+        userId:      data.userId,
+        date:        data.date,
+        cyclePhase:  data.cyclePhase,
+        dayOfCycle:  data.dayOfCycle ?? null,
+        mood:        data.mood,
+        symptoms:    data.symptoms,
+      })
+      .returning();
+  } catch (err) {
+    logger.error({ err }, "DB error saving log");
+    res.status(500).json({ error: "Failed to save log" });
+    return;
+  }
 
-  const existingInsight = await getTodayInsight(data.userId);
   let dailyUpdate: { text: string; severity: string } | null = null;
-
-  if (existingInsight && !existingInsight.isEncouragement) {
-    try {
+  try {
+    const existingInsight = await getTodayInsight(data.userId);
+    if (existingInsight && !existingInsight.isEncouragement) {
       dailyUpdate = await processDailyUpdate(
         data.userId,
         {
-          mood: data.mood,
-          cyclePhase: data.cyclePhase,
-          symptoms: data.symptoms,
-          dayOfCycle: data.dayOfCycle ?? null,
-          date: data.date,
+          mood:        data.mood,
+          cyclePhase:  data.cyclePhase,
+          symptoms:    data.symptoms,
+          dayOfCycle:  data.dayOfCycle ?? null,
+          date:        data.date,
         },
         existingInsight,
       );
-    } catch {
-      // Non-critical — log saved regardless
     }
+  } catch (err) {
+    // Non-critical — log saved regardless
+    logger.warn({ err }, "Daily update failed — log was still saved");
   }
 
   res.status(201).json({ log: saved, update: dailyUpdate });
 });
 
-// ── GET /logs/:userId ──────────────────────────────────────────────────────────
+// ── GET /logs/:userId ─────────────────────────────────────────────────────────
 router.get("/logs/:userId", async (req, res) => {
   const { userId } = req.params;
-  if (!userId) {
-    res.status(400).json({ error: "userId required" });
-    return;
+  if (!userId) { res.status(400).json({ error: "userId required" }); return; }
+  try {
+    const logs = await db
+      .select()
+      .from(lunaLogsTable)
+      .where(eq(lunaLogsTable.userId, userId))
+      .orderBy(desc(lunaLogsTable.date));
+    res.json(logs);
+  } catch (err) {
+    logger.error({ err, userId }, "DB error fetching logs");
+    res.status(500).json({ error: "Failed to fetch logs" });
   }
-  const logs = await db
-    .select()
-    .from(lunaLogsTable)
-    .where(eq(lunaLogsTable.userId, userId))
-    .orderBy(desc(lunaLogsTable.date));
-  res.json(logs);
 });
 
-// ── GET /today-insight/:userId — return cached insight or null ─────────────────
+// ── GET /today-insight/:userId ────────────────────────────────────────────────
 router.get("/today-insight/:userId", async (req, res) => {
   const { userId } = req.params;
-  if (!userId) {
-    res.status(400).json({ error: "userId required" });
-    return;
+  if (!userId) { res.status(400).json({ error: "userId required" }); return; }
+  try {
+    const insight = await getTodayInsight(userId);
+    res.json({ insight });
+  } catch (err) {
+    logger.error({ err, userId }, "DB error fetching today insight");
+    res.json({ insight: null });
   }
-  const insight = await getTodayInsight(userId);
-  res.json({ insight });
 });
 
-// ── GET /today-updates/:userId — return same-day updates ──────────────────────
+// ── GET /today-updates/:userId ────────────────────────────────────────────────
 router.get("/today-updates/:userId", async (req, res) => {
   const { userId } = req.params;
-  if (!userId) {
-    res.status(400).json({ error: "userId required" });
-    return;
+  if (!userId) { res.status(400).json({ error: "userId required" }); return; }
+  try {
+    const updates = await getTodayUpdates(userId);
+    res.json({ updates });
+  } catch (err) {
+    logger.error({ err, userId }, "DB error fetching today updates");
+    res.json({ updates: [] });
   }
-  const updates = await getTodayUpdates(userId);
-  res.json({ updates });
 });
 
-// ── POST /generate-insight — generate (or return cached) daily insight ─────────
-// Daily caching is enforced HERE only. Chat is not affected by this limit.
+// ── POST /generate-insight ────────────────────────────────────────────────────
 router.post("/generate-insight", async (req, res) => {
   const parsed = InsightBody.safeParse(req.body);
-  if (!parsed.success) {
-    res.status(400).json({ error: "userId required" });
-    return;
-  }
+  if (!parsed.success) { res.status(400).json({ error: "userId required" }); return; }
   try {
     const result = await generateInsight(parsed.data.userId);
     res.json(result);
   } catch (err) {
+    logger.error({ err }, "Insight generation failed");
     if (isRateLimit(err)) {
       res.status(429).json({
         error: "rate_limit",
@@ -128,7 +135,7 @@ router.post("/generate-insight", async (req, res) => {
       });
     } else {
       res.status(500).json({
-        error: "ai_error",
+        error:   "ai_error",
         message: "Luna couldn't generate an insight right now.",
       });
     }
