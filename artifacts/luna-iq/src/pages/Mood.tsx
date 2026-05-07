@@ -209,7 +209,11 @@ function FlowerButton({ mood, isSelected, onClick }: { mood: Mood; isSelected: b
         <RealisticFlower mood={mood} isSelected={isSelected} />
         <span
           className="absolute inset-0 flex items-center justify-center select-none pointer-events-none"
-          style={{ fontSize: isSelected ? 22 : 19, lineHeight: 1 }}
+          style={{
+            fontSize: isSelected ? 28 : 24,
+            lineHeight: 1,
+            filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.18))",
+          }}
         >
           {mood.emoji}
         </span>
