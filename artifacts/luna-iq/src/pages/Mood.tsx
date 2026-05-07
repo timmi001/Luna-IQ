@@ -100,86 +100,95 @@ const MOODS = [
 
 type Mood = (typeof MOODS)[number];
 
-/* ── Realistic 5-petal flower SVG ─────────────────────────────────── */
-function RealisticFlower({ mood, isSelected, size = 72 }: { mood: Mood; isSelected: boolean; size?: number }) {
+/* ── Cup flower SVG — rounded petals in a rose/ranunculus style ──── */
+function RealisticFlower({ mood, isSelected, size = 76 }: { mood: Mood; isSelected: boolean; size?: number }) {
   const id = mood.label.toLowerCase();
-  const op = isSelected ? 1 : 0.72;
+  const op = isSelected ? 1 : 0.75;
 
-  const petalPath = "M 0,10 C -6,8 -16,-2 -16,-22 C -16,-40 -8,-52 0,-54 C 8,-52 16,-40 16,-22 C 16,-2 6,8 0,10";
-  const veinPath = "M 0,8 Q 0,-20 0,-52";
+  // Wide, rounded petal — oval with blunt tip, much less pointed than a star
+  const outerPetal = "M 0,12 C -14,12 -26,0 -25,-18 C -24,-34 -13,-47 0,-49 C 13,-47 24,-34 25,-18 C 26,0 14,12 0,12";
+  // Inner petal layer — slightly smaller, sits on top
+  const innerPetal = "M 0,8 C -9,8 -17,0 -16,-13 C -15,-25 -8,-33 0,-34 C 8,-33 15,-25 16,-13 C 17,0 9,8 0,8";
 
   return (
     <svg
-      viewBox="-50 -50 100 100"
+      viewBox="-54 -52 108 108"
       width={size}
       height={size}
       style={{ overflow: "visible", display: "block" }}
     >
       <defs>
+        {/* Outer petal gradient — rich colour at tip, lighter at base */}
         <linearGradient id={`pg-${id}`} x1="0" y1="1" x2="0" y2="0" gradientUnits="objectBoundingBox">
-          <stop offset="0%" stopColor={mood.petalHighlight} stopOpacity="0.9" />
-          <stop offset="40%" stopColor={mood.petalBase} />
-          <stop offset="75%" stopColor={mood.petalMid} />
+          <stop offset="0%"   stopColor={mood.petalHighlight} stopOpacity="0.95" />
+          <stop offset="35%"  stopColor={mood.petalBase} />
+          <stop offset="70%"  stopColor={mood.petalMid} />
           <stop offset="100%" stopColor={mood.petalTip} />
         </linearGradient>
 
+        {/* Inner petal gradient — slightly deeper to read as inner cup */}
+        <linearGradient id={`ig-${id}`} x1="0" y1="1" x2="0" y2="0" gradientUnits="objectBoundingBox">
+          <stop offset="0%"   stopColor={mood.petalBase} stopOpacity="0.9" />
+          <stop offset="50%"  stopColor={mood.petalMid} />
+          <stop offset="100%" stopColor={mood.petalTip} />
+        </linearGradient>
+
+        {/* Centre radial glow */}
         <radialGradient id={`cg-${id}`} cx="38%" cy="35%" r="65%">
-          <stop offset="0%" stopColor={mood.centerInner} />
-          <stop offset="55%" stopColor={mood.centerOuter} stopOpacity="0.85" />
-          <stop offset="100%" stopColor={mood.petalTip} stopOpacity="0.6" />
+          <stop offset="0%"   stopColor={mood.centerInner} />
+          <stop offset="55%"  stopColor={mood.centerOuter} stopOpacity="0.85" />
+          <stop offset="100%" stopColor={mood.petalTip}    stopOpacity="0.55" />
         </radialGradient>
 
-        <radialGradient id={`ps-${id}`} cx="50%" cy="110%" r="70%">
-          <stop offset="0%" stopColor={mood.petalTip} stopOpacity="0.25" />
-          <stop offset="100%" stopColor={mood.petalTip} stopOpacity="0" />
-        </radialGradient>
-
+        {/* Drop shadow */}
         <filter id={`f-${id}`} x="-20%" y="-20%" width="140%" height="140%">
-          <feDropShadow dx="0" dy="1.5" stdDeviation="2" floodColor={mood.petalTip} floodOpacity={isSelected ? 0.35 : 0.15} />
+          <feDropShadow dx="0" dy="2" stdDeviation="2.5"
+            floodColor={mood.petalTip}
+            floodOpacity={isSelected ? 0.40 : 0.18} />
         </filter>
       </defs>
 
       <g opacity={op} filter={`url(#f-${id})`}>
+
+        {/* ── Outer petals (5 × 72°) ── */}
         {[0, 72, 144, 216, 288].map((angle) => (
-          <g key={angle} transform={`rotate(${angle})`}>
-            <path d={petalPath} fill={`url(#pg-${id})`} />
-            <path d={petalPath} fill={`url(#ps-${id})`} />
-            <path
-              d={veinPath}
-              fill="none"
-              stroke={mood.petalTip}
-              strokeWidth="0.8"
-              strokeOpacity="0.3"
-              strokeLinecap="round"
-            />
-            <path
-              d="M 0,8 C -4,5 -10,-8 -9,-28"
-              fill="none"
-              stroke="white"
-              strokeWidth="1.2"
-              strokeOpacity="0.45"
-              strokeLinecap="round"
-            />
+          <g key={`o${angle}`} transform={`rotate(${angle})`}>
+            <path d={outerPetal} fill={`url(#pg-${id})`} />
+            {/* Edge shadow for petal depth */}
+            <path d={outerPetal} fill={mood.petalTip} opacity="0.12" />
+            {/* Centre vein */}
+            <path d="M 0,10 Q 0,-18 0,-48"
+              fill="none" stroke={mood.petalTip}
+              strokeWidth="0.8" strokeOpacity="0.25" strokeLinecap="round" />
+            {/* Highlight on left edge */}
+            <path d="M -10,8 Q -15,-10 -12,-40"
+              fill="none" stroke="white"
+              strokeWidth="1.3" strokeOpacity="0.40" strokeLinecap="round" />
           </g>
         ))}
 
-        <circle cx="0" cy="0" r="17" fill={`url(#cg-${id})`} />
+        {/* ── Inner petal layer (offset 36° — fills gaps between outer) ── */}
+        {[36, 108, 180, 252, 324].map((angle) => (
+          <g key={`i${angle}`} transform={`rotate(${angle})`}>
+            <path d={innerPetal} fill={`url(#ig-${id})`} />
+            <path d="M 0,7 Q 0,-12 0,-33"
+              fill="none" stroke={mood.petalTip}
+              strokeWidth="0.7" strokeOpacity="0.20" strokeLinecap="round" />
+          </g>
+        ))}
 
-        {[0, 60, 120, 180, 240, 300].map((a) => {
-          const rx = 9 * Math.cos((a * Math.PI) / 180);
-          const ry = 9 * Math.sin((a * Math.PI) / 180);
-          return <circle key={a} cx={rx} cy={ry} r="1.8" fill={mood.petalTip} opacity="0.4" />;
-        })}
-        {[30, 90, 150, 210, 270, 330].map((a) => {
-          const rx = 5 * Math.cos((a * Math.PI) / 180);
-          const ry = 5 * Math.sin((a * Math.PI) / 180);
-          return <circle key={a} cx={rx} cy={ry} r="1.2" fill={mood.petalTip} opacity="0.3" />;
-        })}
+        {/* ── Centre disc ── */}
+        <circle cx="0" cy="0" r="18" fill={`url(#cg-${id})`} />
+        {/* Rim */}
+        <circle cx="0" cy="0" r="18" fill="none"
+          stroke={mood.petalTip} strokeWidth="1" strokeOpacity="0.25" />
+        {/* Gloss highlight */}
+        <circle cx="-5" cy="-5" r="5.5" fill="white" opacity="0.30" />
 
-        <circle cx="-4" cy="-4" r="5" fill="white" opacity="0.35" />
-
+        {/* ── Selected ring ── */}
         {isSelected && (
-          <circle cx="0" cy="0" r="18" fill="none" stroke={mood.petalTip} strokeWidth="2" strokeOpacity="0.6" />
+          <circle cx="0" cy="0" r="19.5" fill="none"
+            stroke={mood.petalTip} strokeWidth="2.2" strokeOpacity="0.65" />
         )}
       </g>
     </svg>
