@@ -286,7 +286,7 @@ export default function Mood() {
     <PageTransition className="flex flex-col min-h-screen">
       <AppHeader title="How are you?" subtitle="Take a deep breath and check in." />
 
-      <main className="flex-1 px-5 pt-2 pb-28 flex flex-col gap-5">
+      <main className="flex-1 px-5 pt-2 pb-20 flex flex-col gap-4">
 
         {/* Flower mood picker */}
         <section className="bg-white rounded-3xl p-5 shadow-sm border border-card-border">

@@ -77,7 +77,7 @@ export default function Breathe() {
         )}
       </header>
 
-      <main className="flex-1 flex flex-col items-center justify-center pb-32 px-6">
+      <main className="flex-1 flex flex-col items-center justify-center pb-20 px-6">
         {/* Breathing ring */}
         <div className="relative flex items-center justify-center mb-12">
           {/* Outer glow */}

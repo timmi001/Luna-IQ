@@ -28,18 +28,48 @@ function getGreeting() {
 
 // ── Animated cycle phase icons ────────────────────────────────────────────────
 
+function BloodDrop({ delay, x }: { delay: number; x: number }) {
+  return (
+    <motion.div
+      className="absolute top-0"
+      style={{ left: x }}
+      initial={{ y: -14, opacity: 0, scaleY: 0.4 }}
+      animate={{
+        y:      [-14, -6, 32],
+        opacity:[0,   1,   0],
+        scaleY: [0.4, 1.3, 1],
+      }}
+      transition={{
+        duration: 1.5,
+        delay,
+        repeat: Infinity,
+        ease: "easeIn",
+        times: [0, 0.25, 1],
+      }}
+    >
+      <svg width="9" height="13" viewBox="0 0 9 13" fill="none">
+        <path
+          d="M4.5 0C4.5 0 9 7 9 9.5C9 11.43 6.99 13 4.5 13C2.01 13 0 11.43 0 9.5C0 7 4.5 0 4.5 0Z"
+          fill="#DC2626"
+        />
+        <path
+          d="M3 8.5C3 8.5 2.5 9.5 3.5 10"
+          stroke="#FCA5A5"
+          strokeWidth="0.8"
+          strokeLinecap="round"
+          opacity="0.7"
+        />
+      </svg>
+    </motion.div>
+  );
+}
+
 function MenstrualIcon() {
   return (
-    <div className="relative w-10 h-10 flex items-center justify-center">
-      {[0, 1, 2].map((i) => (
-        <motion.div
-          key={i}
-          className="absolute w-2 h-3 rounded-full bg-rose-400"
-          style={{ left: `${8 + i * 9}px` }}
-          animate={{ y: [0, 8, 0], opacity: [0.9, 0.5, 0.9] }}
-          transition={{ duration: 1.6, delay: i * 0.25, repeat: Infinity, ease: "easeInOut" }}
-        />
-      ))}
+    <div className="relative w-10 h-10 overflow-hidden">
+      <BloodDrop delay={0}    x={2}  />
+      <BloodDrop delay={0.55} x={13} />
+      <BloodDrop delay={1.1}  x={24} />
     </div>
   );
 }
@@ -342,7 +372,7 @@ export default function Home() {
           </div>
         </header>
 
-        <main className="flex-1 px-6 pt-2 pb-24 flex flex-col gap-4">
+        <main className="flex-1 px-6 pt-2 pb-20 flex flex-col gap-4">
 
           {/* Today's Check-in */}
           <div className="bg-white rounded-3xl p-5 shadow-sm border border-card-border relative overflow-hidden">
@@ -405,14 +435,38 @@ export default function Home() {
             </div>
 
             {insight ? (
-              <div className="flex items-start justify-between gap-3">
-                <p className="text-sm text-foreground leading-relaxed flex-1 line-clamp-2">
-                  {insight.isEncouragement ? insight.insight : insightPreview}
-                </p>
-                <div className="flex items-center gap-0.5 text-purple-500 shrink-0 mt-0.5">
-                  <span className="text-xs font-semibold">See more</span>
-                  <ChevronRight className="w-3.5 h-3.5" />
+              <div className="flex flex-col gap-2">
+                <div className="flex items-start justify-between gap-3">
+                  <p className="text-sm text-foreground leading-relaxed flex-1 line-clamp-2">
+                    {insight.isEncouragement ? insight.insight : insightPreview}
+                  </p>
+                  <div className="flex items-center gap-0.5 text-purple-500 shrink-0 mt-0.5">
+                    <span className="text-xs font-semibold">See more</span>
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </div>
                 </div>
+
+                {/* Later Today — shown inline on the preview card */}
+                {updates.length > 0 && (
+                  <div className="flex flex-col gap-1.5 pt-2 border-t border-muted/30">
+                    <div className="flex items-center gap-1">
+                      <Zap className="w-2.5 h-2.5 text-amber-500" />
+                      <span className="text-[10px] font-semibold uppercase tracking-wider text-amber-700">Later Today</span>
+                    </div>
+                    {updates.slice(0, 2).map((upd, i) => (
+                      <p
+                        key={i}
+                        className={`text-xs leading-relaxed rounded-xl px-2.5 py-1.5 line-clamp-2 ${
+                          upd.severity === "significant"
+                            ? "bg-rose-50 text-rose-800"
+                            : "bg-amber-50 text-amber-900"
+                        }`}
+                      >
+                        {upd.text}
+                      </p>
+                    ))}
+                  </div>
+                )}
               </div>
             ) : (
               <div className="flex items-center justify-between">

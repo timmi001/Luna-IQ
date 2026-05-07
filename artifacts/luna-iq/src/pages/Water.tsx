@@ -72,7 +72,7 @@ export default function Water() {
         </div>
       </header>
 
-      <main className="flex-1 flex flex-col items-center pb-28 px-6 pt-4">
+      <main className="flex-1 flex flex-col items-center pb-20 px-6 pt-4">
 
         {/* Animated girl + glass */}
         <div className="relative flex flex-col items-center mb-6">

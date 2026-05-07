@@ -338,7 +338,7 @@ export default function Cycle() {
         </div>
       </div>
 
-      <main className="flex-1 px-5 pb-28 flex flex-col gap-4 overflow-y-auto">
+      <main className="flex-1 px-5 pb-20 flex flex-col gap-4 overflow-y-auto">
         <AnimatePresence mode="wait">
 
           {/* ── CYCLE TAB ── */}

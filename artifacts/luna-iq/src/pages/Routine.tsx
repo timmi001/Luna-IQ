@@ -102,7 +102,7 @@ export default function Routine() {
         </div>
       </header>
 
-      <main className="flex-1 px-6 pb-28 flex flex-col gap-4">
+      <main className="flex-1 px-6 pb-20 flex flex-col gap-4">
 
         {/* Progress bar */}
         <div className="bg-white rounded-2xl p-4 border border-card-border shadow-sm">
