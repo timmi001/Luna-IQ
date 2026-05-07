@@ -279,42 +279,42 @@ export default function Insights() {
                 </div>
 
                 <p className="text-sm text-center text-muted-foreground italic">{aiInsight.reassurance}</p>
+
+                {/* Today's Updates — inside the insight card */}
+                <AnimatePresence>
+                  {dailyUpdates.length > 0 && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0 }}
+                      className="flex flex-col gap-2 pt-2 border-t border-muted/30"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        <Zap className="w-3 h-3 text-amber-500" />
+                        <span className="text-[10px] font-semibold uppercase tracking-wider text-amber-700">Later Today</span>
+                      </div>
+                      {dailyUpdates.map((upd, i) => (
+                        <motion.div
+                          key={i}
+                          initial={{ opacity: 0, x: -6 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: i * 0.06 }}
+                          className={`rounded-xl px-3 py-2.5 text-xs leading-relaxed ${
+                            upd.severity === "significant"
+                              ? "bg-rose-50 border border-rose-200 text-rose-900"
+                              : "bg-amber-50 border border-amber-200 text-amber-900"
+                          }`}
+                        >
+                          {upd.text}
+                        </motion.div>
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </motion.div>
             )}
           </AnimatePresence>
         </div>
-
-        {/* Same-day updates */}
-        <AnimatePresence>
-          {dailyUpdates.length > 0 && (
-            <motion.div
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              className="flex flex-col gap-3"
-            >
-              <div className="flex items-center gap-2 px-1">
-                <Zap className="w-3.5 h-3.5 text-amber-500" />
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-amber-700">Today's Updates</span>
-              </div>
-              {dailyUpdates.map((upd, i) => (
-                <motion.div
-                  key={i}
-                  initial={{ opacity: 0, x: -8 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: i * 0.06 }}
-                  className={`rounded-2xl px-4 py-3 border text-sm leading-relaxed ${
-                    upd.severity === "significant"
-                      ? "bg-rose-50 border-rose-200 text-rose-900"
-                      : "bg-amber-50 border-amber-200 text-amber-900"
-                  }`}
-                >
-                  {upd.text}
-                </motion.div>
-              ))}
-            </motion.div>
-          )}
-        </AnimatePresence>
 
         {/* Log Today CTA — show if no mood logged today and insight loaded */}
         {!loading && aiInsight && !isEncouragement && !hasLoggedToday && (
