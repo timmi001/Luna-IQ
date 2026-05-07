@@ -384,7 +384,7 @@ export default function Home() {
               <Link href="/mood" className="flex-1">
                 <motion.div
                   whileTap={{ scale: 0.96 }}
-                  className="bg-gradient-to-br from-luna-blush/40 to-pink-50 rounded-2xl p-4 border border-luna-blush/40 cursor-pointer flex flex-col gap-2 min-h-[96px]"
+                  className="bg-gradient-to-br from-luna-blush/60 to-pink-100 rounded-2xl p-4 border border-luna-blush/60 cursor-pointer flex flex-col gap-2 min-h-[96px]"
                 >
                   <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Mood</p>
                   <span className="text-4xl leading-none">{moodEmoji}</span>
@@ -423,13 +423,13 @@ export default function Home() {
           >
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-purple-500" />
-                <h3 className="font-semibold uppercase tracking-wider text-xs text-purple-800">Luna's Insight</h3>
+                <Sparkles className="w-4 h-4 text-purple-600" />
+                <h3 className="font-semibold uppercase tracking-wider text-xs text-purple-900">Luna's Insight</h3>
               </div>
               {updates.length > 0 && (
-                <div className="flex items-center gap-1 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5">
-                  <Zap className="w-2.5 h-2.5 text-amber-500" />
-                  <span className="text-[10px] font-semibold text-amber-700">{updates.length} update{updates.length > 1 ? "s" : ""}</span>
+                <div className="flex items-center gap-1 bg-amber-100 border border-amber-300 rounded-full px-2 py-0.5">
+                  <Zap className="w-2.5 h-2.5 text-amber-600" />
+                  <span className="text-[10px] font-semibold text-amber-800">{updates.length} update{updates.length > 1 ? "s" : ""}</span>
                 </div>
               )}
             </div>
@@ -440,7 +440,7 @@ export default function Home() {
                   <p className="text-sm text-foreground leading-relaxed flex-1 line-clamp-2">
                     {insight.isEncouragement ? insight.insight : insightPreview}
                   </p>
-                  <div className="flex items-center gap-0.5 text-purple-500 shrink-0 mt-0.5">
+                  <div className="flex items-center gap-0.5 text-purple-600 shrink-0 mt-0.5">
                     <span className="text-xs font-semibold">See more</span>
                     <ChevronRight className="w-3.5 h-3.5" />
                   </div>
@@ -450,16 +450,16 @@ export default function Home() {
                 {updates.length > 0 && (
                   <div className="flex flex-col gap-1.5 pt-2 border-t border-muted/30">
                     <div className="flex items-center gap-1">
-                      <Zap className="w-2.5 h-2.5 text-amber-500" />
-                      <span className="text-[10px] font-semibold uppercase tracking-wider text-amber-700">Later Today</span>
+                      <Zap className="w-2.5 h-2.5 text-amber-600" />
+                      <span className="text-[10px] font-semibold uppercase tracking-wider text-amber-800">Later Today</span>
                     </div>
                     {updates.slice(0, 2).map((upd, i) => (
                       <p
                         key={i}
                         className={`text-xs leading-relaxed rounded-xl px-2.5 py-1.5 line-clamp-2 ${
                           upd.severity === "significant"
-                            ? "bg-rose-50 text-rose-800"
-                            : "bg-amber-50 text-amber-900"
+                            ? "bg-rose-100 text-rose-900"
+                            : "bg-amber-100 text-amber-900"
                         }`}
                       >
                         {upd.text}
@@ -473,7 +473,7 @@ export default function Home() {
                 <p className="text-sm text-muted-foreground">Log your data to get your daily insight.</p>
                 <button
                   onClick={(e) => { e.stopPropagation(); setLocation("/mood"); }}
-                  className="text-xs font-semibold text-purple-500 shrink-0 ml-2"
+                  className="text-xs font-semibold text-purple-600 shrink-0 ml-2"
                 >
                   Log now →
                 </button>
@@ -486,42 +486,42 @@ export default function Home() {
           {/* Navigation Grid */}
           <div className="grid grid-cols-2 gap-3">
             <Link href="/chat">
-              <div className="bg-luna-lavender/40 hover:bg-luna-lavender/60 transition-colors rounded-3xl p-5 flex flex-col items-center justify-center text-center aspect-square cursor-pointer shadow-sm">
-                <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm mb-3 text-purple-500">
+              <div className="bg-gradient-to-br from-violet-100 to-purple-100 hover:from-violet-200 hover:to-purple-200 transition-colors rounded-3xl p-5 flex flex-col items-center justify-center text-center aspect-square cursor-pointer shadow-sm border border-purple-200/60">
+                <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm mb-3 text-purple-600">
                   <MessageCircleHeart className="w-6 h-6" />
                 </div>
-                <h3 className="font-medium text-purple-900">Luna Chat</h3>
-                <p className="text-xs text-purple-700/70 mt-1">Talk to your AI companion</p>
+                <h3 className="font-semibold text-purple-900">Luna Chat</h3>
+                <p className="text-xs text-purple-700/80 mt-1">Talk to your AI companion</p>
               </div>
             </Link>
 
             <Link href="/breathe">
-              <div className="bg-sky-100/60 hover:bg-sky-100/80 transition-colors rounded-3xl p-5 flex flex-col items-center justify-center text-center aspect-square cursor-pointer shadow-sm">
-                <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm mb-3 text-sky-400">
+              <div className="bg-gradient-to-br from-sky-100 to-cyan-100 hover:from-sky-200 hover:to-cyan-200 transition-colors rounded-3xl p-5 flex flex-col items-center justify-center text-center aspect-square cursor-pointer shadow-sm border border-sky-200/60">
+                <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm mb-3 text-sky-600">
                   <Wind className="w-6 h-6" />
                 </div>
-                <h3 className="font-medium text-sky-900">Breathe</h3>
-                <p className="text-xs text-sky-700/70 mt-1">4 · 4 · 4 calm reset</p>
+                <h3 className="font-semibold text-sky-900">Breathe</h3>
+                <p className="text-xs text-sky-700/80 mt-1">4 · 4 · 4 calm reset</p>
               </div>
             </Link>
 
             <Link href="/water">
-              <div className="bg-cyan-50/80 hover:bg-cyan-100/60 transition-colors rounded-3xl p-5 flex flex-col items-center justify-center text-center aspect-square cursor-pointer shadow-sm">
-                <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm mb-3 text-cyan-500">
+              <div className="bg-gradient-to-br from-teal-100 to-emerald-100 hover:from-teal-200 hover:to-emerald-200 transition-colors rounded-3xl p-5 flex flex-col items-center justify-center text-center aspect-square cursor-pointer shadow-sm border border-teal-200/60">
+                <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm mb-3 text-teal-600">
                   <Droplets className="w-6 h-6" />
                 </div>
-                <h3 className="font-medium text-cyan-900">Water</h3>
-                <p className="text-xs text-cyan-700/70 mt-1">Stay hydrated today</p>
+                <h3 className="font-semibold text-teal-900">Water</h3>
+                <p className="text-xs text-teal-700/80 mt-1">Stay hydrated today</p>
               </div>
             </Link>
 
             <Link href="/routine">
-              <div className="bg-luna-peach/30 hover:bg-luna-peach/50 transition-colors rounded-3xl p-5 flex flex-col items-center justify-center text-center aspect-square cursor-pointer shadow-sm">
-                <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm mb-3 text-orange-400">
+              <div className="bg-gradient-to-br from-orange-100 to-amber-100 hover:from-orange-200 hover:to-amber-200 transition-colors rounded-3xl p-5 flex flex-col items-center justify-center text-center aspect-square cursor-pointer shadow-sm border border-orange-200/60">
+                <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm mb-3 text-orange-600">
                   <ListChecks className="w-6 h-6" />
                 </div>
-                <h3 className="font-medium text-orange-900">Routine</h3>
-                <p className="text-xs text-orange-700/70 mt-1">Build daily habits</p>
+                <h3 className="font-semibold text-orange-900">Routine</h3>
+                <p className="text-xs text-orange-700/80 mt-1">Build daily habits</p>
               </div>
             </Link>
           </div>

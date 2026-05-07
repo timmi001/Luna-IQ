@@ -39,10 +39,11 @@
   --color-destructive-foreground: hsl(var(--destructive-foreground));
   --color-destructive-border: var(--destructive-border);
 
-  --color-luna-blush: hsl(342 66% 90%);
-  --color-luna-lavender: hsl(251 100% 95%);
-  --color-luna-peach: hsl(20 80% 92%);
-  --color-luna-mint: hsl(150 50% 92%);
+  /* Luna brand tokens — rich, saturated versions */
+  --color-luna-blush:    hsl(342 72% 74%);
+  --color-luna-lavender: hsl(258 62% 78%);
+  --color-luna-peach:    hsl(22 84% 74%);
+  --color-luna-mint:     hsl(152 54% 68%);
 
   --font-sans: var(--app-font-sans);
   --font-serif: var(--app-font-serif);
@@ -56,85 +57,98 @@
   --radius-3xl: calc(var(--radius) + 20px);
 }
 
-/* LIGHT MODE ONLY (No dark mode for Luna) */
+/* LIGHT MODE — rich, vibrant Luna palette */
 :root {
-  --button-outline: rgba(0,0,0, .05);
-  --badge-outline: rgba(0,0,0, .05);
-  --opaque-button-border-intensity: -8;
+  --button-outline: rgba(0,0,0, .06);
+  --badge-outline: rgba(0,0,0, .06);
+  --opaque-button-border-intensity: -10;
 
-  --elevate-1: rgba(0,0,0, .02);
-  --elevate-2: rgba(0,0,0, .05);
+  --elevate-1: rgba(0,0,0, .03);
+  --elevate-2: rgba(0,0,0, .06);
 
-  /* Luna IQ Colors */
-  --background: 330 100% 98%; /* #FFF7FB */
-  --foreground: 310 15% 30%; /* Soft dark purple/grey */
-  --border: 330 30% 92%; /* Soft pinkish border */
+  /* ── Base ── */
+  --background:   330 48% 96%;       /* warm rose-tinted white — visible depth */
+  --foreground:   265 30% 11%;       /* deep violet-charcoal — sharp, readable */
+  --border:       330 35% 84%;       /* clearly visible border */
 
-  --card: 0 0% 100%; /* White */
-  --card-foreground: 310 15% 30%;
-  --card-border: 330 30% 94%;
+  /* ── Cards ── */
+  --card:              0 0% 100%;
+  --card-foreground:   265 30% 11%;
+  --card-border:       330 35% 85%;
 
-  --popover: 0 0% 100%;
-  --popover-foreground: 310 15% 30%;
-  --popover-border: 330 30% 94%;
+  /* ── Popover ── */
+  --popover:            0 0% 100%;
+  --popover-foreground: 265 30% 11%;
+  --popover-border:     330 35% 85%;
 
-  --primary: 251 60% 80%; /* Soft Lavender */
-  --primary-foreground: 251 40% 25%;
-  
-  --secondary: 342 60% 85%; /* Soft Blush */
-  --secondary-foreground: 342 40% 25%;
+  /* ── Primary — rich violet-purple ── */
+  --primary:            258 68% 52%;
+  --primary-foreground: 0 0% 100%;
 
-  --muted: 330 40% 95%;
-  --muted-foreground: 310 10% 50%;
+  /* ── Secondary — deep rose ── */
+  --secondary:            345 68% 56%;
+  --secondary-foreground: 0 0% 100%;
 
-  --accent: 342 66% 90%;
-  --accent-foreground: 342 40% 30%;
+  /* ── Muted ── */
+  --muted:            330 22% 91%;
+  --muted-foreground: 260 18% 42%;
 
-  --destructive: 0 70% 85%;
-  --destructive-foreground: 0 60% 30%;
+  /* ── Accent — rich blush ── */
+  --accent:            342 68% 70%;
+  --accent-foreground: 342 55% 18%;
 
-  --input: 330 30% 92%;
-  --ring: 251 60% 80%;
+  /* ── Destructive ── */
+  --destructive:            0 72% 56%;
+  --destructive-foreground: 0 0% 100%;
 
+  /* ── Form ── */
+  --input: 330 30% 88%;
+  --ring:  258 68% 52%;
+
+  /* ── Typography ── */
   --app-font-sans: 'Outfit', 'Inter', sans-serif;
   --app-font-serif: Georgia, serif;
   --app-font-mono: Menlo, monospace;
-  --radius: 1.5rem; /* 24px - Rounded everywhere */
-  
-  --shadow-2xs: 0px 2px 8px rgba(233, 200, 215, 0.1);
-  --shadow-xs: 0px 4px 12px rgba(233, 200, 215, 0.15);
-  --shadow-sm: 0px 6px 16px rgba(233, 200, 215, 0.2);
-  --shadow: 0px 8px 24px rgba(233, 200, 215, 0.25);
-  --shadow-md: 0px 12px 32px rgba(233, 200, 215, 0.3);
-  --shadow-lg: 0px 16px 40px rgba(233, 200, 215, 0.35);
-  --shadow-xl: 0px 24px 48px rgba(233, 200, 215, 0.4);
-  --shadow-2xl: 0px 32px 64px rgba(233, 200, 215, 0.45);
+  --radius: 1.5rem;
+
+  /* ── Shadows — purple-tinted depth ── */
+  --shadow-2xs: 0px 2px 8px  rgba(80, 40, 160, 0.08);
+  --shadow-xs:  0px 4px 12px rgba(80, 40, 160, 0.12);
+  --shadow-sm:  0px 6px 16px rgba(80, 40, 160, 0.14);
+  --shadow:     0px 8px 24px rgba(80, 40, 160, 0.18);
+  --shadow-md:  0px 12px 32px rgba(80, 40, 160, 0.22);
+  --shadow-lg:  0px 16px 40px rgba(80, 40, 160, 0.26);
+  --shadow-xl:  0px 24px 48px rgba(80, 40, 160, 0.30);
+  --shadow-2xl: 0px 32px 64px rgba(80, 40, 160, 0.35);
+
   --tracking-normal: 0em;
   --spacing: 0.25rem;
 
-  --sidebar: 330 100% 98%;
-  --sidebar-foreground: 310 15% 30%;
-  --sidebar-border: 330 30% 92%;
-  --sidebar-primary: 251 60% 80%;
-  --sidebar-primary-foreground: 251 40% 25%;
-  --sidebar-accent: 342 66% 90%;
-  --sidebar-accent-foreground: 342 40% 30%;
-  --sidebar-ring: 251 60% 80%;
-  
-  --chart-1: 342 66% 90%;
-  --chart-2: 251 100% 95%;
-  --chart-3: 20 80% 92%;
-  --chart-4: 150 50% 92%;
-  --chart-5: 45 80% 90%;
+  /* ── Sidebar ── */
+  --sidebar:                  330 48% 96%;
+  --sidebar-foreground:       265 30% 11%;
+  --sidebar-border:           330 35% 84%;
+  --sidebar-primary:          258 68% 52%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent:           342 68% 70%;
+  --sidebar-accent-foreground: 342 55% 18%;
+  --sidebar-ring:             258 68% 52%;
 
-  /* Fallback for older browsers */
-  --primary-border: hsl(from hsl(var(--primary)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
-  --secondary-border: hsl(from hsl(var(--secondary)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
-  --muted-border: hsl(from hsl(var(--muted)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
-  --accent-border: hsl(from hsl(var(--accent)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
+  /* ── Charts — rich saturated versions of brand colors ── */
+  --chart-1: 342 72% 74%;
+  --chart-2: 258 62% 78%;
+  --chart-3: 22 84% 74%;
+  --chart-4: 152 54% 68%;
+  --chart-5: 45 82% 68%;
+
+  /* ── Computed borders ── */
+  --primary-border:     hsl(from hsl(var(--primary))     h s calc(l + var(--opaque-button-border-intensity)) / alpha);
+  --secondary-border:   hsl(from hsl(var(--secondary))   h s calc(l + var(--opaque-button-border-intensity)) / alpha);
+  --muted-border:       hsl(from hsl(var(--muted))       h s calc(l + var(--opaque-button-border-intensity)) / alpha);
+  --accent-border:      hsl(from hsl(var(--accent))      h s calc(l + var(--opaque-button-border-intensity)) / alpha);
   --destructive-border: hsl(from hsl(var(--destructive)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
   --sidebar-primary-border: hsl(from hsl(var(--sidebar-primary)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
-  --sidebar-accent-border: hsl(from hsl(var(--sidebar-accent)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
+  --sidebar-accent-border:  hsl(from hsl(var(--sidebar-accent))  h s calc(l + var(--opaque-button-border-intensity)) / alpha);
 }
 
 .dark {
@@ -210,13 +224,13 @@
   .border.hover-elevate:not(.no-hover-interaction-elevate)::after {
     inset: -1px;
   }
-  
+
   /* Luna specifics */
   .mobile-container {
     @apply w-full max-w-[430px] mx-auto min-h-[100dvh] bg-background relative shadow-2xl pb-24 overflow-x-hidden;
   }
-  
+
   .glass-nav {
-    @apply bg-white/80 backdrop-blur-xl border-t border-white/50 shadow-[0_-10px_40px_rgba(233,200,215,0.2)];
+    @apply bg-white/90 backdrop-blur-xl border-t border-white/60 shadow-[0_-8px_32px_rgba(80,40,160,0.12)];
   }
 }

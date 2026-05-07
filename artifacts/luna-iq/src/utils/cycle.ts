@@ -57,14 +57,14 @@ export const getPhaseMessage = (phase: CyclePhase) => {
 export const getPhaseColor = (phase: CyclePhase) => {
   switch (phase) {
     case "Menstrual":
-      return "bg-rose-100 text-rose-700";
+      return "bg-rose-200 border-rose-300 text-rose-800";
     case "Follicular":
-      return "bg-luna-mint text-emerald-700";
+      return "bg-emerald-100 border-emerald-300 text-emerald-800";
     case "Ovulation":
-      return "bg-luna-peach text-orange-700";
+      return "bg-orange-100 border-orange-300 text-orange-800";
     case "Luteal":
-      return "bg-luna-lavender text-purple-700";
+      return "bg-violet-100 border-violet-300 text-violet-800";
     default:
-      return "bg-gray-100 text-gray-500";
+      return "bg-gray-100 border-gray-200 text-gray-500";
   }
 };

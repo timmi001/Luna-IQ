@@ -46,11 +46,11 @@ function getDayPhase(date: Date, lastPeriodStart: string | null, cycleLength: nu
 }
 
 const PHASE_STYLE: Record<CyclePhase, { bg: string; dot: string; label: string; text: string }> = {
-  Menstrual:  { bg: "#fef2f2", dot: "#f87171", label: "Menstrual",  text: "#b91c1c" },
-  Follicular: { bg: "#f0fdf4", dot: "#86efac", label: "Follicular", text: "#15803d" },
-  Ovulation:  { bg: "#fff7ed", dot: "#fb923c", label: "Ovulation",  text: "#c2410c" },
-  Luteal:     { bg: "#faf5ff", dot: "#c4b5fd", label: "Luteal",     text: "#6d28d9" },
-  Unknown:    { bg: "#f9fafb", dot: "#e5e7eb", label: "—",          text: "#9ca3af" },
+  Menstrual:  { bg: "#fee2e2", dot: "#ef4444", label: "Menstrual",  text: "#991b1b" },
+  Follicular: { bg: "#dcfce7", dot: "#22c55e", label: "Follicular", text: "#14532d" },
+  Ovulation:  { bg: "#ffedd5", dot: "#f97316", label: "Ovulation",  text: "#9a3412" },
+  Luteal:     { bg: "#ede9fe", dot: "#8b5cf6", label: "Luteal",     text: "#4c1d95" },
+  Unknown:    { bg: "#f3f4f6", dot: "#9ca3af", label: "—",          text: "#6b7280" },
 };
 
 const PHASE_DESC: Record<string, string> = {
@@ -317,7 +317,7 @@ export default function Cycle() {
   }, [moodMap]);
 
   return (
-    <PageTransition className="flex flex-col min-h-screen bg-[#faf8ff]">
+    <PageTransition className="flex flex-col min-h-screen">
       <header className="px-5 pt-12 pb-3">
         <h1 className="text-2xl font-semibold text-foreground">My Cycle</h1>
         <p className="text-sm text-muted-foreground mt-0.5">Track and understand your rhythm</p>
@@ -328,10 +328,10 @@ export default function Cycle() {
         <div className="flex gap-1 bg-white rounded-2xl p-1 border border-card-border shadow-sm">
           {TABS.map(t => (
             <button key={t} onClick={() => setActiveTab(t)}
-              className="flex-1 py-1.5 rounded-xl text-xs font-medium transition-all"
+              className="flex-1 py-1.5 rounded-xl text-xs font-semibold transition-all"
               style={activeTab === t
-                ? { background: "linear-gradient(135deg,#c4b5fd,#f9a8d4)", color: "#fff" }
-                : { color: "#9ca3af" }}>
+                ? { background: "linear-gradient(135deg,#7c3aed,#db2777)", color: "#fff", boxShadow: "0 2px 8px rgba(124,58,237,0.35)" }
+                : { color: "#6b7280" }}>
               {t}
             </button>
           ))}
@@ -358,8 +358,8 @@ export default function Cycle() {
                     <button key={f.label} onClick={() => setFlow(f.label)}
                       className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-all active:scale-95"
                       style={flow === f.label
-                        ? { background: "linear-gradient(135deg,#fce7f3,#ede9fe)", borderColor: "#c4b5fd", color: "#6d28d9" }
-                        : { background: "#f9f9f9", borderColor: "#e5e7eb", color: "#6b7280" }}>
+                        ? { background: "linear-gradient(135deg,#ede9fe,#fce7f3)", borderColor: "#8b5cf6", color: "#4c1d95" }
+                        : { background: "#f3f4f6", borderColor: "#d1d5db", color: "#4b5563" }}>
                       <span>{f.emoji}</span>{f.label}
                     </button>
                   ))}
