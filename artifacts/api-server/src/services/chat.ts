@@ -2,13 +2,14 @@ import { GoogleGenAI } from "@google/genai";
 import { db, lunaLogsTable } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
 import { LUNA_SYSTEM_PROMPT } from "./luna.js";
+import { logger } from "../lib/logger.js";
 
 const apiKey = process.env.GEMINI_API_KEY;
 if (!apiKey) throw new Error("GEMINI_API_KEY environment variable is not set");
 
 const chatGenai = new GoogleGenAI({ apiKey });
 
-const CHAT_MODEL = "gemini-2.0-flash";
+const CHAT_MODEL = "gemini-2.5-flash";
 
 export type ChatMessage = { role: string; content: string };
 
@@ -58,14 +59,19 @@ ${recentContext}`;
     { role: "user" as const, parts: [{ text: message }] },
   ];
 
-  const stream = await chatGenai.models.generateContentStream({
-    model: CHAT_MODEL,
-    contents: chatMessages,
-    config: { maxOutputTokens: 8192 },
-  });
+  try {
+    const stream = await chatGenai.models.generateContentStream({
+      model: CHAT_MODEL,
+      contents: chatMessages,
+      config: { maxOutputTokens: 8192 },
+    });
 
-  for await (const chunk of stream) {
-    const text = chunk.text;
-    if (text) onChunk(text);
+    for await (const chunk of stream) {
+      const text = chunk.text;
+      if (text) onChunk(text);
+    }
+  } catch (err) {
+    logger.error({ err, model: CHAT_MODEL }, "Gemini chat error");
+    throw err;
   }
 }
