@@ -1,0 +1,127 @@
+Enhance the Luna authentication and profile system using Supabase.
+
+The app should collect:
+- full name
+- date of birth (DOB)
+
+during onboarding/signup.
+
+Requirements:
+
+---
+
+## PROFILE SETUP
+
+Update the profiles table to include:
+
+- full_name
+- first_name
+- date_of_birth
+- birthday_last_shown_at
+- created_at
+
+Automatically extract the user’s first name from their full name.
+
+Example:
+- “Sarah Johnson” → first_name = “Sarah”
+
+Store both values in Supabase.
+
+---
+
+## DYNAMIC PERSONALIZED GREETINGS
+
+Use the user’s first name dynamically throughout the app.
+
+Examples:
+- “Good evening, Sarah 💜”
+- “How are you feeling today, Sarah?”
+- “Welcome back, Sarah 🌸”
+
+The greeting system should:
+- change based on time of day
+- feel soft, calming, and emotionally warm
+- update dynamically after login
+
+Time examples:
+- Morning
+- Afternoon
+- Evening
+
+---
+
+## BIRTHDAY EXPERIENCE
+
+Use the user’s DOB to create a birthday experience.
+
+On the user’s birthday:
+- show a special birthday greeting
+- display a soft celebratory UI moment
+- optionally reward bonus Luna Points
+
+Examples:
+- “Happy Birthday, Sarah 💜”
+- “Wishing you a gentle and beautiful year ahead 🌸”
+
+Requirements:
+- birthday message should appear only once per birthday/day
+- avoid showing repeatedly on every refresh
+- store last shown date in Supabase
+
+---
+
+## OPTIONAL BIRTHDAY REWARD
+
+Add optional bonus:
+- +50 Luna Points on birthday
+
+Display:
+“Birthday reward unlocked 💜”
+
+Ensure:
+- reward can only happen once per year
+
+---
+
+## FRONTEND UI
+
+Update onboarding/signup flow to collect:
+1. Full name
+2. Date of birth
+3. Email
+4. Password
+
+Use:
+- clean mobile-first UI
+- soft pastel Luna styling
+- rounded inputs/cards
+- feminine calming design
+
+---
+
+## SECURITY & VALIDATION
+
+Validate:
+- proper DOB format
+- realistic age input
+- safe profile storage
+
+Ensure all user profile data is protected with Supabase RLS policies.
+
+---
+
+## IMPORTANT UX STYLE
+
+The experience should feel:
+- personal
+- emotionally warm
+- premium
+- supportive
+- not childish
+
+Avoid:
+- loud birthday popups
+- excessive animations
+- overly playful language
+
+Keep it elegant and calming.
