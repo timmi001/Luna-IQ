@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
-import { ChevronLeft, ChevronRight, Crown, Palette, FileText, Shield, AlertCircle, LogOut, Check, Pencil } from "lucide-react";
+import { ChevronLeft, ChevronRight, Crown, Palette, FileText, Shield, AlertCircle, LogOut, Check, Pencil, Mail, User } from "lucide-react";
 import { storage } from "@/utils/storage";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { PageTransition } from "@/components/PageTransition";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/lib/supabase";
 
 const AVATARS = [
   { emoji: "🌸", bg: "#FFF0F9", label: "Blossom" },
@@ -20,28 +22,45 @@ type SheetType = "privacy" | "policy" | "disclaimer" | "premium" | "theme" | nul
 
 export default function Profile() {
   const [, setLocation] = useLocation();
-  const profile = storage.getProfile();
-  const [nickname, setNickname] = useState(profile.nickname || "");
-  const [avatarIndex, setAvatarIndex] = useState(profile.avatarIndex ?? 0);
-  const [editing, setEditing] = useState(false);
+  const { user, profile, refreshProfile, signOut } = useAuth();
+
+  const [avatarIndex, setAvatarIndex] = useState(profile?.avatar_index ?? 0);
+  const [editingName, setEditingName] = useState(false);
+  const [displayName, setDisplayName] = useState(profile?.full_name ?? "");
   const [activeSheet, setActiveSheet] = useState<SheetType>(null);
+  const [savingName, setSavingName] = useState(false);
 
-  const save = () => {
-    storage.saveProfile({ nickname, avatarIndex });
-    setEditing(false);
-  };
+  const avatar = AVATARS[avatarIndex] ?? AVATARS[0]!;
 
-  const handleAvatarSelect = (i: number) => {
+  const handleAvatarSelect = async (i: number) => {
     setAvatarIndex(i);
-    storage.saveProfile({ nickname, avatarIndex: i });
+    storage.saveProfile({ nickname: profile?.first_name ?? "", avatarIndex: i });
+    if (user) {
+      await supabase.from("profiles").update({ avatar_index: i }).eq("id", user.id);
+      await refreshProfile();
+    }
   };
 
-  const handleLogout = () => {
+  const saveName = async () => {
+    if (!user || !displayName.trim()) return;
+    setSavingName(true);
+    const first = displayName.trim().split(/\s+/)[0] ?? displayName.trim();
+    await supabase
+      .from("profiles")
+      .update({ full_name: displayName.trim(), first_name: first })
+      .eq("id", user.id);
+    await refreshProfile();
+    setSavingName(false);
+    setEditingName(false);
+  };
+
+  const handleLogout = async () => {
     localStorage.clear();
-    setLocation("/");
+    await signOut();
+    setLocation("/login");
   };
 
-  const avatar = AVATARS[avatarIndex] ?? AVATARS[0];
+  const lunaPoints = profile?.luna_points ?? 0;
 
   const menuItems = [
     { icon: Crown, label: "Premium", sub: "Unlock all features", color: "#F59E0B", sheet: "premium" as SheetType },
@@ -67,7 +86,6 @@ export default function Profile() {
       <main className="flex-1 px-5 flex flex-col gap-5">
         {/* Avatar + Name card */}
         <div className="bg-white rounded-3xl p-6 shadow-sm border border-card-border flex flex-col items-center gap-4">
-          {/* Large avatar */}
           <div
             className="w-24 h-24 rounded-3xl flex items-center justify-center shadow-md"
             style={{ background: avatar.bg, fontSize: 48 }}
@@ -75,30 +93,52 @@ export default function Profile() {
             {avatar.emoji}
           </div>
 
-          {/* Nickname */}
-          {editing ? (
-            <div className="flex items-center gap-2 w-full max-w-[200px]">
+          {/* Name */}
+          {editingName ? (
+            <div className="flex items-center gap-2 w-full max-w-[240px]">
               <input
                 autoFocus
-                value={nickname}
-                onChange={(e) => setNickname(e.target.value)}
-                placeholder="Your nickname"
-                maxLength={20}
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                placeholder="Your full name"
+                maxLength={40}
                 className="flex-1 text-center text-lg font-semibold border-b-2 border-purple-200 bg-transparent outline-none text-foreground placeholder:text-muted-foreground"
               />
-              <button onClick={save} className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center">
+              <button
+                onClick={saveName}
+                disabled={savingName}
+                className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center disabled:opacity-50"
+              >
                 <Check className="w-4 h-4 text-purple-600" />
               </button>
             </div>
           ) : (
-            <button onClick={() => setEditing(true)} className="flex items-center gap-2 group">
+            <button onClick={() => setEditingName(true)} className="flex items-center gap-2 group">
               <span className="text-xl font-semibold text-foreground">
-                {nickname || "Add a nickname"}
+                {profile?.full_name || "Add your name"}
               </span>
               <Pencil className="w-3.5 h-3.5 text-muted-foreground group-hover:text-purple-400 transition-colors" />
             </button>
           )}
-          <p className="text-xs text-muted-foreground -mt-2">Tap name to edit</p>
+
+          {/* Email */}
+          {user?.email && (
+            <div className="flex items-center gap-1.5 -mt-2">
+              <Mail className="w-3 h-3 text-muted-foreground/60" />
+              <p className="text-xs text-muted-foreground">{user.email}</p>
+            </div>
+          )}
+
+          {/* Luna Points */}
+          {lunaPoints > 0 && (
+            <div className="flex items-center gap-2 bg-purple-50 border border-purple-100 rounded-2xl px-4 py-2">
+              <span className="text-lg">💜</span>
+              <div>
+                <p className="text-xs font-semibold text-purple-800">{lunaPoints} Luna Points</p>
+                <p className="text-[10px] text-purple-500">Keep going, you're doing great</p>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Avatar picker */}
@@ -160,7 +200,7 @@ export default function Profile() {
           <div className="w-9 h-9 rounded-2xl bg-rose-50 flex items-center justify-center">
             <LogOut className="w-4 h-4 text-rose-400" />
           </div>
-          <span className="text-sm font-medium text-rose-500">Log out</span>
+          <span className="text-sm font-medium text-rose-500">Sign out</span>
         </button>
       </main>
 
@@ -197,13 +237,13 @@ export default function Profile() {
               <p>Custom themes are coming soon! We're crafting beautiful new color palettes just for you. 🎨</p>
             )}
             {activeSheet === "privacy" && (
-              <p>Luna Chat respects your privacy. All your data is stored locally on your device. We do not collect, share, or sell your personal information. Your wellness journey is yours alone.</p>
+              <p>Luna IQ respects your privacy. Your wellness data is protected with Supabase Row Level Security — only you can access your profile and data. We do not sell or share your personal information.</p>
             )}
             {activeSheet === "policy" && (
-              <p>By using Luna Chat, you agree to use the app for personal wellness purposes only. The content and features are provided as-is. Luna Chat reserves the right to update these terms at any time.</p>
+              <p>By using Luna IQ, you agree to use the app for personal wellness purposes only. The content and features are provided as-is. Luna IQ reserves the right to update these terms at any time.</p>
             )}
             {activeSheet === "disclaimer" && (
-              <p>Luna Chat is a wellness companion app and is not a substitute for professional medical advice, diagnosis, or treatment. Always seek the advice of your physician or qualified health provider with any questions you may have regarding a medical condition.</p>
+              <p>Luna IQ is a wellness companion app and is not a substitute for professional medical advice, diagnosis, or treatment. Always seek the advice of your physician or qualified health provider with any questions you may have regarding a medical condition.</p>
             )}
           </div>
         </SheetContent>

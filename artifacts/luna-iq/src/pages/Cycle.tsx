@@ -1,6 +1,7 @@
 import { useState, useMemo, useRef } from "react";
 import { storage } from "@/utils/storage";
 import { getCycleDetails, CyclePhase } from "@/utils/cycle";
+import { useAuth } from "@/contexts/AuthContext";
 
 import { PageTransition } from "@/components/PageTransition";
 import { useToast } from "@/hooks/use-toast";
@@ -231,6 +232,7 @@ function CycleCalendar({ lastPeriodStart, cycleLength }: { lastPeriodStart: stri
 
 // ── Main page ──────────────────────────────────────────────────────────────────
 export default function Cycle() {
+  const { user } = useAuth();
   const { toast } = useToast();
   const [data, setData] = useState(storage.getCycle());
   const [activeTab, setActiveTab] = useState("Cycle");
@@ -295,7 +297,7 @@ export default function Cycle() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          userId: "guest",
+          userId: user?.id ?? "guest",
           date: iso,
           cyclePhase: "Menstrual",
           dayOfCycle: 1,

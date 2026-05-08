@@ -6,6 +6,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { storage } from "@/utils/storage";
 import { getCycleDetails, getPhaseColor, CyclePhase } from "@/utils/cycle";
 import { PageTransition } from "@/components/PageTransition";
+import { useAuth } from "@/contexts/AuthContext";
+import { BirthdayBanner } from "@/components/BirthdayBanner";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -20,11 +22,12 @@ const AVATARS = [
   { emoji: "🌻", bg: "#FEFCE8" },
 ];
 
-function getGreeting() {
+function getGreeting(firstName?: string | null) {
   const h = new Date().getHours();
-  if (h < 12) return "Good morning";
-  if (h < 18) return "Good afternoon";
-  return "Good evening";
+  const name = firstName ? `, ${firstName}` : "";
+  if (h < 12) return `Good morning${name} ✨`;
+  if (h < 18) return `Good afternoon${name} 🌸`;
+  return `Good evening${name} 💜`;
 }
 
 // ── Animated cycle phase icons ────────────────────────────────────────────────
@@ -197,13 +200,10 @@ function InsightModal({
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
       >
-        {/* Backdrop */}
         <motion.div
           className="absolute inset-0 bg-black/40 backdrop-blur-sm"
           onClick={onClose}
         />
-
-        {/* Sheet */}
         <motion.div
           className="relative w-full max-w-[430px] bg-background rounded-t-3xl px-6 pt-5 pb-10 shadow-2xl max-h-[88vh] overflow-y-auto"
           initial={{ y: "100%" }}
@@ -211,10 +211,7 @@ function InsightModal({
           exit={{ y: "100%" }}
           transition={{ type: "spring", damping: 28, stiffness: 300 }}
         >
-          {/* Handle */}
           <div className="w-10 h-1 bg-muted/60 rounded-full mx-auto mb-5" />
-
-          {/* Header */}
           <div className="flex items-center justify-between mb-5">
             <div className="flex items-center gap-2">
               <Sparkles className="w-5 h-5 text-purple-500" />
@@ -245,7 +242,6 @@ function InsightModal({
           ) : (
             <div className="flex flex-col gap-4">
               <p className="text-sm text-foreground leading-relaxed">{insight.insight}</p>
-
               {insight.pattern && (
                 <div className="bg-luna-lavender/20 rounded-2xl px-4 py-3 border border-purple-100">
                   <div className="flex items-center gap-1.5 mb-1">
@@ -255,7 +251,6 @@ function InsightModal({
                   <p className="text-xs text-foreground/80 leading-relaxed">{insight.pattern}</p>
                 </div>
               )}
-
               <div className="bg-emerald-50 rounded-2xl px-4 py-3 border border-emerald-100">
                 <div className="flex items-center gap-1.5 mb-1">
                   <Heart className="w-3.5 h-3.5 text-emerald-500" />
@@ -263,9 +258,7 @@ function InsightModal({
                 </div>
                 <p className="text-xs text-foreground/80 leading-relaxed">{insight.suggestion}</p>
               </div>
-
               <p className="text-sm text-center text-muted-foreground italic">{insight.reassurance}</p>
-
               {updates.length > 0 && (
                 <div className="flex flex-col gap-2 pt-2 border-t border-muted/30">
                   <div className="flex items-center gap-1.5">
@@ -298,19 +291,22 @@ function InsightModal({
 
 export default function Home() {
   const [, setLocation] = useLocation();
-  const [greeting, setGreeting] = useState("");
+  const { user, profile, refreshProfile } = useAuth();
+  const userId = user?.id ?? "guest";
+
   const [insight, setInsight] = useState<Insight | null>(null);
   const [updates, setUpdates] = useState<DailyUpdate[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
+  const [showBirthday, setShowBirthday] = useState(true);
 
-  useEffect(() => { setGreeting(getGreeting()); }, []);
-
-  const profile = storage.getProfile();
   const latestMood = storage.getLatestMood();
   const cycleData = storage.getCycle();
   const { phase, currentDay } = getCycleDetails(cycleData.lastPeriodStart, cycleData.cycleLength);
-  const avatar = AVATARS[profile.avatarIndex ?? 0] ?? AVATARS[0]!;
-  const name = profile.nickname ? `, ${profile.nickname}` : "";
+
+  const avatarIndex = profile?.avatar_index ?? 0;
+  const avatar = AVATARS[avatarIndex] ?? AVATARS[0]!;
+
+  const greeting = getGreeting(profile?.first_name);
 
   const moodEmoji = latestMood ? latestMood.mood.split(" ")[0] : "🤍";
   const moodLabel = latestMood ? latestMood.mood.split(" ")[1] : "Not logged";
@@ -318,8 +314,8 @@ export default function Home() {
   const loadInsight = useCallback(async () => {
     try {
       const [insightRes, updatesRes] = await Promise.all([
-        fetch(`${BASE}/api/luna/today-insight/guest`),
-        fetch(`${BASE}/api/luna/today-updates/guest`),
+        fetch(`${BASE}/api/luna/today-insight/${userId}`),
+        fetch(`${BASE}/api/luna/today-updates/${userId}`),
       ]);
       if (insightRes.ok) {
         const { insight: cached } = await insightRes.json() as { insight: Insight | null };
@@ -332,11 +328,10 @@ export default function Home() {
     } catch {
       // Non-critical
     }
-  }, []);
+  }, [userId]);
 
   useEffect(() => { loadInsight(); }, [loadInsight]);
 
-  // Preview: first sentence of insight
   const insightPreview = insight?.insight
     ? insight.insight.split(". ")[0] + (insight.insight.includes(". ") ? "." : "")
     : null;
@@ -349,10 +344,14 @@ export default function Home() {
         {/* Header */}
         <header className="px-6 pt-12 pb-4 flex items-center justify-between sticky top-0 z-20 bg-background/80 backdrop-blur-md">
           <div>
-            <h1 className="text-2xl font-semibold text-foreground tracking-tight flex items-center gap-2">
-              {greeting}{name} <Sparkles className="w-5 h-5 text-luna-peach" />
+            <h1 className="text-2xl font-semibold text-foreground tracking-tight">
+              {greeting}
             </h1>
-            <p className="text-sm text-muted-foreground mt-1">Ready for a moment of mindfulness?</p>
+            <p className="text-sm text-muted-foreground mt-1">
+              {profile?.first_name
+                ? `How are you feeling today, ${profile.first_name}?`
+                : "Ready for a moment of mindfulness?"}
+            </p>
           </div>
 
           <div className="flex items-center gap-2">
@@ -374,6 +373,17 @@ export default function Home() {
         </header>
 
         <main className="flex-1 px-6 pt-2 pb-20 flex flex-col gap-4">
+
+          {/* Birthday Banner */}
+          {profile && showBirthday && (
+            <BirthdayBanner
+              profile={profile}
+              onDismiss={() => {
+                setShowBirthday(false);
+                refreshProfile();
+              }}
+            />
+          )}
 
           {/* Today's Check-in */}
           <div className="bg-white rounded-3xl p-5 shadow-sm border border-card-border relative overflow-hidden">
@@ -404,7 +414,7 @@ export default function Home() {
                 </motion.div>
               </Link>
 
-              {/* Cycle card — animated phase icon */}
+              {/* Cycle card */}
               <Link href="/cycle" className="flex-1">
                 <motion.div
                   whileTap={{ scale: 0.96 }}
@@ -457,8 +467,6 @@ export default function Home() {
                     <ChevronRight className="w-3.5 h-3.5" />
                   </div>
                 </div>
-
-                {/* Later Today — shown inline on the preview card */}
                 {updates.length > 0 && (
                   <div className="flex flex-col gap-1.5 pt-2 border-t border-muted/30">
                     <div className="flex items-center gap-1">
@@ -533,14 +541,13 @@ export default function Home() {
                   <ListChecks className="w-6 h-6" />
                 </div>
                 <h3 className="font-semibold text-orange-900">Routine</h3>
-                <p className="text-xs text-orange-700/80 mt-1">Build daily habits</p>
+                <p className="text-xs text-orange-700/80 mt-1">Your daily rituals</p>
               </div>
             </Link>
           </div>
         </main>
       </PageTransition>
 
-      {/* Insight Modal */}
       {modalOpen && insight && (
         <InsightModal
           insight={insight}

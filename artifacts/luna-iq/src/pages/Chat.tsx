@@ -3,6 +3,7 @@ import { AppHeader } from "@/components/AppHeader";
 import { PageTransition } from "@/components/PageTransition";
 import { motion, AnimatePresence } from "framer-motion";
 import { SendHorizonal, Sparkles, RotateCcw } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -20,6 +21,7 @@ const SUGGESTIONS = [
 ];
 
 export default function Chat() {
+  const { user } = useAuth();
   const [messages, setMessages] = useState<Message[]>([
     {
       role: "assistant",
@@ -52,7 +54,7 @@ export default function Chat() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          userId: "guest",
+          userId: user?.id ?? "guest",
           message: text.trim(),
           conversationHistory: history.map((m) => ({ role: m.role, content: m.content })),
         }),

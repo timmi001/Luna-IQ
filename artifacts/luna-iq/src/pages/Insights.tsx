@@ -7,10 +7,11 @@ import { Flame, Sparkles, Droplets, RefreshCw, Heart, Lightbulb, PlusCircle, Zap
 import { format } from "date-fns";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLocation } from "wouter";
+import { useAuth } from "@/contexts/AuthContext";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
-async function syncTodayToBackend() {
+async function syncTodayToBackend(userId: string) {
   try {
     const cycleData = storage.getCycle();
     const { phase, currentDay } = getCycleDetails(cycleData.lastPeriodStart, cycleData.cycleLength);
@@ -37,7 +38,7 @@ async function syncTodayToBackend() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        userId: "guest",
+        userId,
         date: today,
         cyclePhase: phase,
         dayOfCycle: currentDay,
@@ -64,6 +65,8 @@ type DailyUpdate = {
 };
 
 export default function Insights() {
+  const { user } = useAuth();
+  const userId = user?.id ?? "guest";
   const latestMood = storage.getLatestMood();
   const cycleData = storage.getCycle();
   const { phase, currentDay } = getCycleDetails(cycleData.lastPeriodStart, cycleData.cycleLength);
@@ -77,7 +80,7 @@ export default function Insights() {
 
   const fetchUpdates = useCallback(async () => {
     try {
-      const res = await fetch(`${BASE}/api/luna/today-updates/guest`);
+      const res = await fetch(`${BASE}/api/luna/today-updates/${userId}`);
       if (res.ok) {
         const { updates } = await res.json() as { updates: DailyUpdate[] };
         setDailyUpdates(updates);
@@ -93,7 +96,7 @@ export default function Insights() {
     try {
       // Check cache first (skip only on manual refresh)
       if (!forceRefresh) {
-        const cacheRes = await fetch(`${BASE}/api/luna/today-insight/guest`);
+        const cacheRes = await fetch(`${BASE}/api/luna/today-insight/${userId}`);
         if (cacheRes.ok) {
           const { insight: cached } = await cacheRes.json() as { insight: Insight | null };
           if (cached) {
@@ -107,12 +110,12 @@ export default function Insights() {
       }
 
       // No cache — sync today's data then ask Gemini
-      await syncTodayToBackend();
+      await syncTodayToBackend(userId);
 
       const res = await fetch(`${BASE}/api/luna/generate-insight`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: "guest" }),
+        body: JSON.stringify({ userId }),
       });
       if (res.status === 429) {
         setError("Luna is taking a short rest — daily limit reached. Check back tomorrow!");

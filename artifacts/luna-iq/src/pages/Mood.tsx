@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { motion, AnimatePresence } from "framer-motion";
 import { MOODS, MoodFlower, type MoodDef } from "@/components/MoodFlower";
+import { useAuth } from "@/contexts/AuthContext";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -37,6 +38,7 @@ function FlowerButton({ mood, isSelected, onClick }: { mood: Mood; isSelected: b
 
 /* ── Page ─────────────────────────────────────────────────────────── */
 export default function Mood() {
+  const { user } = useAuth();
   const [selectedMood, setSelectedMood] = useState<string | null>(null);
   const [note, setNote] = useState("");
   const [history, setHistory] = useState<MoodEntry[]>(storage.getMoods().slice(0, 7));
@@ -69,7 +71,7 @@ export default function Mood() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          userId: "guest",
+          userId: user?.id ?? "guest",
           date: new Date().toISOString().split("T")[0],
           cyclePhase: phase === "Unknown" ? "Follicular" : phase,
           dayOfCycle: currentDay > 0 ? currentDay : undefined,
