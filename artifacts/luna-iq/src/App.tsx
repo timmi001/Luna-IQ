@@ -20,6 +20,8 @@ import Breathe from "@/pages/Breathe";
 import Water from "@/pages/Water";
 import Routine from "@/pages/Routine";
 import Notifications from "@/pages/Notifications";
+import PrivateSpace from "@/pages/PrivateSpace";
+import LunaPoints from "@/pages/LunaPoints";
 
 const queryClient = new QueryClient();
 
@@ -122,6 +124,12 @@ function AppRoutes() {
         </Route>
         <Route path="/notifications">
           <ProtectedRoute><Notifications /></ProtectedRoute>
+        </Route>
+        <Route path="/private-space">
+          <ProtectedRoute><PrivateSpace /></ProtectedRoute>
+        </Route>
+        <Route path="/luna-points">
+          <ProtectedRoute><LunaPoints /></ProtectedRoute>
         </Route>
         <Route component={NotFound} />
       </Switch>

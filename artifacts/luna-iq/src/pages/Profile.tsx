@@ -169,6 +169,28 @@ export default function Profile() {
           </div>
         </div>
 
+        {/* Luna Points navigation card */}
+        <button
+          onClick={() => setLocation("/luna-points")}
+          className="w-full rounded-3xl p-5 shadow-sm border border-purple-100 flex items-center gap-4 active:scale-[0.98] transition-all text-left overflow-hidden relative"
+          style={{ background: "linear-gradient(135deg, #F5F3FF 0%, #FFF0F9 100%)" }}
+        >
+          <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl flex-shrink-0"
+            style={{ background: "linear-gradient(135deg, #EDE9FE, #FCE7F3)" }}>
+            🌙
+          </div>
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-purple-800">Luna Points</p>
+            <p className="text-xs text-purple-400">View rewards & activity</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="bg-white/70 rounded-xl px-2.5 py-1">
+              <p className="text-xs font-bold text-purple-700">{lunaPoints} pts</p>
+            </div>
+            <ChevronRight className="w-4 h-4 text-purple-300" />
+          </div>
+        </button>
+
         {/* Menu items */}
         <div className="bg-white rounded-3xl shadow-sm border border-card-border overflow-hidden">
           {menuItems.map((item, i) => (

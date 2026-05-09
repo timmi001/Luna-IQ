@@ -2,6 +2,7 @@ import { useState, useMemo, useRef } from "react";
 import { storage } from "@/utils/storage";
 import { getCycleDetails, CyclePhase } from "@/utils/cycle";
 import { useAuth } from "@/contexts/AuthContext";
+import { addPoints } from "@/lib/points";
 
 import { PageTransition } from "@/components/PageTransition";
 import { useToast } from "@/hooks/use-toast";
@@ -284,6 +285,17 @@ export default function Cycle() {
     storage.saveCycle(updated);
     setData(updated);
     toast({ title: "Cycle logged 🌸", description: `${flow} flow on ${logDate}` });
+
+    if (user?.id) {
+      addPoints(user.id, "cycle_log").then(({ awarded, bonus }) => {
+        if (awarded) {
+          toast({
+            title: "+5 Luna Points earned 💜",
+            description: bonus > 0 ? `Streak bonus: +${bonus} pts! 🔥` : "Tracking your cycle is an act of self-care 🌸",
+          });
+        }
+      }).catch(() => {});
+    }
 
     // Build symptom list from flow + any noted symptoms
     const symptomList = [

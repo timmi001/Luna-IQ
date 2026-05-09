@@ -1,0 +1,314 @@
+Build two connected features for the Luna wellness app:
+
+1. Private Space Page
+2. Luna Points Page (inside Profile section)
+
+The Luna app aesthetic should feel:
+- soft
+- calming
+- feminine
+- emotionally safe
+- premium
+- modern
+
+Use:
+- pastel purple/pink/lavender gradients
+- glassmorphism
+- rounded cards
+- soft shadows
+- smooth subtle animations
+- elegant mobile-first UI
+
+Avoid clutter and over-gamification.
+
+==================================================
+🌙 FEATURE 1: PRIVATE SPACE PAGE
+==================================================
+
+Create a dedicated “Private Space” page inside Luna.
+
+Purpose:
+A safe emotional journaling and reflection space where users can privately express thoughts, emotions, reflections, and personal notes.
+
+This feature should feel:
+- peaceful
+- emotionally safe
+- intimate
+- calming
+- supportive
+
+--------------------------------------------------
+🧱 DATABASE TABLE
+--------------------------------------------------
+
+Create/connect Supabase table:
+
+private_space_entries
+
+Fields:
+- id
+- user_id
+- title
+- content
+- mood_tag
+- created_at
+- updated_at
+
+Enable Row Level Security (RLS):
+- users can only access their own entries
+
+--------------------------------------------------
+✨ PRIVATE SPACE FEATURES
+--------------------------------------------------
+
+Allow users to:
+- create entries
+- edit entries
+- delete entries
+- search entries
+- view past reflections
+- add optional mood tags
+
+Mood examples:
+- calm
+- anxious
+- emotional
+- reflective
+- happy
+- tired
+
+--------------------------------------------------
+🎨 PRIVATE SPACE UI
+--------------------------------------------------
+
+Design a clean mobile-first page with:
+
+1. Welcome Header
+Example:
+“Your thoughts are safe here 💜”
+
+2. Quick Reflection Prompt Card
+Examples:
+- “How are you feeling today?”
+- “What’s been on your mind lately?”
+- “What made you smile today?”
+
+3. Journal Entry Input Area
+
+4. Entry Cards
+Each card should display:
+- title
+- preview text
+- mood tag
+- created date
+
+5. Empty State UI
+Example:
+“A quiet place for your reflections 🌸”
+
+--------------------------------------------------
+🌸 UX STYLE
+--------------------------------------------------
+
+Use:
+- soft transitions
+- blurred/glass cards
+- elegant typography
+- subtle emotional design
+
+Do NOT:
+- make it social
+- add likes/comments
+- add public sharing
+
+Use supportive microcopy like:
+- “Only you can see this 💜”
+- “A safe space for your thoughts 🌙”
+
+==================================================
+🌙 FEATURE 2: LUNA POINTS PAGE
+==================================================
+
+Create a dedicated “Luna Points” page INSIDE the Profile section.
+
+Navigation flow:
+Profile → Luna Points
+
+Purpose:
+Reward healthy engagement and self-care consistency.
+
+The reward system should feel:
+- emotionally encouraging
+- wellness-focused
+- calm
+- elegant
+
+NOT:
+- competitive
+- casino-like
+- addictive
+
+--------------------------------------------------
+🧱 DATABASE TABLES
+--------------------------------------------------
+
+Connect/create:
+
+### user_wallet
+Fields:
+- id
+- user_id
+- total_points
+- current_streak
+- longest_streak
+- updated_at
+
+### luna_points
+Fields:
+- id
+- user_id
+- action_type
+- points_earned
+- created_at
+
+### rewards_catalog
+Fields:
+- id
+- reward_name
+- reward_description
+- points_required
+- reward_type
+- active
+- created_at
+
+--------------------------------------------------
+💜 POINT REWARD SYSTEM
+--------------------------------------------------
+
+Users earn Luna Points from:
+
+1. Mood check-ins
+→ +3 points
+
+2. Cycle logs
+→ +5 points
+
+3. Quick tools interaction
+→ +2 points
+
+4. Private Space journaling
+→ +4 points
+
+Add anti-spam/cooldown logic.
+
+Prevent repeated abuse of point generation.
+
+--------------------------------------------------
+🔥 STREAK SYSTEM
+--------------------------------------------------
+
+Create wellness streaks.
+
+Examples:
+- 3-day streak
+- 7-day streak
+- 14-day streak
+
+Reward milestone bonuses.
+
+Example:
+7-day streak → +20 bonus points
+
+--------------------------------------------------
+🎁 REWARDS PAGE CONTENT
+--------------------------------------------------
+
+Inside the Luna Points page create:
+
+1. Wallet Card
+Display:
+- total points
+- current streak
+
+Example:
+🌙 Luna Points
+245 pts
+5-day streak
+
+2. Reward History Section
+
+3. Future Rewards Section
+
+Future rewards examples:
+- ₦500 pad discount
+- Wellness care package
+- Period care starter kit
+- Feminine care discounts
+- Self-care bundle
+- Free Luna Premium week
+
+Each reward card should display:
+- reward name
+- points required
+- short description
+- disabled placeholder redeem button
+
+--------------------------------------------------
+💫 MICRO INTERACTIONS
+--------------------------------------------------
+
+Display soft emotional reward feedback like:
+- “+5 Luna Points earned 💜”
+- “Consistency deserves care 🌸”
+- “You’re showing up for yourself today 💜”
+
+Animations should feel:
+- soft
+- elegant
+- subtle
+
+NOT flashy or game-like.
+
+--------------------------------------------------
+🚫 IMPORTANT RESTRICTIONS
+--------------------------------------------------
+
+Do NOT:
+- add leaderboards
+- add competition
+- add gambling mechanics
+- add spin wheels
+- over-gamify wellness
+
+Luna Points should reinforce:
+- self-care
+- wellness habits
+- emotional consistency
+
+==================================================
+🧠 BACKEND REQUIREMENTS
+==================================================
+
+Create helper functions:
+- addPoints()
+- updateStreak()
+- getUserWallet()
+
+Store all data in Supabase.
+
+Ensure:
+- auth persistence works
+- users only access their own data
+- all tables use proper RLS policies
+
+==================================================
+🌸 FINAL EXPERIENCE GOAL
+==================================================
+
+The combined experience should make Luna feel like:
+- a calm digital wellness companion
+- emotionally intelligent
+- deeply personal
+- safe and premium
+
+The app should feel emotionally warm and thoughtfully designed for women.

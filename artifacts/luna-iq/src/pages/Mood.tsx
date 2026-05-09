@@ -10,6 +10,7 @@ import { format } from "date-fns";
 import { motion, AnimatePresence } from "framer-motion";
 import { MOODS, MoodFlower, type MoodDef } from "@/components/MoodFlower";
 import { useAuth } from "@/contexts/AuthContext";
+import { addPoints } from "@/lib/points";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -51,6 +52,17 @@ export default function Mood() {
     setSelectedMood(null);
     setNote("");
     toast({ title: "Mood logged 🌸", description: "Your feelings have been safely recorded." });
+
+    if (user?.id) {
+      addPoints(user.id, "mood_checkin").then(({ awarded, bonus }) => {
+        if (awarded) {
+          toast({
+            title: "+3 Luna Points earned 💜",
+            description: bonus > 0 ? `Streak bonus: +${bonus} pts! 🔥` : "You're showing up for yourself today 🌸",
+          });
+        }
+      }).catch(() => {});
+    }
 
     try {
       const cycleData = storage.getCycle();
