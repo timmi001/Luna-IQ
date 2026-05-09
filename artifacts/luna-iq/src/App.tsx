@@ -23,6 +23,8 @@ import Notifications from "@/pages/Notifications";
 
 const queryClient = new QueryClient();
 
+// ── Loading screen ────────────────────────────────────────────────────────────
+
 function LoadingScreen() {
   return (
     <div
@@ -41,32 +43,59 @@ function LoadingScreen() {
   );
 }
 
-function Redirect({ to }: { to: string }) {
+// ── Navigation helper — only redirects AFTER auth is initialized ──────────────
+
+function AuthRedirect({ to }: { to: string }) {
   const [, setLocation] = useLocation();
-  useEffect(() => { setLocation(to); }, [to, setLocation]);
+  useEffect(() => {
+    console.log("[Luna Router] Redirecting to", to);
+    setLocation(to);
+  }, [to, setLocation]);
   return null;
 }
 
+// ── Protected route — shows loading, then redirects or renders ────────────────
+// IMPORTANT: Only renders children after loading=false AND user is confirmed.
+// Never redirects while loading is still true.
+
 function ProtectedRoute({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth();
-  if (loading) return <LoadingScreen />;
-  if (!user) return <Redirect to="/login" />;
+
+  if (loading) {
+    return <LoadingScreen />;
+  }
+
+  if (!user) {
+    console.log("[Luna Router] No user after init — redirecting to /login");
+    return <AuthRedirect to="/login" />;
+  }
+
   return <>{children}</>;
 }
 
-function AppRoutes() {
+// ── Public route — redirects logged-in users to home ─────────────────────────
+
+function PublicRoute({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth();
 
   if (loading) return <LoadingScreen />;
+  if (user) return <AuthRedirect to="/" />;
+  return <>{children}</>;
+}
 
+// ── Route tree ────────────────────────────────────────────────────────────────
+
+function AppRoutes() {
   return (
     <AnimatePresence mode="wait">
       <Switch>
-        {/* Public routes */}
-        <Route path="/login" component={Login} />
-        <Route path="/signup" component={Signup} />
+        <Route path="/login">
+          <PublicRoute><Login /></PublicRoute>
+        </Route>
+        <Route path="/signup">
+          <PublicRoute><Signup /></PublicRoute>
+        </Route>
 
-        {/* Protected routes */}
         <Route path="/">
           <ProtectedRoute><Home /></ProtectedRoute>
         </Route>
@@ -100,6 +129,8 @@ function AppRoutes() {
   );
 }
 
+// ── App shell — nav visibility ────────────────────────────────────────────────
+
 function AppShell() {
   const { user, loading } = useAuth();
   const [location] = useLocation();
@@ -113,6 +144,8 @@ function AppShell() {
     </div>
   );
 }
+
+// ── Root ──────────────────────────────────────────────────────────────────────
 
 function App() {
   return (
