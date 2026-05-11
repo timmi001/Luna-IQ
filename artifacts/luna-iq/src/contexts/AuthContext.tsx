@@ -1,3 +1,4 @@
+// @refresh reset
 import {
   createContext,
   useContext,
@@ -31,7 +32,11 @@ type AuthContextValue = {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-async function fetchProfile(userId: string, userEmail?: string): Promise<Profile | null> {
+async function fetchProfile(
+  userId: string,
+  userEmail?: string,
+  userMeta?: Record<string, string>,
+): Promise<Profile | null> {
   try {
     const { data, error } = await supabase
       .from("profiles")
@@ -44,15 +49,30 @@ async function fetchProfile(userId: string, userEmail?: string): Promise<Profile
       return null;
     }
 
-    // Row exists — return it
-    if (data) return data as Profile;
+    // Row exists — if first_name is empty but metadata has one, backfill it silently
+    if (data) {
+      const existing = data as Profile;
+      if (!existing.first_name && userMeta?.full_name) {
+        const fullName  = userMeta.full_name;
+        const firstName = userMeta.first_name ?? (fullName.trim().split(/\s+/)[0] ?? "");
+        await supabase
+          .from("profiles")
+          .update({ full_name: fullName, first_name: firstName })
+          .eq("id", userId);
+        return { ...existing, full_name: fullName, first_name: firstName };
+      }
+      return existing;
+    }
 
-    // No row yet — auto-create a default profile so the app always has one
-    console.log("[Luna Auth] No profile found — creating default row for", userId);
+    // No row yet — auto-create using auth metadata (set during signup) so the
+    // name is available immediately without waiting for the Signup page upsert.
+    const fullName  = userMeta?.full_name  ?? "";
+    const firstName = userMeta?.first_name ?? (fullName.trim().split(/\s+/)[0] ?? "");
+    console.log("[Luna Auth] No profile found — creating default row for", userId, "name:", firstName || "(none)");
     const defaultProfile = {
       id: userId,
-      full_name: "",
-      first_name: "",
+      full_name: fullName,
+      first_name: firstName,
       avatar_index: 0,
       luna_points: 0,
       date_of_birth: null,
@@ -109,7 +129,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         if (newSession?.user) {
           // Load profile in the background — don't block auth state
-          const p = await fetchProfile(newSession.user.id, newSession.user.email);
+          // Pass user_metadata so auto-creation uses the name from signup
+          const meta = (newSession.user.user_metadata ?? {}) as Record<string, string>;
+          const p = await fetchProfile(newSession.user.id, newSession.user.email, meta);
           if (mounted) setProfile(p);
         } else {
           // Only clear profile on explicit sign-out events, not token refresh gaps
