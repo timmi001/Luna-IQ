@@ -55,9 +55,16 @@ export default function Profile() {
   };
 
   const handleLogout = async () => {
-    localStorage.clear();
+    // Sign out from Supabase FIRST — it needs its session token in localStorage
+    // to invalidate the session on the server. Clearing storage beforehand
+    // wipes the token and causes signOut() to fail silently with no redirect.
     await signOut();
-    setLocation("/login");
+    // Clear only app-specific keys after the auth handshake completes
+    localStorage.removeItem("luna_moods");
+    localStorage.removeItem("luna_cycle");
+    localStorage.removeItem("luna_symptoms");
+    localStorage.removeItem("luna_profile");
+    // onAuthStateChange fires SIGNED_OUT → sets user=null → ProtectedRoute redirects to /login
   };
 
   const lunaPoints = profile?.luna_points ?? 0;
