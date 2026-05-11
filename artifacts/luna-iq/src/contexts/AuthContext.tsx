@@ -113,10 +113,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           if (mounted) setProfile(p);
         } else {
           // Only clear profile on explicit sign-out events, not token refresh gaps
-          if (
-            event === "SIGNED_OUT" ||
-            event === "USER_DELETED"
-          ) {
+          if (event === "SIGNED_OUT") {
             setProfile(null);
             console.log("[Luna Auth] Cleared profile on", event);
           }

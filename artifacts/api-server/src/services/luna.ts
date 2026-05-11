@@ -169,6 +169,50 @@ export async function getTodayInsight(userId: string): Promise<InsightResult | n
   return rows[0]!.insightData as InsightResult;
 }
 
+// ── Dashboard insight: return cached OR generate if today's logs exist ─────────
+// Called only from the dashboard on load. Never called from log endpoints.
+
+export async function getOrGenerateInsight(
+  userId: string,
+): Promise<{ insight: InsightResult | null; hasLogs: boolean }> {
+  const today = new Date().toISOString().split("T")[0]!;
+
+  // 1. Return cached insight if one already exists for today
+  try {
+    const cached = await getTodayInsight(userId);
+    if (cached) return { insight: cached, hasLogs: true };
+  } catch (dbErr) {
+    logger.error({ err: dbErr }, "DB error reading cached insight");
+  }
+
+  // 2. Check if the user has any logs for today
+  let todayLogs: typeof lunaLogsTable.$inferSelect[] = [];
+  try {
+    todayLogs = await db
+      .select()
+      .from(lunaLogsTable)
+      .where(and(eq(lunaLogsTable.userId, userId), eq(lunaLogsTable.date, today)))
+      .limit(10);
+  } catch (dbErr) {
+    logger.error({ err: dbErr }, "DB error checking today's logs");
+    return { insight: null, hasLogs: false };
+  }
+
+  // 3. No logs today — don't generate anything
+  if (todayLogs.length === 0) {
+    return { insight: null, hasLogs: false };
+  }
+
+  // 4. Logs exist — generate the insight now (synchronous, result cached in DB)
+  try {
+    const insight = await generateInsight(userId);
+    return { insight, hasLogs: true };
+  } catch (err) {
+    logger.error({ err, userId }, "getOrGenerateInsight: generation failed");
+    return { insight: null, hasLogs: true };
+  }
+}
+
 export async function getTodayUpdates(userId: string): Promise<DailyUpdateResult[]> {
   const today = new Date().toISOString().split("T")[0]!;
   const rows = await db

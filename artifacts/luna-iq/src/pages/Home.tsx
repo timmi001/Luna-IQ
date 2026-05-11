@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { Link, useLocation } from "wouter";
-import { Bell, MessageCircleHeart, Wind, Droplets, ListChecks, Sparkles, X, Lightbulb, Heart, Zap, PlusCircle, ChevronRight } from "lucide-react";
+import { Bell, MessageCircleHeart, Wind, Droplets, ListChecks, Sparkles, X, Lightbulb, Heart, PlusCircle, ChevronRight } from "lucide-react";
 import { MOODS, MoodFlower } from "@/components/MoodFlower";
 import { motion, AnimatePresence } from "framer-motion";
 import { storage } from "@/utils/storage";
@@ -177,18 +177,15 @@ type Insight = {
   isEncouragement?: boolean;
 };
 
-type DailyUpdate = { text: string; severity: "minor" | "significant" };
 
 // ── Insight Modal ─────────────────────────────────────────────────────────────
 
 function InsightModal({
   insight,
-  updates,
   onClose,
   onLogMood,
 }: {
   insight: Insight;
-  updates: DailyUpdate[];
   onClose: () => void;
   onLogMood: () => void;
 }) {
@@ -259,26 +256,6 @@ function InsightModal({
                 <p className="text-xs text-foreground/80 leading-relaxed">{insight.suggestion}</p>
               </div>
               <p className="text-sm text-center text-muted-foreground italic">{insight.reassurance}</p>
-              {updates.length > 0 && (
-                <div className="flex flex-col gap-2 pt-2 border-t border-muted/30">
-                  <div className="flex items-center gap-1.5">
-                    <Zap className="w-3 h-3 text-amber-500" />
-                    <span className="text-[10px] font-semibold uppercase tracking-wider text-amber-700">Later Today</span>
-                  </div>
-                  {updates.map((upd, i) => (
-                    <div
-                      key={i}
-                      className={`rounded-xl px-3 py-2.5 text-xs leading-relaxed ${
-                        upd.severity === "significant"
-                          ? "bg-rose-50 border border-rose-200 text-rose-900"
-                          : "bg-amber-50 border border-amber-200 text-amber-900"
-                      }`}
-                    >
-                      {upd.text}
-                    </div>
-                  ))}
-                </div>
-              )}
             </div>
           )}
         </motion.div>
@@ -295,7 +272,8 @@ export default function Home() {
   const userId = user?.id ?? "guest";
 
   const [insight, setInsight] = useState<Insight | null>(null);
-  const [updates, setUpdates] = useState<DailyUpdate[]>([]);
+  const [insightLoading, setInsightLoading] = useState(true);
+  const [hasLogs, setHasLogs] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [showBirthday, setShowBirthday] = useState(true);
 
@@ -312,21 +290,22 @@ export default function Home() {
   const moodLabel = latestMood ? latestMood.mood.split(" ")[1] : "Not logged";
 
   const loadInsight = useCallback(async () => {
+    if (userId === "guest") return;
+    setInsightLoading(true);
     try {
-      const [insightRes, updatesRes] = await Promise.all([
-        fetch(`${BASE}/api/luna/today-insight/${userId}`),
-        fetch(`${BASE}/api/luna/today-updates/${userId}`),
-      ]);
-      if (insightRes.ok) {
-        const { insight: cached } = await insightRes.json() as { insight: Insight | null };
-        if (cached) setInsight(cached);
-      }
-      if (updatesRes.ok) {
-        const { updates: upds } = await updatesRes.json() as { updates: DailyUpdate[] };
-        setUpdates(upds);
+      const res = await fetch(`${BASE}/api/luna/today-insight/${userId}`);
+      if (res.ok) {
+        const { insight: fetched, hasLogs: hl } = await res.json() as {
+          insight: Insight | null;
+          hasLogs: boolean;
+        };
+        setHasLogs(hl);
+        if (fetched) setInsight(fetched);
       }
     } catch {
       // Non-critical
+    } finally {
+      setInsightLoading(false);
     }
   }, [userId]);
 
@@ -446,63 +425,81 @@ export default function Home() {
 
           {/* Luna Insight Preview Card */}
           <motion.div
-            className="bg-white rounded-3xl p-5 shadow-sm border border-card-border cursor-pointer"
-            whileTap={{ scale: 0.98 }}
+            className="bg-white rounded-3xl p-5 shadow-sm border border-card-border"
+            style={{ cursor: insight ? "pointer" : "default" }}
+            whileTap={insight ? { scale: 0.98 } : {}}
             onClick={() => insight && setModalOpen(true)}
           >
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-purple-600" />
-                <h3 className="font-semibold uppercase tracking-wider text-xs text-purple-900">Luna's Insight</h3>
-              </div>
-              {updates.length > 0 && (
-                <div className="flex items-center gap-1 bg-amber-100 border border-amber-300 rounded-full px-2 py-0.5">
-                  <Zap className="w-2.5 h-2.5 text-amber-600" />
-                  <span className="text-[10px] font-semibold text-amber-800">{updates.length} update{updates.length > 1 ? "s" : ""}</span>
-                </div>
-              )}
+            <div className="flex items-center gap-2 mb-3">
+              <Sparkles className="w-4 h-4 text-purple-600" />
+              <h3 className="font-semibold uppercase tracking-wider text-xs text-purple-900">Luna's Insight</h3>
             </div>
 
-            {insight ? (
+            {/* State 1: Loading / generating */}
+            {insightLoading && (
+              <div className="flex flex-col items-center gap-3 py-3">
+                <div className="flex items-center gap-3">
+                  <motion.div
+                    className="w-2 h-2 rounded-full bg-purple-300"
+                    animate={{ scale: [1, 1.4, 1], opacity: [0.5, 1, 0.5] }}
+                    transition={{ duration: 1.2, repeat: Infinity, delay: 0 }}
+                  />
+                  <motion.div
+                    className="w-2 h-2 rounded-full bg-purple-400"
+                    animate={{ scale: [1, 1.4, 1], opacity: [0.5, 1, 0.5] }}
+                    transition={{ duration: 1.2, repeat: Infinity, delay: 0.2 }}
+                  />
+                  <motion.div
+                    className="w-2 h-2 rounded-full bg-purple-500"
+                    animate={{ scale: [1, 1.4, 1], opacity: [0.5, 1, 0.5] }}
+                    transition={{ duration: 1.2, repeat: Infinity, delay: 0.4 }}
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground text-center">
+                  Luna is preparing your insight…
+                </p>
+              </div>
+            )}
+
+            {/* State 2: No logs today */}
+            {!insightLoading && !hasLogs && (
+              <div className="flex flex-col gap-3">
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  Log how you're feeling today to receive your personalized Luna Insight 💜
+                </p>
+                <button
+                  onClick={(e) => { e.stopPropagation(); setLocation("/mood"); }}
+                  className="self-start text-xs font-semibold text-white bg-purple-500 hover:bg-purple-600 px-4 py-2 rounded-2xl transition-colors active:scale-95"
+                >
+                  Log mood now →
+                </button>
+              </div>
+            )}
+
+            {/* State 3: Insight ready */}
+            {!insightLoading && insight && (
               <div className="flex flex-col gap-2">
                 <div className="flex items-start justify-between gap-3">
                   <p className="text-sm text-foreground leading-relaxed flex-1 line-clamp-2">
-                    {insight.isEncouragement ? insight.insight : insightPreview}
+                    {insightPreview}
                   </p>
                   <div className="flex items-center gap-0.5 text-purple-600 shrink-0 mt-0.5">
                     <span className="text-xs font-semibold">See more</span>
                     <ChevronRight className="w-3.5 h-3.5" />
                   </div>
                 </div>
-                {updates.length > 0 && (
-                  <div className="flex flex-col gap-1.5 pt-2 border-t border-muted/30">
-                    <div className="flex items-center gap-1">
-                      <Zap className="w-2.5 h-2.5 text-amber-600" />
-                      <span className="text-[10px] font-semibold uppercase tracking-wider text-amber-800">Later Today</span>
-                    </div>
-                    {updates.slice(0, 2).map((upd, i) => (
-                      <p
-                        key={i}
-                        className={`text-xs leading-relaxed rounded-xl px-2.5 py-1.5 line-clamp-2 ${
-                          upd.severity === "significant"
-                            ? "bg-rose-100 text-rose-900"
-                            : "bg-amber-100 text-amber-900"
-                        }`}
-                      >
-                        {upd.text}
-                      </p>
-                    ))}
-                  </div>
-                )}
               </div>
-            ) : (
+            )}
+
+            {/* State 3b: Has logs but generation failed */}
+            {!insightLoading && hasLogs && !insight && (
               <div className="flex items-center justify-between">
-                <p className="text-sm text-muted-foreground">Log your data to get your daily insight.</p>
+                <p className="text-sm text-muted-foreground">Luna couldn't prepare your insight right now.</p>
                 <button
-                  onClick={(e) => { e.stopPropagation(); setLocation("/mood"); }}
+                  onClick={(e) => { e.stopPropagation(); loadInsight(); }}
                   className="text-xs font-semibold text-purple-600 shrink-0 ml-2"
                 >
-                  Log now →
+                  Retry →
                 </button>
               </div>
             )}
@@ -558,7 +555,6 @@ export default function Home() {
       {modalOpen && insight && (
         <InsightModal
           insight={insight}
-          updates={updates}
           onClose={() => setModalOpen(false)}
           onLogMood={() => { setModalOpen(false); setLocation("/mood"); }}
         />

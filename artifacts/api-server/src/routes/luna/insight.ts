@@ -2,13 +2,10 @@ import { Router } from "express";
 import { db, lunaLogsTable } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
 import {
-  generateInsight,
-  getTodayInsight,
+  getOrGenerateInsight,
   getTodayUpdates,
-  processDailyUpdate,
 } from "../../services/luna.js";
 import { logger } from "../../lib/logger.js";
-import { isRateLimit } from "../../lib/gemini.js";
 import { z } from "zod";
 
 const router = Router();
@@ -52,34 +49,9 @@ router.post("/log", async (req, res) => {
     return;
   }
 
-  let dailyUpdate: { text: string; severity: string } | null = null;
-  try {
-    const existingInsight = await getTodayInsight(data.userId);
-    if (existingInsight && !existingInsight.isEncouragement) {
-      // Already have a real insight today — process as a same-day update
-      dailyUpdate = await processDailyUpdate(
-        data.userId,
-        {
-          mood:        data.mood,
-          cyclePhase:  data.cyclePhase,
-          symptoms:    data.symptoms,
-          dayOfCycle:  data.dayOfCycle ?? null,
-          date:        data.date,
-        },
-        existingInsight,
-      );
-    } else {
-      // No insight yet (or only an encouragement placeholder) — generate one now
-      generateInsight(data.userId).catch((err) => {
-        logger.warn({ err, userId: data.userId }, "Background insight generation failed");
-      });
-    }
-  } catch (err) {
-    // Non-critical — log saved regardless
-    logger.warn({ err }, "Daily update / insight trigger failed — log was still saved");
-  }
-
-  res.status(201).json({ log: saved, update: dailyUpdate });
+  // Logging is intentionally separated from insight generation.
+  // Insights are only generated when the user opens the dashboard.
+  res.status(201).json({ log: saved });
 });
 
 // ── GET /logs/:userId ─────────────────────────────────────────────────────────
@@ -100,15 +72,18 @@ router.get("/logs/:userId", async (req, res) => {
 });
 
 // ── GET /today-insight/:userId ────────────────────────────────────────────────
+// Returns cached insight if it exists. If not, checks for today's logs:
+//   - logs found  → generates insight now, caches it, returns it
+//   - no logs     → returns { insight: null, hasLogs: false } (no Gemini call)
 router.get("/today-insight/:userId", async (req, res) => {
   const { userId } = req.params;
   if (!userId) { res.status(400).json({ error: "userId required" }); return; }
   try {
-    const insight = await getTodayInsight(userId);
-    res.json({ insight });
+    const result = await getOrGenerateInsight(userId);
+    res.json(result);
   } catch (err) {
-    logger.error({ err, userId }, "DB error fetching today insight");
-    res.json({ insight: null });
+    logger.error({ err, userId }, "today-insight error");
+    res.json({ insight: null, hasLogs: false });
   }
 });
 
