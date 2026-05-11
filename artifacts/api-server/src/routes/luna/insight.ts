@@ -3,6 +3,7 @@ import { db, lunaLogsTable } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
 import {
   getOrGenerateInsight,
+  generateInsight,
   getTodayUpdates,
 } from "../../services/luna.js";
 import { logger } from "../../lib/logger.js";
@@ -109,17 +110,11 @@ router.post("/generate-insight", async (req, res) => {
     res.json(result);
   } catch (err) {
     logger.error({ err }, "Insight generation failed");
-    if (isRateLimit(err)) {
-      res.status(429).json({
-        error: "rate_limit",
-        message: "Luna is resting for a moment. Please try again shortly.",
-      });
-    } else {
-      res.status(500).json({
-        error:   "ai_error",
-        message: "Luna couldn't generate an insight right now.",
-      });
-    }
+    const status = (err as { status?: number })?.status === 429 ? 429 : 500;
+    const message = status === 429
+      ? "Luna is resting for a moment. Please try again shortly."
+      : "Luna couldn't generate an insight right now.";
+    res.status(status).json({ error: status === 429 ? "rate_limit" : "ai_error", message });
   }
 });
 
