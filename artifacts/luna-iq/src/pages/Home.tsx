@@ -332,6 +332,13 @@ export default function Home() {
 
   useEffect(() => { loadInsight(); }, [loadInsight]);
 
+  // Re-fetch insight when the page becomes visible again (e.g. after mood logging)
+  useEffect(() => {
+    const handleVisibility = () => { if (document.visibilityState === "visible") loadInsight(); };
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => document.removeEventListener("visibilitychange", handleVisibility);
+  }, [loadInsight]);
+
   const insightPreview = insight?.insight
     ? insight.insight.split(". ")[0] + (insight.insight.includes(". ") ? "." : "")
     : null;

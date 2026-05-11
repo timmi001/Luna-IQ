@@ -56,6 +56,7 @@ router.post("/log", async (req, res) => {
   try {
     const existingInsight = await getTodayInsight(data.userId);
     if (existingInsight && !existingInsight.isEncouragement) {
+      // Already have a real insight today — process as a same-day update
       dailyUpdate = await processDailyUpdate(
         data.userId,
         {
@@ -67,10 +68,15 @@ router.post("/log", async (req, res) => {
         },
         existingInsight,
       );
+    } else {
+      // No insight yet (or only an encouragement placeholder) — generate one now
+      generateInsight(data.userId).catch((err) => {
+        logger.warn({ err, userId: data.userId }, "Background insight generation failed");
+      });
     }
   } catch (err) {
     // Non-critical — log saved regardless
-    logger.warn({ err }, "Daily update failed — log was still saved");
+    logger.warn({ err }, "Daily update / insight trigger failed — log was still saved");
   }
 
   res.status(201).json({ log: saved, update: dailyUpdate });

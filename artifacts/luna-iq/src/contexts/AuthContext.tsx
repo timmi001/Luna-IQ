@@ -31,18 +31,45 @@ type AuthContextValue = {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-async function fetchProfile(userId: string): Promise<Profile | null> {
+async function fetchProfile(userId: string, userEmail?: string): Promise<Profile | null> {
   try {
     const { data, error } = await supabase
       .from("profiles")
       .select("*")
       .eq("id", userId)
-      .single();
+      .maybeSingle();
+
     if (error) {
       console.warn("[Luna Auth] Profile fetch error (non-fatal):", error.message);
       return null;
     }
-    return data as Profile;
+
+    // Row exists — return it
+    if (data) return data as Profile;
+
+    // No row yet — auto-create a default profile so the app always has one
+    console.log("[Luna Auth] No profile found — creating default row for", userId);
+    const defaultProfile = {
+      id: userId,
+      full_name: "",
+      first_name: "",
+      avatar_index: 0,
+      luna_points: 0,
+      date_of_birth: null,
+      birthday_last_shown_at: null,
+    };
+    const { data: created, error: insertError } = await supabase
+      .from("profiles")
+      .insert(defaultProfile)
+      .select()
+      .single();
+
+    if (insertError) {
+      console.warn("[Luna Auth] Profile auto-create error:", insertError.message);
+      // Return a local fallback so the UI still works
+      return { ...defaultProfile, created_at: new Date().toISOString() } as Profile;
+    }
+    return created as Profile;
   } catch (err) {
     console.warn("[Luna Auth] Profile fetch exception (non-fatal):", err);
     return null;
@@ -82,7 +109,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         if (newSession?.user) {
           // Load profile in the background — don't block auth state
-          const p = await fetchProfile(newSession.user.id);
+          const p = await fetchProfile(newSession.user.id, newSession.user.email);
           if (mounted) setProfile(p);
         } else {
           // Only clear profile on explicit sign-out events, not token refresh gaps
