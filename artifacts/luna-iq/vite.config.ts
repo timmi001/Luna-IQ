@@ -59,6 +59,9 @@ export default defineConfig({
     port,
     host: "0.0.0.0",
     allowedHosts: true,
+    headers: {
+      "Cache-Control": "no-store, max-age=0",
+    },
     fs: {
       strict: true,
       deny: ["**/.*"],
