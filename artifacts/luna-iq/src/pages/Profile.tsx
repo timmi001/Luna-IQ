@@ -58,13 +58,17 @@ export default function Profile() {
 
   const handleSignOut = async () => {
     if (signingOut) return;
-    setSigningOut(true);
-    localStorage.removeItem("luna_moods");
-    localStorage.removeItem("luna_cycle");
-    localStorage.removeItem("luna_symptoms");
-    localStorage.removeItem("luna_profile");
-    await signOut();
+
+    try {
+      setSigningOut(true);
+      await signOut();
+    } catch (error) {
+      console.error("Logout failed:", error);
+    } finally {
+      setSigningOut(false);
+    }
   };
+  
 
   const lunaPoints = profile?.luna_points ?? 0;
 

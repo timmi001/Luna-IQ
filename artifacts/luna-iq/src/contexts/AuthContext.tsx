@@ -49,21 +49,21 @@ async function fetchProfile(
       return null;
     }
 
-    // Row exists
     if (data) {
       const existing = data as Profile;
-      console.log("[Luna Auth] Profile loaded — first_name:", JSON.stringify(existing.first_name), "| meta full_name:", JSON.stringify(userMeta?.full_name));
+      console.log(
+        "[Luna Auth] Profile loaded — first_name:",
+        JSON.stringify(existing.first_name),
+        "| meta full_name:",
+        JSON.stringify(userMeta?.full_name),
+      );
 
-      // If first_name is empty, try to backfill from:
-      //  1. auth metadata (set during signup via options.data)
-      //  2. email prefix as last-resort fallback
       if (!existing.first_name) {
-        const metaFull  = userMeta?.full_name?.trim()  ?? "";
-        const metaFirst = userMeta?.first_name?.trim() ?? "";
-        const emailFirst = userEmail ? userEmail.split("@")[0] ?? "" : "";
-
-        const fullName  = metaFull  || existing.full_name || "";
-        const firstName = metaFirst || (metaFull ? metaFull.split(/\s+/)[0]! : "") || emailFirst;
+        const metaFull   = userMeta?.full_name?.trim()  ?? "";
+        const metaFirst  = userMeta?.first_name?.trim() ?? "";
+        const emailFirst = userEmail ? (userEmail.split("@")[0] ?? "") : "";
+        const fullName   = metaFull || existing.full_name || "";
+        const firstName  = metaFirst || (metaFull ? metaFull.split(/\s+/)[0]! : "") || emailFirst;
 
         if (firstName) {
           console.log("[Luna Auth] Backfilling first_name:", firstName);
@@ -77,13 +77,11 @@ async function fetchProfile(
       return existing;
     }
 
-    // No row yet — auto-create using auth metadata (set during signup) so the
-    // name is available immediately without waiting for the Signup page upsert.
-    const metaFull  = userMeta?.full_name?.trim()  ?? "";
-    const metaFirst = userMeta?.first_name?.trim() ?? "";
-    const emailFirst = userEmail ? userEmail.split("@")[0] ?? "" : "";
-    const fullName  = metaFull || "";
-    const firstName = metaFirst || (metaFull ? metaFull.split(/\s+/)[0]! : "") || emailFirst;
+    const metaFull   = userMeta?.full_name?.trim()  ?? "";
+    const metaFirst  = userMeta?.first_name?.trim() ?? "";
+    const emailFirst = userEmail ? (userEmail.split("@")[0] ?? "") : "";
+    const fullName   = metaFull || "";
+    const firstName  = metaFirst || (metaFull ? metaFull.split(/\s+/)[0]! : "") || emailFirst;
 
     console.log("[Luna Auth] No profile found — creating row for", userId, "| name:", firstName || "(none)");
     const defaultProfile = {
@@ -115,7 +113,6 @@ async function fetchProfile(
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
-  // loading stays true until the FIRST auth state event fires
   const [loading, setLoading] = useState(true);
   const initializedRef = useRef(false);
 
@@ -132,11 +129,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         if (!mounted) return;
 
-        // Always update session from the event — this is the canonical state
         setSession(newSession);
 
-        // Mark auth as initialized after the very first event (INITIAL_SESSION)
-        // Only set loading=false ONCE to prevent flickering on subsequent events
         if (!initializedRef.current) {
           initializedRef.current = true;
           setLoading(false);
@@ -144,13 +138,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
 
         if (newSession?.user) {
-          // Load profile in the background — don't block auth state
-          // Pass user_metadata so auto-creation uses the name from signup
           const meta = (newSession.user.user_metadata ?? {}) as Record<string, string>;
           const p = await fetchProfile(newSession.user.id, newSession.user.email, meta);
           if (mounted) setProfile(p);
         } else {
-          // Only clear profile on explicit sign-out events, not token refresh gaps
           if (event === "SIGNED_OUT") {
             setProfile(null);
             console.log("[Luna Auth] Cleared profile on", event);
@@ -159,8 +150,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       },
     );
 
-    // Safety fallback: if onAuthStateChange never fires (e.g. network issues),
-    // unblock the UI after 5 seconds so users aren't stuck on the loading screen.
     const fallback = setTimeout(() => {
       if (!initializedRef.current && mounted) {
         console.warn("[Luna Auth] Fallback timeout — forcing loading=false");
@@ -189,19 +178,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const { error } = await supabase.auth.signOut();
       if (error) {
-        console.warn("[Luna Auth] signOut: Supabase error (still clearing state):", error.message);
+        console.warn("[Luna Auth] signOut: Supabase error:", error.message);
       } else {
         console.log("[Luna Auth] signOut: Supabase completed OK");
       }
     } catch (err) {
-      console.warn("[Luna Auth] signOut: threw (still clearing state):", err);
+      console.warn("[Luna Auth] signOut: threw:", err);
     } finally {
-      // Always clear state regardless of whether Supabase succeeded.
-      console.log("[Luna Auth] signOut: clearing session + profile, then navigating to /login");
+      console.log("[Luna Auth] signOut: clearing state and redirecting");
       setSession(null);
       setProfile(null);
-      // Use a hard redirect instead of relying on React state + wouter useEffect
-      // inside AnimatePresence, which can race/block the navigation.
       window.location.replace("/login");
     }
   };
