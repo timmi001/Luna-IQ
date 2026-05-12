@@ -45,33 +45,50 @@ async function fetchProfile(
       .maybeSingle();
 
     if (error) {
-      console.warn("[Luna Auth] Profile fetch error (non-fatal):", error.message);
+      console.warn("[Luna Auth] Profile fetch error:", error.message, error.code);
       return null;
     }
 
-    // Row exists — if first_name is empty but metadata has one, backfill it silently
+    // Row exists
     if (data) {
       const existing = data as Profile;
-      if (!existing.first_name && userMeta?.full_name) {
-        const fullName  = userMeta.full_name;
-        const firstName = userMeta.first_name ?? (fullName.trim().split(/\s+/)[0] ?? "");
-        await supabase
-          .from("profiles")
-          .update({ full_name: fullName, first_name: firstName })
-          .eq("id", userId);
-        return { ...existing, full_name: fullName, first_name: firstName };
+      console.log("[Luna Auth] Profile loaded — first_name:", JSON.stringify(existing.first_name), "| meta full_name:", JSON.stringify(userMeta?.full_name));
+
+      // If first_name is empty, try to backfill from:
+      //  1. auth metadata (set during signup via options.data)
+      //  2. email prefix as last-resort fallback
+      if (!existing.first_name) {
+        const metaFull  = userMeta?.full_name?.trim()  ?? "";
+        const metaFirst = userMeta?.first_name?.trim() ?? "";
+        const emailFirst = userEmail ? userEmail.split("@")[0] ?? "" : "";
+
+        const fullName  = metaFull  || existing.full_name || "";
+        const firstName = metaFirst || (metaFull ? metaFull.split(/\s+/)[0]! : "") || emailFirst;
+
+        if (firstName) {
+          console.log("[Luna Auth] Backfilling first_name:", firstName);
+          await supabase
+            .from("profiles")
+            .update({ full_name: fullName || firstName, first_name: firstName })
+            .eq("id", userId);
+          return { ...existing, full_name: fullName || firstName, first_name: firstName };
+        }
       }
       return existing;
     }
 
     // No row yet — auto-create using auth metadata (set during signup) so the
     // name is available immediately without waiting for the Signup page upsert.
-    const fullName  = userMeta?.full_name  ?? "";
-    const firstName = userMeta?.first_name ?? (fullName.trim().split(/\s+/)[0] ?? "");
-    console.log("[Luna Auth] No profile found — creating default row for", userId, "name:", firstName || "(none)");
+    const metaFull  = userMeta?.full_name?.trim()  ?? "";
+    const metaFirst = userMeta?.first_name?.trim() ?? "";
+    const emailFirst = userEmail ? userEmail.split("@")[0] ?? "" : "";
+    const fullName  = metaFull || "";
+    const firstName = metaFirst || (metaFull ? metaFull.split(/\s+/)[0]! : "") || emailFirst;
+
+    console.log("[Luna Auth] No profile found — creating row for", userId, "| name:", firstName || "(none)");
     const defaultProfile = {
       id: userId,
-      full_name: fullName,
+      full_name: fullName || firstName,
       first_name: firstName,
       avatar_index: 0,
       luna_points: 0,
@@ -86,12 +103,11 @@ async function fetchProfile(
 
     if (insertError) {
       console.warn("[Luna Auth] Profile auto-create error:", insertError.message);
-      // Return a local fallback so the UI still works
       return { ...defaultProfile, created_at: new Date().toISOString() } as Profile;
     }
     return created as Profile;
   } catch (err) {
-    console.warn("[Luna Auth] Profile fetch exception (non-fatal):", err);
+    console.warn("[Luna Auth] Profile fetch exception:", err);
     return null;
   }
 }
@@ -181,10 +197,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.warn("[Luna Auth] signOut: threw (still clearing state):", err);
     } finally {
       // Always clear state regardless of whether Supabase succeeded.
-      // This is the authoritative source of truth for the UI.
-      console.log("[Luna Auth] signOut: clearing session + profile");
+      console.log("[Luna Auth] signOut: clearing session + profile, then navigating to /login");
       setSession(null);
       setProfile(null);
+      // Use a hard redirect instead of relying on React state + wouter useEffect
+      // inside AnimatePresence, which can race/block the navigation.
+      window.location.replace("/login");
     }
   };
 
