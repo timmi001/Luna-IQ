@@ -169,12 +169,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
-    console.log("[Luna Auth] Manual sign-out requested");
-    await supabase.auth.signOut();
-    // Force state clear immediately — don't rely solely on onAuthStateChange
-    // firing SIGNED_OUT, which can silently fail if the token is already expired.
-    setSession(null);
-    setProfile(null);
+    console.log("[Luna Auth] signOut: started");
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.warn("[Luna Auth] signOut: Supabase error (still clearing state):", error.message);
+      } else {
+        console.log("[Luna Auth] signOut: Supabase completed OK");
+      }
+    } catch (err) {
+      console.warn("[Luna Auth] signOut: threw (still clearing state):", err);
+    } finally {
+      // Always clear state regardless of whether Supabase succeeded.
+      // This is the authoritative source of truth for the UI.
+      console.log("[Luna Auth] signOut: clearing session + profile");
+      setSession(null);
+      setProfile(null);
+    }
   };
 
   return (

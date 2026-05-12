@@ -29,6 +29,7 @@ export default function Profile() {
   const [displayName, setDisplayName] = useState(profile?.full_name ?? "");
   const [activeSheet, setActiveSheet] = useState<SheetType>(null);
   const [savingName, setSavingName] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
 
   const avatar = AVATARS[avatarIndex] ?? AVATARS[0]!;
 
@@ -55,16 +56,21 @@ export default function Profile() {
   };
 
   const handleLogout = async () => {
-    // Sign out from Supabase FIRST — it needs its session token in localStorage
-    // to invalidate the session on the server. Clearing storage beforehand
-    // wipes the token and causes signOut() to fail silently with no redirect.
-    await signOut();
-    // Clear only app-specific keys after the auth handshake completes
-    localStorage.removeItem("luna_moods");
-    localStorage.removeItem("luna_cycle");
-    localStorage.removeItem("luna_symptoms");
-    localStorage.removeItem("luna_profile");
-    // onAuthStateChange fires SIGNED_OUT → sets user=null → ProtectedRoute redirects to /login
+    if (signingOut) return;
+    console.log("[Profile] handleLogout: button clicked");
+    setSigningOut(true);
+    try {
+      await signOut();
+      console.log("[Profile] handleLogout: signOut resolved, clearing local storage");
+      localStorage.removeItem("luna_moods");
+      localStorage.removeItem("luna_cycle");
+      localStorage.removeItem("luna_symptoms");
+      localStorage.removeItem("luna_profile");
+      // AuthContext.signOut() sets session=null → user=null → ProtectedRoute → /login
+    } catch (err) {
+      console.error("[Profile] handleLogout: unexpected error", err);
+      setSigningOut(false);
+    }
   };
 
   const lunaPoints = profile?.luna_points ?? 0;
@@ -224,12 +230,22 @@ export default function Profile() {
         {/* Logout */}
         <button
           onClick={handleLogout}
-          className="w-full bg-white rounded-3xl px-5 py-4 shadow-sm border border-rose-100 flex items-center gap-3 active:scale-[0.98] transition-all"
+          disabled={signingOut}
+          className="w-full bg-white rounded-3xl px-5 py-4 shadow-sm border border-rose-100 flex items-center gap-3 active:scale-[0.98] transition-all disabled:opacity-60 disabled:cursor-not-allowed"
         >
           <div className="w-9 h-9 rounded-2xl bg-rose-50 flex items-center justify-center">
-            <LogOut className="w-4 h-4 text-rose-400" />
+            {signingOut ? (
+              <svg className="w-4 h-4 text-rose-400 animate-spin" viewBox="0 0 24 24" fill="none">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+              </svg>
+            ) : (
+              <LogOut className="w-4 h-4 text-rose-400" />
+            )}
           </div>
-          <span className="text-sm font-medium text-rose-500">Sign out</span>
+          <span className="text-sm font-medium text-rose-500">
+            {signingOut ? "Signing out…" : "Sign out"}
+          </span>
         </button>
       </main>
 
