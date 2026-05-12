@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
-import { ChevronLeft, ChevronRight, Crown, Palette, FileText, Shield, AlertCircle, LogOut, Check, Pencil, Mail, User } from "lucide-react";
+import { ChevronLeft, ChevronRight, Crown, Palette, FileText, Shield, AlertCircle, LogOut, Check, Pencil, Mail } from "lucide-react";
 import { storage } from "@/utils/storage";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { PageTransition } from "@/components/PageTransition";
@@ -31,6 +31,7 @@ export default function Profile() {
   const [savingName, setSavingName] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
 
+
   const avatar = AVATARS[avatarIndex] ?? AVATARS[0]!;
 
   const handleAvatarSelect = async (i: number) => {
@@ -55,22 +56,14 @@ export default function Profile() {
     setEditingName(false);
   };
 
-  const handleLogout = async () => {
+  const handleSignOut = async () => {
     if (signingOut) return;
-    console.log("[Profile] handleLogout: button clicked");
     setSigningOut(true);
-    try {
-      await signOut();
-      console.log("[Profile] handleLogout: signOut resolved, clearing local storage");
-      localStorage.removeItem("luna_moods");
-      localStorage.removeItem("luna_cycle");
-      localStorage.removeItem("luna_symptoms");
-      localStorage.removeItem("luna_profile");
-      // AuthContext.signOut() sets session=null → user=null → ProtectedRoute → /login
-    } catch (err) {
-      console.error("[Profile] handleLogout: unexpected error", err);
-      setSigningOut(false);
-    }
+    localStorage.removeItem("luna_moods");
+    localStorage.removeItem("luna_cycle");
+    localStorage.removeItem("luna_symptoms");
+    localStorage.removeItem("luna_profile");
+    await signOut();
   };
 
   const lunaPoints = profile?.luna_points ?? 0;
@@ -227,25 +220,31 @@ export default function Profile() {
           ))}
         </div>
 
-        {/* Logout */}
+        {/* Sign out */}
         <button
-          onClick={handleLogout}
+          onClick={handleSignOut}
           disabled={signingOut}
-          className="w-full bg-white rounded-3xl px-5 py-4 shadow-sm border border-rose-100 flex items-center gap-3 active:scale-[0.98] transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+          className="w-full rounded-3xl px-5 py-4 flex items-center justify-center gap-2.5 font-semibold text-sm transition-all active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed"
+          style={{
+            background: "linear-gradient(135deg, #FFF1F2 0%, #FFE4E6 100%)",
+            border: "1.5px solid #FECDD3",
+            color: "#E11D48",
+          }}
         >
-          <div className="w-9 h-9 rounded-2xl bg-rose-50 flex items-center justify-center">
-            {signingOut ? (
-              <svg className="w-4 h-4 text-rose-400 animate-spin" viewBox="0 0 24 24" fill="none">
+          {signingOut ? (
+            <>
+              <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
               </svg>
-            ) : (
-              <LogOut className="w-4 h-4 text-rose-400" />
-            )}
-          </div>
-          <span className="text-sm font-medium text-rose-500">
-            {signingOut ? "Signing out…" : "Sign out"}
-          </span>
+              Signing out…
+            </>
+          ) : (
+            <>
+              <LogOut className="w-4 h-4" />
+              Sign out
+            </>
+          )}
         </button>
       </main>
 
