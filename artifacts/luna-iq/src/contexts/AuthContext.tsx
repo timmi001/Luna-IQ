@@ -25,6 +25,7 @@ type AuthContextValue = {
   user: User | null;
   profile: Profile | null;
   loading: boolean;
+  profileLoading: boolean;
   refreshProfile: () => Promise<void>;
   signOut: () => void;
 };
@@ -137,9 +138,10 @@ async function fetchProfile(
 // ── AuthProvider ───────────────────────────────────────────────────────────
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [session, setSession]   = useState<Session | null>(null);
-  const [profile, setProfile]   = useState<Profile | null>(null);
-  const [loading, setLoading]   = useState(true);
+  const [session, setSession]         = useState<Session | null>(null);
+  const [profile, setProfile]         = useState<Profile | null>(null);
+  const [loading, setLoading]         = useState(true);
+  const [profileLoading, setProfileLoading] = useState(false);
 
   const initializedRef   = useRef(false);
   const currentUserIdRef = useRef<string | null>(null);
@@ -176,6 +178,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
     fetchingForRef.current = uid;
+    if (mountedRef.current) setProfileLoading(true);
 
     try {
       const p = await fetchProfile(uid, email, meta);
@@ -185,6 +188,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     } finally {
       if (fetchingForRef.current === uid) fetchingForRef.current = null;
+      if (mountedRef.current) setProfileLoading(false);
     }
   };
 
@@ -276,20 +280,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             return;
           }
 
-          if (event === "INITIAL_SESSION") {
-            // getSession() already fetched the profile (or is fetching it now).
-            // Avoid a redundant DB round-trip.
-            console.log("[Luna Auth] INITIAL_SESSION — profile handled by getSession()");
-            return;
-          }
-
-          // SIGNED_IN (or any other event): load the profile
+          // SIGNED_IN / INITIAL_SESSION: load the profile.
+          //
+          // We do NOT skip INITIAL_SESSION here even when getSession() is also
+          // running, because there is a race where TOKEN_REFRESHED initialises
+          // the app first (sets initializedRef) and getSession() then returns
+          // early — leaving the profile permanently unloaded.
+          //
+          // The fetchingForRef dedup guard in loadProfile() handles the
+          // concurrent-fetch case: if getSession() started a fetch first,
+          // loadProfile() will see fetchingForRef === uid and skip silently.
+          // If TOKEN_REFRESHED was the initialiser and getSession() bailed,
+          // this INITIAL_SESSION call is the only one that loads the profile.
           const meta = (newSession.user.user_metadata ?? {}) as Record<string, string>;
           await loadProfile(incomingUserId, newSession.user.email, meta, mountedRef);
 
         } else {
           // Null session → logout or no stored session
           setProfile(null);
+          setProfileLoading(false);
           console.log("[Luna Auth] Session cleared — no active user");
         }
       },
@@ -340,6 +349,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     setSession(null);
     setProfile(null);
+    setProfileLoading(false);
     currentUserIdRef.current = null;
     console.log("[Luna Auth] signOut: local state cleared");
 
@@ -356,6 +366,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user: session?.user ?? null,
         profile,
         loading,
+        profileLoading,
         refreshProfile,
         signOut,
       }}

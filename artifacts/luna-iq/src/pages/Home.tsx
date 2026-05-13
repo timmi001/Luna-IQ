@@ -268,7 +268,7 @@ function InsightModal({
 
 export default function Home() {
   const [, setLocation] = useLocation();
-  const { user, profile, refreshProfile } = useAuth();
+  const { user, profile, profileLoading, refreshProfile } = useAuth();
   const userId = user?.id ?? "guest";
 
   const [insight, setInsight] = useState<Insight | null>(null);
@@ -330,14 +330,23 @@ export default function Home() {
         {/* Header */}
         <header className="px-6 pt-12 pb-4 flex items-center justify-between sticky top-0 z-20 bg-background/80 backdrop-blur-md">
           <div>
-            <h1 className="text-2xl font-semibold text-foreground tracking-tight">
-              {greeting}
-            </h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              {profile?.first_name
-                ? `How are you feeling today, ${profile.first_name}?`
-                : "Ready for a moment of mindfulness?"}
-            </p>
+            {profileLoading ? (
+              <>
+                <div className="h-8 w-52 rounded-xl bg-luna-lavender/40 animate-pulse mb-2" />
+                <div className="h-4 w-40 rounded-lg bg-luna-blush/40 animate-pulse" />
+              </>
+            ) : (
+              <>
+                <h1 className="text-2xl font-semibold text-foreground tracking-tight">
+                  {greeting}
+                </h1>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {profile?.first_name
+                    ? `How are you feeling today, ${profile.first_name}?`
+                    : "Ready for a moment of mindfulness?"}
+                </p>
+              </>
+            )}
           </div>
 
           <div className="flex items-center gap-2">
