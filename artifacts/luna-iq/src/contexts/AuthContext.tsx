@@ -110,9 +110,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const initializedRef    = useRef(false);
   const currentUserIdRef  = useRef<string | null>(null);
-  // Prevents duplicate signOut calls. Does NOT gate incoming auth events —
-  // only TOKEN_REFRESHED is blocked during signout (see guard below).
-  const signingOutRef     = useRef(false);
+
+  /**
+   * signingOutRef — set true on the FIRST signOut() call so duplicate taps
+   * are silently ignored. Cleared when the Supabase call finishes (or a fresh
+   * SIGNED_IN arrives). Stored in a ref so it survives re-renders.
+   */
+  const signingOutRef = useRef(false);
+
+  /**
+   * didSignOutRef — set true when the user explicitly signs out. While true,
+   * automatic session-restoration events (INITIAL_SESSION, TOKEN_REFRESHED)
+   * are suppressed. Only a deliberate SIGNED_IN or SIGNED_UP from the user
+   * clears it. This prevents the race where supabase.auth.signOut() hasn't
+   * finished clearing localStorage when HMR remounts the provider, causing
+   * Supabase to fire INITIAL_SESSION with the stale token and restore the
+   * session the user just ended.
+   */
+  const didSignOutRef = useRef(false);
 
   useEffect(() => {
     let mounted = true;
@@ -126,21 +141,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.log(
           "[Luna Auth]", event,
           "| user:", incomingUserId ?? "null",
-          "| signingOut:", signingOutRef.current,
+          "| didSignOut:", didSignOutRef.current,
         );
 
-        // Narrow guard: only block automatic token refreshes while a signOut is
-        // in flight. SIGNED_IN and SIGNED_UP must always be processed so login
-        // and signup work correctly even immediately after a logout.
-        if (signingOutRef.current && event === "TOKEN_REFRESHED") {
-          console.log("[Luna Auth] Ignoring TOKEN_REFRESHED during signout");
+        // ── Post-logout guard ────────────────────────────────────────────────
+        // After an explicit logout, suppress any automatic event that tries to
+        // restore the session. Only a deliberate SIGNED_IN / SIGNED_UP from
+        // the user themselves should bring a session back.
+        if (
+          didSignOutRef.current &&
+          incomingUserId &&
+          event !== "SIGNED_IN"
+        ) {
+          console.log("[Luna Auth] Suppressing", event, "— user has signed out, awaiting fresh login");
           return;
+        }
+
+        // ── New deliberate login ─────────────────────────────────────────────
+        // Reset both guards so the new session flows through normally.
+        // Note: Supabase fires SIGNED_IN for both login and signup.
+        if (event === "SIGNED_IN") {
+          didSignOutRef.current  = false;
+          signingOutRef.current  = false;
+          console.log("[Luna Auth] Fresh login — logout guards cleared");
         }
 
         setSession(newSession);
         currentUserIdRef.current = incomingUserId;
 
-        // Unblock the loading screen exactly once — on the very first auth event
+        // Unblock the loading screen on the very first auth event
         if (!initializedRef.current) {
           initializedRef.current = true;
           setLoading(false);
@@ -150,13 +179,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (incomingUserId && newSession?.user) {
           const meta = (newSession.user.user_metadata ?? {}) as Record<string, string>;
           const p = await fetchProfile(incomingUserId, newSession.user.email, meta);
-          // Guard: only apply if the user hasn't changed during the async fetch
+          // Only apply if the user hasn't changed during the async fetch
           if (mounted && currentUserIdRef.current === incomingUserId) {
             setProfile(p);
+            console.log("[Luna Auth] Profile loaded for", incomingUserId);
           }
         } else {
-          // Null session (SIGNED_OUT, or no stored session on initial load)
+          // Null session — SIGNED_OUT or no stored session on initial load
           setProfile(null);
+          console.log("[Luna Auth] Session cleared — no active user");
         }
       },
     );
@@ -186,26 +217,55 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   /**
-   * Optimistic sign-out:
-   * 1. Prevent duplicate calls via signingOutRef.
-   * 2. Clear local auth state immediately → ProtectedRoute redirects to /login.
-   * 3. Call supabase.auth.signOut() in the background — no await, no UI block.
-   *    The resulting SIGNED_OUT event is just a no-op (state already null).
+   * Optimistic sign-out — instant UI response, zero hang risk.
+   *
+   * Step 1: Clear localStorage["luna-iq-auth"] SYNCHRONOUSLY.
+   *         This is the critical step. If the component remounts (HMR or
+   *         otherwise) before the background network call finishes, the new
+   *         onAuthStateChange subscription will call getSession() internally.
+   *         getSession() reads from localStorage first. With an empty key it
+   *         returns null immediately — no server round-trip, no 5-second wait.
+   *         Without this step, getSession() finds the stale token, tries to
+   *         validate it against Supabase's servers, which can stall for 5+ s
+   *         on Replit's network, causing the fallback timeout to fire.
+   *
+   * Step 2: Wipe React state → ProtectedRoute sees user=null → /login redirect.
+   *
+   * Step 3: Background supabase.auth.signOut() — revokes the server-side token
+   *         so the old session can't be replayed elsewhere. Fire and forget.
    */
   const signOut = () => {
-    if (signingOutRef.current) return;
-    signingOutRef.current = true;
+    if (signingOutRef.current) {
+      console.log("[Luna Auth] signOut: already in progress, ignoring duplicate call");
+      return;
+    }
 
-    console.log("[Luna Auth] signOut: clearing local state");
+    console.log("[Luna Auth] signOut: start");
+    signingOutRef.current = true;
+    didSignOutRef.current = true;
+
+    // 1. Wipe localStorage synchronously — prevents INITIAL_SESSION from
+    //    restoring the session if AuthProvider remounts before the network
+    //    call completes (the exact HMR race that caused the 5 s stall).
+    try {
+      localStorage.removeItem("luna-iq-auth");
+    } catch {
+      // Ignore — localStorage unavailable in some environments
+    }
+
+    // 2. Wipe React state — ProtectedRoute immediately redirects to /login
     setSession(null);
     setProfile(null);
     currentUserIdRef.current = null;
+    console.log("[Luna Auth] signOut: local state cleared — UI redirecting now");
 
+    // 3. Background server-side token revocation — don't await
     supabase.auth.signOut()
-      .catch((err) => console.warn("[Luna Auth] signOut background error:", err))
+      .then(() => console.log("[Luna Auth] signOut: Supabase server revocation complete"))
+      .catch((err) => console.warn("[Luna Auth] signOut: revocation error (non-fatal):", err))
       .finally(() => {
         signingOutRef.current = false;
-        console.log("[Luna Auth] signOut: Supabase call complete");
+        console.log("[Luna Auth] signOut: guard released");
       });
   };
 
