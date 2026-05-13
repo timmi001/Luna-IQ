@@ -31,12 +31,16 @@ type AuthContextValue = {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
+// ── Profile fetch ──────────────────────────────────────────────────────────
+
 async function fetchProfile(
   userId: string,
   userEmail?: string,
   userMeta?: Record<string, string>,
 ): Promise<Profile | null> {
   try {
+    console.log("[Luna Profile] fetchProfile start | userId:", userId);
+
     const { data, error } = await supabase
       .from("profiles")
       .select("*")
@@ -44,43 +48,65 @@ async function fetchProfile(
       .maybeSingle();
 
     if (error) {
-      console.warn("[Luna Auth] fetchProfile error:", error.message);
+      console.warn("[Luna Profile] SELECT error:", error.code, error.message);
       return null;
     }
+
+    console.log("[Luna Profile] SELECT result:", {
+      found: !!data,
+      full_name: data?.full_name ?? "(none)",
+      first_name: data?.first_name ?? "(empty)",
+    });
 
     if (data) {
       const existing = data as Profile;
 
       // Backfill first_name if missing.
-      // Priority: metadata first_name → metadata full_name split → profile
-      // full_name split (covers older accounts with no metadata) → email prefix.
+      // Priority: metadata first_name → metadata full_name split →
+      //           profile full_name split (covers old accounts) → email prefix.
       if (!existing.first_name) {
-        const metaFull   = userMeta?.full_name?.trim()  ?? "";
-        const metaFirst  = userMeta?.first_name?.trim() ?? "";
+        const metaFirst  = userMeta?.first_name?.trim()  ?? "";
+        const metaFull   = userMeta?.full_name?.trim()   ?? "";
         const emailFirst = userEmail ? (userEmail.split("@")[0] ?? "") : "";
         const fullName   = metaFull || existing.full_name || "";
         const firstName  =
           metaFirst ||
-          (metaFull ? metaFull.split(/\s+/)[0]! : "") ||
+          (metaFull   ? metaFull.trim().split(/\s+/)[0]!   : "") ||
           (existing.full_name ? existing.full_name.trim().split(/\s+/)[0]! : "") ||
           emailFirst;
 
+        console.log("[Luna Profile] first_name empty — backfilling:", {
+          metaFirst, metaFull, emailFirst, derivedFirstName: firstName,
+        });
+
         if (firstName) {
-          await supabase
+          const { error: updateErr } = await supabase
             .from("profiles")
             .update({ full_name: fullName || firstName, first_name: firstName })
             .eq("id", userId);
+
+          if (updateErr) {
+            console.warn("[Luna Profile] UPDATE error:", updateErr.code, updateErr.message);
+            // Return with client-side backfill even if DB write fails
+          } else {
+            console.log("[Luna Profile] UPDATE success — first_name:", firstName);
+          }
+
           return { ...existing, full_name: fullName || firstName, first_name: firstName };
         }
       }
+
+      console.log("[Luna Profile] Returning existing profile | first_name:", existing.first_name);
       return existing;
     }
 
-    // No profile row yet — auto-create from auth metadata
-    const metaFull   = userMeta?.full_name?.trim()  ?? "";
-    const metaFirst  = userMeta?.first_name?.trim() ?? "";
+    // ── No row yet — auto-create from auth metadata ──────────────────────
+    const metaFirst  = userMeta?.first_name?.trim()  ?? "";
+    const metaFull   = userMeta?.full_name?.trim()   ?? "";
     const emailFirst = userEmail ? (userEmail.split("@")[0] ?? "") : "";
     const firstName  = metaFirst || (metaFull ? metaFull.split(/\s+/)[0]! : "") || emailFirst;
+
+    console.log("[Luna Profile] No row found — inserting | first_name:", firstName);
 
     const defaultProfile = {
       id: userId,
@@ -99,15 +125,20 @@ async function fetchProfile(
       .single();
 
     if (insertError) {
-      console.warn("[Luna Auth] Profile create error:", insertError.message);
+      console.warn("[Luna Profile] INSERT error:", insertError.code, insertError.message);
       return { ...defaultProfile, created_at: new Date().toISOString() } as Profile;
     }
+
+    console.log("[Luna Profile] INSERT success | first_name:", (created as Profile).first_name);
     return created as Profile;
+
   } catch (err) {
-    console.warn("[Luna Auth] fetchProfile exception:", err);
+    console.warn("[Luna Profile] fetchProfile exception:", err);
     return null;
   }
 }
+
+// ── AuthProvider ───────────────────────────────────────────────────────────
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession]   = useState<Session | null>(null);
@@ -118,20 +149,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const currentUserIdRef  = useRef<string | null>(null);
 
   /**
-   * signingOutRef — set true on the FIRST signOut() call so duplicate taps
-   * are silently ignored. Cleared when the Supabase call finishes (or a fresh
-   * SIGNED_IN arrives). Stored in a ref so it survives re-renders.
+   * signingOutRef — prevents double-tap on the Sign Out button.
+   * Cleared when supabase.auth.signOut({ scope: 'local' }) resolves.
    */
   const signingOutRef = useRef(false);
 
   /**
-   * didSignOutRef — set true when the user explicitly signs out. While true,
-   * automatic session-restoration events (INITIAL_SESSION, TOKEN_REFRESHED)
-   * are suppressed. Only a deliberate SIGNED_IN or SIGNED_UP from the user
-   * clears it. This prevents the race where supabase.auth.signOut() hasn't
-   * finished clearing localStorage when HMR remounts the provider, causing
-   * Supabase to fire INITIAL_SESSION with the stale token and restore the
-   * session the user just ended.
+   * didSignOutRef — set true when the user explicitly signs out.
+   * Blocks any automatic session-restoration event (INITIAL_SESSION,
+   * TOKEN_REFRESHED) until a deliberate SIGNED_IN arrives.
+   *
+   * Why needed: after signOut() clears localStorage, the Supabase client's
+   * in-memory session can still fire TOKEN_REFRESHED if the refresh timer
+   * happened to tick in the gap. This guard prevents that stale event from
+   * restoring the old session in React state.
    */
   const didSignOutRef = useRef(false);
 
@@ -151,25 +182,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         );
 
         // ── Post-logout guard ────────────────────────────────────────────────
-        // After an explicit logout, suppress any automatic event that tries to
-        // restore the session. Only a deliberate SIGNED_IN / SIGNED_UP from
-        // the user themselves should bring a session back.
-        if (
-          didSignOutRef.current &&
-          incomingUserId &&
-          event !== "SIGNED_IN"
-        ) {
-          console.log("[Luna Auth] Suppressing", event, "— user has signed out, awaiting fresh login");
+        // Block automatic session-restoration events after explicit logout.
+        // Only a deliberate SIGNED_IN clears this flag and allows a new session.
+        if (didSignOutRef.current && incomingUserId && event !== "SIGNED_IN") {
+          console.log("[Luna Auth] Suppressing", event, "after logout — waiting for SIGNED_IN");
           return;
         }
 
         // ── New deliberate login ─────────────────────────────────────────────
-        // Reset both guards so the new session flows through normally.
-        // Note: Supabase fires SIGNED_IN for both login and signup.
         if (event === "SIGNED_IN") {
           didSignOutRef.current  = false;
           signingOutRef.current  = false;
-          console.log("[Luna Auth] Fresh login — logout guards cleared");
+          console.log("[Luna Auth] SIGNED_IN — logout guards cleared");
         }
 
         setSession(newSession);
@@ -183,15 +207,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
 
         if (incomingUserId && newSession?.user) {
+          // ── Skip profile fetch on TOKEN_REFRESHED ────────────────────────
+          // TOKEN_REFRESHED just rotates the access token — the profile data
+          // hasn't changed. Fetching the profile again wastes a DB round-trip
+          // and, crucially, the parallel fetch would have raced with the first
+          // SIGNED_IN fetch (both awaiting the same DB query, both writing to
+          // currentUserIdRef), causing the guard below to fail sporadically.
+          if (event === "TOKEN_REFRESHED") {
+            console.log("[Luna Auth] TOKEN_REFRESHED — skipping profile re-fetch");
+            return;
+          }
+
           const meta = (newSession.user.user_metadata ?? {}) as Record<string, string>;
           const p = await fetchProfile(incomingUserId, newSession.user.email, meta);
-          // Only apply if the user hasn't changed during the async fetch
+
+          // Only apply the result if the same user is still active.
+          // (Guards against a logout racing with a slow DB response.)
           if (mounted && currentUserIdRef.current === incomingUserId) {
+            console.log("[Luna Auth] setProfile | first_name:", p?.first_name ?? "(null)");
             setProfile(p);
-            console.log("[Luna Auth] Profile loaded for", incomingUserId);
+          } else {
+            console.log("[Luna Auth] Profile fetch result discarded — user changed during fetch");
           }
         } else {
-          // Null session — SIGNED_OUT or no stored session on initial load
+          // Null session → SIGNED_OUT or no stored session on initial load
           setProfile(null);
           console.log("[Luna Auth] Session cleared — no active user");
         }
@@ -223,26 +262,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   /**
-   * Optimistic sign-out — instant UI response, zero hang risk.
+   * Optimistic sign-out — instant UI, zero hang risk.
    *
-   * Step 1: Clear localStorage["luna-iq-auth"] SYNCHRONOUSLY.
-   *         This is the critical step. If the component remounts (HMR or
-   *         otherwise) before the background network call finishes, the new
-   *         onAuthStateChange subscription will call getSession() internally.
-   *         getSession() reads from localStorage first. With an empty key it
-   *         returns null immediately — no server round-trip, no 5-second wait.
-   *         Without this step, getSession() finds the stale token, tries to
-   *         validate it against Supabase's servers, which can stall for 5+ s
-   *         on Replit's network, causing the fallback timeout to fire.
+   * Step 1: Clear localStorage["luna-iq-auth"] synchronously.
+   *         Prevents getSession() from finding the stale token if the
+   *         component remounts (e.g. HMR) before the sign-out resolves.
    *
-   * Step 2: Wipe React state → ProtectedRoute sees user=null → /login redirect.
+   * Step 2: Wipe React state → ProtectedRoute redirects to /login immediately.
    *
-   * Step 3: Background supabase.auth.signOut() — revokes the server-side token
-   *         so the old session can't be replayed elsewhere. Fire and forget.
+   * Step 3: supabase.auth.signOut({ scope: 'local' }) — NO network request.
+   *         This clears the Supabase JS client's in-memory session and, crucially,
+   *         STOPS THE AUTO-REFRESH TIMER. Without this step the in-memory session
+   *         would keep firing TOKEN_REFRESHED events that could race with a
+   *         subsequent login and corrupt the new session's JWT.
+   *         Because there is no network call, this resolves in < 1 ms and
+   *         CANNOT interfere with a new login that the user initiates later.
    */
   const signOut = () => {
     if (signingOutRef.current) {
-      console.log("[Luna Auth] signOut: already in progress, ignoring duplicate call");
+      console.log("[Luna Auth] signOut: duplicate call ignored");
       return;
     }
 
@@ -250,29 +288,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     signingOutRef.current = true;
     didSignOutRef.current = true;
 
-    // 1. Wipe localStorage synchronously — prevents INITIAL_SESSION from
-    //    restoring the session if AuthProvider remounts before the network
-    //    call completes (the exact HMR race that caused the 5 s stall).
+    // Step 1 — wipe localStorage so any remount sees no token
     try {
       localStorage.removeItem("luna-iq-auth");
     } catch {
-      // Ignore — localStorage unavailable in some environments
+      // Ignore if localStorage is unavailable
     }
 
-    // 2. Wipe React state — ProtectedRoute immediately redirects to /login
+    // Step 2 — clear React state → instant UI redirect
     setSession(null);
     setProfile(null);
     currentUserIdRef.current = null;
-    console.log("[Luna Auth] signOut: local state cleared — UI redirecting now");
+    console.log("[Luna Auth] signOut: local state cleared");
 
-    // 3. Background server-side token revocation — don't await
-    supabase.auth.signOut()
-      .then(() => console.log("[Luna Auth] signOut: Supabase server revocation complete"))
-      .catch((err) => console.warn("[Luna Auth] signOut: revocation error (non-fatal):", err))
-      .finally(() => {
-        signingOutRef.current = false;
-        console.log("[Luna Auth] signOut: guard released");
-      });
+    // Step 3 — clear Supabase client memory + stop refresh timer (no network)
+    supabase.auth.signOut({ scope: "local" })
+      .then(() => console.log("[Luna Auth] signOut: client memory cleared, refresh timer stopped"))
+      .catch((err) => console.warn("[Luna Auth] signOut: local signOut error:", err))
+      .finally(() => { signingOutRef.current = false; });
   };
 
   return (
