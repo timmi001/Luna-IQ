@@ -51,13 +51,19 @@ async function fetchProfile(
     if (data) {
       const existing = data as Profile;
 
-      // Backfill first_name if missing — from metadata or email prefix
+      // Backfill first_name if missing.
+      // Priority: metadata first_name → metadata full_name split → profile
+      // full_name split (covers older accounts with no metadata) → email prefix.
       if (!existing.first_name) {
         const metaFull   = userMeta?.full_name?.trim()  ?? "";
         const metaFirst  = userMeta?.first_name?.trim() ?? "";
         const emailFirst = userEmail ? (userEmail.split("@")[0] ?? "") : "";
         const fullName   = metaFull || existing.full_name || "";
-        const firstName  = metaFirst || (metaFull ? metaFull.split(/\s+/)[0]! : "") || emailFirst;
+        const firstName  =
+          metaFirst ||
+          (metaFull ? metaFull.split(/\s+/)[0]! : "") ||
+          (existing.full_name ? existing.full_name.trim().split(/\s+/)[0]! : "") ||
+          emailFirst;
 
         if (firstName) {
           await supabase
