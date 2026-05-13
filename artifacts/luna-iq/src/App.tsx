@@ -4,7 +4,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
 import { BottomNav } from "@/components/BottomNav";
-import { AnimatePresence, motion } from "framer-motion";
+import { motion } from "framer-motion";
 import { useEffect, type ReactNode } from "react";
 
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
@@ -45,99 +45,94 @@ function LoadingScreen() {
   );
 }
 
-// ── Navigation helper — only redirects AFTER auth is initialized ──────────────
+// ── Redirect helper ───────────────────────────────────────────────────────────
+// Shows the loading screen while the wouter navigation fires in useEffect.
+// This prevents a blank frame that would otherwise appear when AuthRedirect
+// returned null inside AnimatePresence.
 
 function AuthRedirect({ to }: { to: string }) {
   const [, setLocation] = useLocation();
   useEffect(() => {
-    console.log("[Luna Router] Redirecting to", to);
     setLocation(to);
   }, [to, setLocation]);
-  return null;
+  return <LoadingScreen />;
 }
 
-// ── Protected route — shows loading, then redirects or renders ────────────────
-// IMPORTANT: Only renders children after loading=false AND user is confirmed.
-// Never redirects while loading is still true.
+// ── Protected route ───────────────────────────────────────────────────────────
+// Renders children only after auth has initialized AND a user is present.
+// While loading → loading screen. No user → redirect to /login.
 
 function ProtectedRoute({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth();
-
-  if (loading) {
-    return <LoadingScreen />;
-  }
-
-  if (!user) {
-    console.log("[Luna Router] No user after init — redirecting to /login");
-    return <AuthRedirect to="/login" />;
-  }
-
+  if (loading)  return <LoadingScreen />;
+  if (!user)    return <AuthRedirect to="/login" />;
   return <>{children}</>;
 }
 
-// ── Public route — redirects logged-in users to home ─────────────────────────
+// ── Public route ──────────────────────────────────────────────────────────────
+// Redirects logged-in users away from /login and /signup.
 
 function PublicRoute({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth();
-
   if (loading) return <LoadingScreen />;
-  if (user) return <AuthRedirect to="/" />;
+  if (user)    return <AuthRedirect to="/" />;
   return <>{children}</>;
 }
 
 // ── Route tree ────────────────────────────────────────────────────────────────
+// AnimatePresence is intentionally NOT wrapping Switch here — it doesn't
+// actually drive route transitions (each page uses its own PageTransition
+// component). Wrapping Switch caused blank frames during auth redirects.
 
 function AppRoutes() {
   return (
-    <AnimatePresence mode="wait">
-      <Switch>
-        <Route path="/login">
-          <PublicRoute><Login /></PublicRoute>
-        </Route>
-        <Route path="/signup">
-          <PublicRoute><Signup /></PublicRoute>
-        </Route>
+    <Switch>
+      <Route path="/login">
+        <PublicRoute><Login /></PublicRoute>
+      </Route>
+      <Route path="/signup">
+        <PublicRoute><Signup /></PublicRoute>
+      </Route>
 
-        <Route path="/">
-          <ProtectedRoute><Home /></ProtectedRoute>
-        </Route>
-        <Route path="/chat">
-          <ProtectedRoute><Chat /></ProtectedRoute>
-        </Route>
-        <Route path="/mood">
-          <ProtectedRoute><Mood /></ProtectedRoute>
-        </Route>
-        <Route path="/cycle">
-          <ProtectedRoute><Cycle /></ProtectedRoute>
-        </Route>
-        <Route path="/profile">
-          <ProtectedRoute><Profile /></ProtectedRoute>
-        </Route>
-        <Route path="/breathe">
-          <ProtectedRoute><Breathe /></ProtectedRoute>
-        </Route>
-        <Route path="/water">
-          <ProtectedRoute><Water /></ProtectedRoute>
-        </Route>
-        <Route path="/routine">
-          <ProtectedRoute><Routine /></ProtectedRoute>
-        </Route>
-        <Route path="/notifications">
-          <ProtectedRoute><Notifications /></ProtectedRoute>
-        </Route>
-        <Route path="/private-space">
-          <ProtectedRoute><PrivateSpace /></ProtectedRoute>
-        </Route>
-        <Route path="/luna-points">
-          <ProtectedRoute><LunaPoints /></ProtectedRoute>
-        </Route>
-        <Route component={NotFound} />
-      </Switch>
-    </AnimatePresence>
+      <Route path="/">
+        <ProtectedRoute><Home /></ProtectedRoute>
+      </Route>
+      <Route path="/chat">
+        <ProtectedRoute><Chat /></ProtectedRoute>
+      </Route>
+      <Route path="/mood">
+        <ProtectedRoute><Mood /></ProtectedRoute>
+      </Route>
+      <Route path="/cycle">
+        <ProtectedRoute><Cycle /></ProtectedRoute>
+      </Route>
+      <Route path="/profile">
+        <ProtectedRoute><Profile /></ProtectedRoute>
+      </Route>
+      <Route path="/breathe">
+        <ProtectedRoute><Breathe /></ProtectedRoute>
+      </Route>
+      <Route path="/water">
+        <ProtectedRoute><Water /></ProtectedRoute>
+      </Route>
+      <Route path="/routine">
+        <ProtectedRoute><Routine /></ProtectedRoute>
+      </Route>
+      <Route path="/notifications">
+        <ProtectedRoute><Notifications /></ProtectedRoute>
+      </Route>
+      <Route path="/private-space">
+        <ProtectedRoute><PrivateSpace /></ProtectedRoute>
+      </Route>
+      <Route path="/luna-points">
+        <ProtectedRoute><LunaPoints /></ProtectedRoute>
+      </Route>
+      <Route component={NotFound} />
+    </Switch>
   );
 }
 
-// ── App shell — nav visibility ────────────────────────────────────────────────
+// ── App shell ─────────────────────────────────────────────────────────────────
 
 function AppShell() {
   const { user, loading } = useAuth();

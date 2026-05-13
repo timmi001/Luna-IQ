@@ -56,19 +56,12 @@ export default function Profile() {
     setEditingName(false);
   };
 
-  const handleSignOut = async () => {
+  const handleSignOut = () => {
     if (signingOut) return;
-
-    try {
-      setSigningOut(true);
-      await signOut();
-    } catch (error) {
-      console.error("Logout failed:", error);
-    } finally {
-      setSigningOut(false);
-    }
+    setSigningOut(true);
+    signOut(); // optimistic — clears auth state immediately, background Supabase call
   };
-  
+
 
   const lunaPoints = profile?.luna_points ?? 0;
 
