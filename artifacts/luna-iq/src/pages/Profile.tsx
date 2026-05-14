@@ -88,7 +88,7 @@ export default function Profile() {
 
       <main className="flex-1 px-5 flex flex-col gap-5">
         {/* Avatar + Name card */}
-        <div className="bg-white rounded-3xl p-6 shadow-sm border border-card-border flex flex-col items-center gap-4">
+        <div className="luna-glass rounded-3xl p-6 shadow-sm flex flex-col items-center gap-4">
           <div
             className="w-24 h-24 rounded-3xl flex items-center justify-center shadow-md"
             style={{ background: avatar.bg, fontSize: 48 }}
@@ -105,14 +105,16 @@ export default function Profile() {
                 onChange={(e) => setDisplayName(e.target.value)}
                 placeholder="Your full name"
                 maxLength={40}
-                className="flex-1 text-center text-lg font-semibold border-b-2 border-purple-200 bg-transparent outline-none text-foreground placeholder:text-muted-foreground"
+                className="flex-1 text-center text-lg font-semibold border-b-2 bg-transparent outline-none text-foreground placeholder:text-muted-foreground"
+                style={{ borderColor: "#C3898E" }}
               />
               <button
                 onClick={saveName}
                 disabled={savingName}
-                className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center disabled:opacity-50"
+                className="w-8 h-8 rounded-full flex items-center justify-center disabled:opacity-50"
+                style={{ background: "rgba(180,232,224,0.40)" }}
               >
-                <Check className="w-4 h-4 text-purple-600" />
+                <Check className="w-4 h-4" style={{ color: "#4A3644" }} />
               </button>
             </div>
           ) : (
@@ -120,7 +122,7 @@ export default function Profile() {
               <span className="text-xl font-semibold text-foreground">
                 {profile?.full_name || "Add your name"}
               </span>
-              <Pencil className="w-3.5 h-3.5 text-muted-foreground group-hover:text-purple-400 transition-colors" />
+              <Pencil className="w-3.5 h-3.5 text-muted-foreground group-hover:text-luna-rose transition-colors" />
             </button>
           )}
 
@@ -134,18 +136,18 @@ export default function Profile() {
 
           {/* Luna Points */}
           {lunaPoints > 0 && (
-            <div className="flex items-center gap-2 bg-purple-50 border border-purple-100 rounded-2xl px-4 py-2">
-              <span className="text-lg">💜</span>
+            <div className="flex items-center gap-2 rounded-2xl px-4 py-2" style={{ background: "rgba(230,197,127,0.20)", border: "1px solid rgba(230,197,127,0.40)" }}>
+              <span className="text-lg">✨</span>
               <div>
-                <p className="text-xs font-semibold text-purple-800">{lunaPoints} Luna Points</p>
-                <p className="text-[10px] text-purple-500">Keep going, you're doing great</p>
+                <p className="text-xs font-semibold text-foreground">{lunaPoints} Luna Points</p>
+                <p className="text-[10px] text-muted-foreground">Keep going, you're doing great</p>
               </div>
             </div>
           )}
         </div>
 
         {/* Avatar picker */}
-        <div className="bg-white rounded-3xl p-5 shadow-sm border border-card-border">
+        <div className="luna-glass rounded-3xl p-5 shadow-sm">
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Choose your avatar</p>
           <div className="grid grid-cols-4 gap-3">
             {AVATARS.map((av, i) => (
@@ -159,8 +161,8 @@ export default function Profile() {
                   style={{
                     background: av.bg,
                     fontSize: 28,
-                    border: avatarIndex === i ? "2.5px solid #A78BFA" : "2px solid transparent",
-                    boxShadow: avatarIndex === i ? "0 0 12px rgba(167,139,250,0.4)" : "none",
+                    border: avatarIndex === i ? "2.5px solid #C3898E" : "2px solid transparent",
+                    boxShadow: avatarIndex === i ? "0 0 12px rgba(195,137,142,0.45)" : "none",
                     transform: avatarIndex === i ? "scale(1.08)" : "scale(1)",
                   }}
                 >
@@ -175,27 +177,26 @@ export default function Profile() {
         {/* Luna Points navigation card */}
         <button
           onClick={() => setLocation("/luna-points")}
-          className="w-full rounded-3xl p-5 shadow-sm border border-purple-100 flex items-center gap-4 active:scale-[0.98] transition-all text-left overflow-hidden relative"
-          style={{ background: "linear-gradient(135deg, #F5F3FF 0%, #FFF0F9 100%)" }}
+          className="w-full rounded-3xl p-5 shadow-sm flex items-center gap-4 active:scale-[0.98] transition-all text-left overflow-hidden relative luna-glass"
         >
           <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl flex-shrink-0"
-            style={{ background: "linear-gradient(135deg, #EDE9FE, #FCE7F3)" }}>
+            style={{ background: "linear-gradient(135deg, #B4E8E0, #C3898E)" }}>
             🌙
           </div>
           <div className="flex-1">
-            <p className="text-sm font-semibold text-purple-800">Luna Points</p>
-            <p className="text-xs text-purple-400">View rewards & activity</p>
+            <p className="text-sm font-semibold text-foreground">Luna Points</p>
+            <p className="text-xs text-muted-foreground">View rewards & activity</p>
           </div>
           <div className="flex items-center gap-2">
-            <div className="bg-white/70 rounded-xl px-2.5 py-1">
-              <p className="text-xs font-bold text-purple-700">{lunaPoints} pts</p>
+            <div className="bg-white/60 rounded-xl px-2.5 py-1">
+              <p className="text-xs font-bold text-foreground">{lunaPoints} pts</p>
             </div>
-            <ChevronRight className="w-4 h-4 text-purple-300" />
+            <ChevronRight className="w-4 h-4 text-muted-foreground" />
           </div>
         </button>
 
         {/* Menu items */}
-        <div className="bg-white rounded-3xl shadow-sm border border-card-border overflow-hidden">
+        <div className="luna-glass rounded-3xl shadow-sm overflow-hidden">
           {menuItems.map((item, i) => (
             <button
               key={item.label}
@@ -247,7 +248,7 @@ export default function Profile() {
 
       {/* Info sheets */}
       <Sheet open={activeSheet !== null} onOpenChange={(o) => !o && setActiveSheet(null)}>
-        <SheetContent side="bottom" className="rounded-t-3xl max-h-[70vh] overflow-y-auto pb-10" style={{ background: "linear-gradient(180deg, #FFF7FB 0%, #F6F0FF 100%)" }}>
+        <SheetContent side="bottom" className="rounded-t-3xl max-h-[70vh] overflow-y-auto pb-10" style={{ background: "linear-gradient(180deg, #F5E1E3 0%, #ECD5DC 100%)" }}>
           <SheetHeader>
             <SheetTitle>
               {activeSheet === "premium" && "Luna Premium 👑"}

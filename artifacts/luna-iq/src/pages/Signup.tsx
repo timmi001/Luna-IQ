@@ -82,7 +82,7 @@ export default function Signup() {
   return (
     <div
       className="min-h-screen flex flex-col items-center justify-center px-6 py-12"
-      style={{ background: "linear-gradient(160deg, #FFF7FB 0%, #F3EEFF 50%, #FFF0F6 100%)" }}
+      style={{ background: "linear-gradient(160deg, #C3898E 0%, #A57480 50%, #5E4352 100%)" }}
     >
       {/* Logo */}
       <motion.div
@@ -91,28 +91,31 @@ export default function Signup() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <div className="w-16 h-16 rounded-3xl flex items-center justify-center shadow-lg"
-          style={{ background: "linear-gradient(135deg, #E9E4FF, #F7D6E0)" }}>
+        <div
+          className="w-16 h-16 rounded-3xl flex items-center justify-center shadow-lg"
+          style={{ background: "linear-gradient(135deg, #B4E8E0, #C3898E)" }}
+        >
           <span className="text-3xl">🌙</span>
         </div>
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-purple-900 tracking-tight">Luna IQ</h1>
-          <p className="text-sm text-purple-400 mt-0.5">Your wellness companion</p>
+          <h1 className="text-2xl font-bold text-white tracking-tight">Luna IQ</h1>
+          <p className="text-sm text-white/70 mt-0.5">Your wellness companion</p>
         </div>
       </motion.div>
 
       {/* Card */}
       <motion.div
-        className="w-full max-w-sm bg-white/80 backdrop-blur-md rounded-3xl p-7 shadow-xl border border-white/60"
+        className="w-full max-w-sm backdrop-blur-xl rounded-3xl p-7 shadow-2xl border border-white/30"
+        style={{ background: "rgba(255,255,255,0.18)" }}
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.1 }}
       >
-        <h2 className="text-xl font-semibold text-foreground mb-1">Create your account</h2>
-        <p className="text-sm text-muted-foreground mb-6">Begin your wellness journey today</p>
+        <h2 className="text-xl font-semibold text-white mb-1">Create your account</h2>
+        <p className="text-sm text-white/70 mb-6">Begin your wellness journey today</p>
 
         {error && (
-          <div className="bg-rose-50 border border-rose-200 rounded-2xl px-4 py-3 mb-5 text-sm text-rose-700">
+          <div className="bg-white/20 border border-white/30 rounded-2xl px-4 py-3 mb-5 text-sm text-white">
             {error}
           </div>
         )}
@@ -120,21 +123,21 @@ export default function Signup() {
         <form onSubmit={handleSignup} className="flex flex-col gap-3.5">
           {/* Full name */}
           <div className="relative">
-            <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/60" />
+            <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/60" />
             <input
               type="text"
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
               placeholder="Full name"
               required
-              className="w-full pl-11 pr-4 py-3.5 rounded-2xl border border-purple-100 bg-purple-50/40 text-sm text-foreground placeholder:text-muted-foreground/60 outline-none focus:border-purple-300 focus:bg-white transition-all"
+              className="w-full pl-11 pr-4 py-3.5 rounded-2xl border border-white/30 bg-white/15 text-sm text-white placeholder:text-white/50 outline-none focus:border-white/60 focus:bg-white/25 transition-all"
             />
           </div>
 
           {/* Preview */}
           {showPreview && (
             <motion.p
-              className="text-xs text-purple-500 pl-1 -mt-1"
+              className="text-xs text-white/80 pl-1 -mt-1"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
             >
@@ -144,48 +147,48 @@ export default function Signup() {
 
           {/* Date of birth */}
           <div className="relative">
-            <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/60 pointer-events-none" />
+            <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/60 pointer-events-none" />
             <input
               type="date"
               value={dob}
               onChange={(e) => setDob(e.target.value)}
               max={new Date().toISOString().split("T")[0]}
-              className="w-full pl-11 pr-4 py-3.5 rounded-2xl border border-purple-100 bg-purple-50/40 text-sm text-foreground outline-none focus:border-purple-300 focus:bg-white transition-all"
-              style={{ colorScheme: "light" }}
+              className="w-full pl-11 pr-4 py-3.5 rounded-2xl border border-white/30 bg-white/15 text-sm text-white outline-none focus:border-white/60 focus:bg-white/25 transition-all"
+              style={{ colorScheme: "dark" }}
             />
           </div>
-          <p className="text-[11px] text-muted-foreground/70 pl-1 -mt-2">
+          <p className="text-[11px] text-white/60 pl-1 -mt-2">
             Date of birth — used for personalised care 🌙
           </p>
 
           {/* Email */}
           <div className="relative">
-            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/60" />
+            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/60" />
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Email address"
               required
-              className="w-full pl-11 pr-4 py-3.5 rounded-2xl border border-purple-100 bg-purple-50/40 text-sm text-foreground placeholder:text-muted-foreground/60 outline-none focus:border-purple-300 focus:bg-white transition-all"
+              className="w-full pl-11 pr-4 py-3.5 rounded-2xl border border-white/30 bg-white/15 text-sm text-white placeholder:text-white/50 outline-none focus:border-white/60 focus:bg-white/25 transition-all"
             />
           </div>
 
           {/* Password */}
           <div className="relative">
-            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/60" />
+            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/60" />
             <input
               type={showPw ? "text" : "password"}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Password (min. 6 characters)"
               required
-              className="w-full pl-11 pr-12 py-3.5 rounded-2xl border border-purple-100 bg-purple-50/40 text-sm text-foreground placeholder:text-muted-foreground/60 outline-none focus:border-purple-300 focus:bg-white transition-all"
+              className="w-full pl-11 pr-12 py-3.5 rounded-2xl border border-white/30 bg-white/15 text-sm text-white placeholder:text-white/50 outline-none focus:border-white/60 focus:bg-white/25 transition-all"
             />
             <button
               type="button"
               onClick={() => setShowPw(!showPw)}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground/50 hover:text-muted-foreground transition-colors"
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-white/50 hover:text-white transition-colors"
             >
               {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>
@@ -194,12 +197,15 @@ export default function Signup() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3.5 rounded-2xl font-semibold text-sm text-white transition-all active:scale-[0.98] disabled:opacity-60 flex items-center justify-center gap-2 mt-1"
-            style={{ background: loading ? "#c4b5fd" : "linear-gradient(135deg, #8B5CF6, #A855F7)" }}
+            className="w-full py-3.5 rounded-2xl font-semibold text-sm transition-all active:scale-[0.98] disabled:opacity-60 flex items-center justify-center gap-2 mt-1"
+            style={{
+              background: loading ? "rgba(180,232,224,0.6)" : "#B4E8E0",
+              color: "#4A3644",
+            }}
           >
             {loading ? (
               <motion.div
-                className="w-4 h-4 rounded-full border-2 border-white border-t-transparent"
+                className="w-4 h-4 rounded-full border-2 border-current border-t-transparent"
                 animate={{ rotate: 360 }}
                 transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
               />
@@ -212,11 +218,11 @@ export default function Signup() {
           </button>
         </form>
 
-        <p className="text-center text-sm text-muted-foreground mt-6">
+        <p className="text-center text-sm text-white/70 mt-6">
           Already have an account?{" "}
           <button
             onClick={() => setLocation("/login")}
-            className="text-purple-600 font-semibold hover:text-purple-700 transition-colors"
+            className="text-white font-semibold hover:text-white/80 transition-colors underline underline-offset-2"
           >
             Sign in
           </button>

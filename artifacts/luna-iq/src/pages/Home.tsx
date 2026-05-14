@@ -202,7 +202,8 @@ function InsightModal({
           onClick={onClose}
         />
         <motion.div
-          className="relative w-full max-w-[430px] bg-background rounded-t-3xl px-6 pt-5 pb-10 shadow-2xl max-h-[88vh] overflow-y-auto"
+          className="relative w-full max-w-[430px] rounded-t-3xl px-6 pt-5 pb-10 shadow-2xl max-h-[88vh] overflow-y-auto"
+          style={{ background: "linear-gradient(160deg, #F5E1E3 0%, #ECD5DC 100%)" }}
           initial={{ y: "100%" }}
           animate={{ y: 0 }}
           exit={{ y: "100%" }}
@@ -211,8 +212,8 @@ function InsightModal({
           <div className="w-10 h-1 bg-muted/60 rounded-full mx-auto mb-5" />
           <div className="flex items-center justify-between mb-5">
             <div className="flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-purple-500" />
-              <span className="font-semibold text-sm uppercase tracking-wider text-purple-800">Luna's Insight</span>
+              <Sparkles className="w-5 h-5 text-luna-rose" />
+              <span className="font-semibold text-sm uppercase tracking-wider text-foreground">Luna's Insight</span>
             </div>
             <button
               onClick={onClose}
@@ -230,7 +231,8 @@ function InsightModal({
               <p className="text-xs text-muted-foreground italic text-center">{insight.reassurance}</p>
               <button
                 onClick={onLogMood}
-                className="flex items-center gap-2 bg-purple-600 text-white font-semibold text-sm px-6 py-3 rounded-2xl"
+                className="flex items-center gap-2 font-semibold text-sm px-6 py-3 rounded-2xl"
+                style={{ background: "#B4E8E0", color: "#4A3644" }}
               >
                 <PlusCircle className="w-4 h-4" />
                 Log Today's Mood
@@ -240,10 +242,10 @@ function InsightModal({
             <div className="flex flex-col gap-4">
               <p className="text-sm text-foreground leading-relaxed">{insight.insight}</p>
               {insight.pattern && (
-                <div className="bg-luna-lavender/20 rounded-2xl px-4 py-3 border border-purple-100">
+                <div className="rounded-2xl px-4 py-3" style={{ background: "rgba(180,232,224,0.25)", border: "1px solid rgba(180,232,224,0.50)" }}>
                   <div className="flex items-center gap-1.5 mb-1">
-                    <Lightbulb className="w-3.5 h-3.5 text-purple-500" />
-                    <span className="text-[10px] font-semibold uppercase tracking-wider text-purple-700">Pattern Detected</span>
+                    <Lightbulb className="w-3.5 h-3.5 text-luna-rose" />
+                    <span className="text-[10px] font-semibold uppercase tracking-wider text-foreground">Pattern Detected</span>
                   </div>
                   <p className="text-xs text-foreground/80 leading-relaxed">{insight.pattern}</p>
                 </div>
@@ -381,8 +383,8 @@ export default function Home() {
           )}
 
           {/* Today's Check-in */}
-          <div className="bg-white rounded-3xl p-5 shadow-sm border border-card-border relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-28 h-28 bg-luna-lavender/20 rounded-full blur-2xl -mr-8 -mt-8 pointer-events-none" />
+          <div className="luna-glass rounded-3xl p-5 shadow-sm relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-28 h-28 bg-luna-mint/20 rounded-full blur-2xl -mr-8 -mt-8 pointer-events-none" />
             <h2 className="text-base font-semibold text-foreground mb-3">Today's Check-in</h2>
 
             <div className="flex gap-3">
@@ -434,14 +436,14 @@ export default function Home() {
 
           {/* Luna Insight Preview Card */}
           <motion.div
-            className="bg-white rounded-3xl p-5 shadow-sm border border-card-border"
+            className="luna-glass rounded-3xl p-5 shadow-sm"
             style={{ cursor: insight ? "pointer" : "default" }}
             whileTap={insight ? { scale: 0.98 } : {}}
             onClick={() => insight && setModalOpen(true)}
           >
             <div className="flex items-center gap-2 mb-3">
-              <Sparkles className="w-4 h-4 text-purple-600" />
-              <h3 className="font-semibold uppercase tracking-wider text-xs text-purple-900">Luna's Insight</h3>
+              <Sparkles className="w-4 h-4 text-luna-rose" />
+              <h3 className="font-semibold uppercase tracking-wider text-xs text-foreground">Luna's Insight</h3>
             </div>
 
             {/* State 1: Loading / generating */}
@@ -449,17 +451,17 @@ export default function Home() {
               <div className="flex flex-col items-center gap-3 py-3">
                 <div className="flex items-center gap-3">
                   <motion.div
-                    className="w-2 h-2 rounded-full bg-purple-300"
+                    className="w-2 h-2 rounded-full bg-luna-mint"
                     animate={{ scale: [1, 1.4, 1], opacity: [0.5, 1, 0.5] }}
                     transition={{ duration: 1.2, repeat: Infinity, delay: 0 }}
                   />
                   <motion.div
-                    className="w-2 h-2 rounded-full bg-purple-400"
+                    className="w-2 h-2 rounded-full bg-luna-rose"
                     animate={{ scale: [1, 1.4, 1], opacity: [0.5, 1, 0.5] }}
                     transition={{ duration: 1.2, repeat: Infinity, delay: 0.2 }}
                   />
                   <motion.div
-                    className="w-2 h-2 rounded-full bg-purple-500"
+                    className="w-2 h-2 rounded-full bg-luna-gold"
                     animate={{ scale: [1, 1.4, 1], opacity: [0.5, 1, 0.5] }}
                     transition={{ duration: 1.2, repeat: Infinity, delay: 0.4 }}
                   />
@@ -478,7 +480,8 @@ export default function Home() {
                 </p>
                 <button
                   onClick={(e) => { e.stopPropagation(); setLocation("/mood"); }}
-                  className="self-start text-xs font-semibold text-white bg-purple-500 hover:bg-purple-600 px-4 py-2 rounded-2xl transition-colors active:scale-95"
+                  className="self-start text-xs font-semibold px-4 py-2 rounded-2xl transition-all active:scale-95"
+                  style={{ background: "#B4E8E0", color: "#4A3644" }}
                 >
                   Log mood now →
                 </button>
@@ -492,7 +495,7 @@ export default function Home() {
                   <p className="text-sm text-foreground leading-relaxed flex-1 line-clamp-2">
                     {insightPreview}
                   </p>
-                  <div className="flex items-center gap-0.5 text-purple-600 shrink-0 mt-0.5">
+                  <div className="flex items-center gap-0.5 text-luna-rose shrink-0 mt-0.5">
                     <span className="text-xs font-semibold">See more</span>
                     <ChevronRight className="w-3.5 h-3.5" />
                   </div>
@@ -506,7 +509,7 @@ export default function Home() {
                 <p className="text-sm text-muted-foreground">Luna couldn't prepare your insight right now.</p>
                 <button
                   onClick={(e) => { e.stopPropagation(); loadInsight(); }}
-                  className="text-xs font-semibold text-purple-600 shrink-0 ml-2"
+                  className="text-xs font-semibold text-luna-rose shrink-0 ml-2"
                 >
                   Retry →
                 </button>
@@ -519,12 +522,14 @@ export default function Home() {
           {/* Navigation Grid */}
           <div className="grid grid-cols-2 gap-3">
             <Link href="/chat">
-              <div className="bg-gradient-to-br from-violet-100 to-purple-100 hover:from-violet-200 hover:to-purple-200 transition-colors rounded-3xl p-5 flex flex-col items-center justify-center text-center aspect-square cursor-pointer shadow-sm border border-purple-200/60">
-                <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm mb-3 text-purple-600">
+              <div className="rounded-3xl p-5 flex flex-col items-center justify-center text-center aspect-square cursor-pointer shadow-sm transition-all active:scale-[0.97]"
+                style={{ background: "linear-gradient(135deg, rgba(195,137,142,0.25) 0%, rgba(180,232,224,0.25) 100%)", border: "1px solid rgba(195,137,142,0.30)" }}>
+                <div className="w-12 h-12 rounded-full flex items-center justify-center shadow-sm mb-3"
+                  style={{ background: "#C3898E", color: "white" }}>
                   <MessageCircleHeart className="w-6 h-6" />
                 </div>
-                <h3 className="font-semibold text-purple-900">Luna Chat</h3>
-                <p className="text-xs text-purple-700/80 mt-1">Talk to your AI companion</p>
+                <h3 className="font-semibold text-foreground">Luna Chat</h3>
+                <p className="text-xs text-muted-foreground mt-1">Talk to your AI companion</p>
               </div>
             </Link>
 

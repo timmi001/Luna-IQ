@@ -31,11 +31,11 @@ function LoadingScreen() {
   return (
     <div
       className="min-h-screen flex items-center justify-center"
-      style={{ background: "linear-gradient(160deg, #FFF7FB 0%, #F3EEFF 50%, #FFF0F6 100%)" }}
+      style={{ background: "linear-gradient(160deg, #F5E1E3 0%, #ECD5DC 60%, #E0CDD6 100%)" }}
     >
       <motion.div
         className="w-16 h-16 rounded-3xl flex items-center justify-center shadow-lg"
-        style={{ background: "linear-gradient(135deg, #E9E4FF, #F7D6E0)" }}
+        style={{ background: "linear-gradient(135deg, #B4E8E0, #C3898E)" }}
         animate={{ scale: [1, 1.1, 1], opacity: [0.7, 1, 0.7] }}
         transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
       >
