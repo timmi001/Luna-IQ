@@ -20,16 +20,7 @@ async function syncTodayToBackend(userId: string) {
 
     if (phase === "Unknown") return;
 
-    const symptoms: string[] = (() => {
-      try {
-        const raw = localStorage.getItem("luna_symptoms");
-        if (!raw) return [];
-        const entries = JSON.parse(raw) as { date: string; note: string }[];
-        const entry = entries.find((e) => e.date === today);
-        if (!entry?.note) return [];
-        return entry.note.split(",").map((s) => s.trim()).filter(Boolean);
-      } catch { return []; }
-    })();
+    const symptoms = storage.getSymptomsArray(today);
 
     const moodToday =
       latestMood && latestMood.date.startsWith(today) ? latestMood.mood : "neutral";

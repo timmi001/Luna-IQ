@@ -67,17 +67,8 @@ export default function Mood() {
     try {
       const cycleData = storage.getCycle();
       const { phase, currentDay } = getCycleDetails(cycleData.lastPeriodStart, cycleData.cycleLength);
-      const symptoms: string[] = (() => {
-        try {
-          const raw = localStorage.getItem("luna_symptoms");
-          if (!raw) return [];
-          const entries = JSON.parse(raw) as { date: string; note: string }[];
-          const today = new Date().toISOString().split("T")[0];
-          const entry = entries.find((e) => e.date === today);
-          if (!entry?.note) return [];
-          return entry.note.split(",").map((s) => s.trim()).filter(Boolean);
-        } catch { return []; }
-      })();
+      const today = new Date().toISOString().split("T")[0]!;
+      const symptoms = storage.getSymptomsArray(today);
 
       await fetch(`${BASE}/api/luna/log`, {
         method: "POST",

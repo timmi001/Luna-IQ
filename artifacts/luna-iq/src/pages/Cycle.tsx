@@ -14,24 +14,12 @@ const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 // ── Symptom helpers ────────────────────────────────────────────────────────────
 function getTodaySymptomNote(): string {
-  try {
-    const raw = localStorage.getItem("luna_symptoms");
-    if (!raw) return "";
-    const entries = JSON.parse(raw) as { date: string; note: string }[];
-    const today = new Date().toISOString().split("T")[0];
-    return entries.find((e) => e.date === today)?.note ?? "";
-  } catch { return ""; }
+  const today = new Date().toISOString().split("T")[0]!;
+  return storage.getSymptomsNote(today);
 }
 function saveSymptomNote(note: string) {
-  try {
-    const raw = localStorage.getItem("luna_symptoms");
-    const entries: { date: string; note: string }[] = raw ? JSON.parse(raw) : [];
-    const today = new Date().toISOString().split("T")[0];
-    const idx = entries.findIndex((e) => e.date === today);
-    if (idx >= 0) entries[idx].note = note;
-    else entries.unshift({ date: today, note });
-    localStorage.setItem("luna_symptoms", JSON.stringify(entries));
-  } catch {}
+  const today = new Date().toISOString().split("T")[0]!;
+  storage.saveSymptomsNote(today, note);
 }
 
 // ── Phase helpers ──────────────────────────────────────────────────────────────

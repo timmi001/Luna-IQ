@@ -8,6 +8,7 @@ import {
 } from "react";
 import type { AuthChangeEvent, Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
+import { setStorageUser, migrateGlobalData } from "@/utils/storage";
 
 export type Profile = {
   id: string;
@@ -211,6 +212,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       initializedRef.current = true;
       const uid = stored?.user?.id ?? null;
       currentUserIdRef.current = uid;
+
+      // Scope localStorage to this user BEFORE any page renders (must precede setLoading)
+      if (uid) {
+        setStorageUser(uid);
+        migrateGlobalData(uid);
+      } else {
+        setStorageUser(null);
+      }
+
       setSession(stored);
       setLoading(false);   // ← loading screen dismissed here, fast
 
@@ -259,6 +269,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           signingOutRef.current  = false;
           fetchingForRef.current = null;   // clear any stale fetch lock
           console.log("[Luna Auth] SIGNED_IN — guards cleared");
+        }
+
+        // Scope localStorage to the incoming user BEFORE React re-renders
+        if (incomingUserId) {
+          setStorageUser(incomingUserId);
+          migrateGlobalData(incomingUserId);
+        } else {
+          setStorageUser(null);
         }
 
         // ── Update session ─────────────────────────────────────────────────
@@ -346,6 +364,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     fetchingForRef.current = null;
 
     try { localStorage.removeItem("luna-iq-auth"); } catch { /* ignore */ }
+    setStorageUser(null);
 
     setSession(null);
     setProfile(null);

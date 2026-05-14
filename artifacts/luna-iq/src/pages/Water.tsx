@@ -5,24 +5,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import { PageTransition } from "@/components/PageTransition";
 import { useAuth } from "@/contexts/AuthContext";
 import { addPoints } from "@/lib/points";
+import { storage } from "@/utils/storage";
 
 const GOAL = 8;
 const INTERVAL_HRS = 3;
-
-function getTodayGlasses(): number {
-  try {
-    const raw = localStorage.getItem("luna_water");
-    if (!raw) return 0;
-    const data = JSON.parse(raw) as { date: string; glasses: number };
-    const today = new Date().toISOString().split("T")[0];
-    return data.date === today ? data.glasses : 0;
-  } catch { return 0; }
-}
-
-function saveGlasses(n: number) {
-  const today = new Date().toISOString().split("T")[0];
-  localStorage.setItem("luna_water", JSON.stringify({ date: today, glasses: n }));
-}
 
 function getNextReminder(): string {
   const now = new Date();
@@ -38,14 +24,14 @@ export default function Water() {
   const [wave, setWave] = useState(false);
 
   useEffect(() => {
-    setGlasses(getTodayGlasses());
+    setGlasses(storage.getWaterToday());
   }, []);
 
   const add = () => {
     if (glasses >= GOAL) return;
     const next = glasses + 1;
     setGlasses(next);
-    saveGlasses(next);
+    storage.setWater(next);
     setWave(true);
     setTimeout(() => setWave(false), 700);
     if (next >= GOAL) {
@@ -60,7 +46,7 @@ export default function Water() {
     if (glasses <= 0) return;
     const next = glasses - 1;
     setGlasses(next);
-    saveGlasses(next);
+    storage.setWater(next);
   };
 
   const fillPct = Math.min((glasses / GOAL) * 100, 100);

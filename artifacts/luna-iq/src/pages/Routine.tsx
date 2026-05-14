@@ -5,14 +5,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { PageTransition } from "@/components/PageTransition";
 import { useAuth } from "@/contexts/AuthContext";
 import { addPoints } from "@/lib/points";
-
-interface RoutineItem {
-  id: string;
-  label: string;
-  emoji: string;
-  done: boolean;
-  time?: string;
-}
+import { storage } from "@/utils/storage";
+import type { RoutineItem } from "@/utils/storage";
 
 const DEFAULT_ROUTINES: Omit<RoutineItem, "done">[] = [
   { id: "1", emoji: "☀️", label: "Morning stretch", time: "7:00 AM" },
@@ -25,10 +19,9 @@ const DEFAULT_ROUTINES: Omit<RoutineItem, "done">[] = [
 
 function getStoredRoutine(): RoutineItem[] {
   try {
-    const raw = localStorage.getItem("luna_routine");
-    if (!raw) return DEFAULT_ROUTINES.map((r) => ({ ...r, done: false }));
-    const stored = JSON.parse(raw) as { items: RoutineItem[]; date: string };
-    const today = new Date().toISOString().split("T")[0];
+    const stored = storage.getRoutineRaw();
+    if (!stored) return DEFAULT_ROUTINES.map((r) => ({ ...r, done: false }));
+    const today = new Date().toISOString().split("T")[0]!;
     if (stored.date !== today) {
       return stored.items.map((i) => ({ ...i, done: false }));
     }
@@ -39,8 +32,7 @@ function getStoredRoutine(): RoutineItem[] {
 }
 
 function saveRoutine(items: RoutineItem[]) {
-  const today = new Date().toISOString().split("T")[0];
-  localStorage.setItem("luna_routine", JSON.stringify({ items, date: today }));
+  storage.saveRoutine(items);
 }
 
 export default function Routine() {
