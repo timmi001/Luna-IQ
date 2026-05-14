@@ -3,6 +3,8 @@ import { useLocation } from "wouter";
 import { ArrowLeft } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { PageTransition } from "@/components/PageTransition";
+import { useAuth } from "@/contexts/AuthContext";
+import { addPoints } from "@/lib/points";
 
 const GOAL = 8;
 const INTERVAL_HRS = 3;
@@ -30,6 +32,7 @@ function getNextReminder(): string {
 
 export default function Water() {
   const [, setLocation] = useLocation();
+  const { user } = useAuth();
   const [glasses, setGlasses] = useState(0);
   const [showCelebrate, setShowCelebrate] = useState(false);
   const [wave, setWave] = useState(false);
@@ -49,6 +52,8 @@ export default function Water() {
       setShowCelebrate(true);
       setTimeout(() => setShowCelebrate(false), 2500);
     }
+    // Award points for using this quick tool (once per day)
+    if (user?.id) addPoints(user.id, "quick_tool").catch(() => {});
   };
 
   const remove = () => {

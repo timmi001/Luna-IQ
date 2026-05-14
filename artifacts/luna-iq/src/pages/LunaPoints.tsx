@@ -160,11 +160,20 @@ function HistoryRow({ record }: { record: PointRecord }) {
 }
 
 // ── Reward card ────────────────────────────────────────────────────────────────
-function RewardCard({ reward, userPoints }: { reward: Reward; userPoints: number }) {
+function RewardCard({
+  reward,
+  userPoints,
+  onClick,
+}: {
+  reward: Reward;
+  userPoints: number;
+  onClick: () => void;
+}) {
   const canAfford = userPoints >= reward.points_required;
   return (
-    <div
-      className="rounded-3xl p-4 border flex items-center gap-4"
+    <button
+      onClick={onClick}
+      className="w-full rounded-3xl p-4 border flex items-center gap-4 text-left active:scale-[0.98] transition-all"
       style={{
         background: canAfford ? "linear-gradient(135deg, #FDF2F8, #F5F3FF)" : "#FAFAFA",
         borderColor: canAfford ? "#E9D5FF" : "#E5E7EB",
@@ -183,20 +192,122 @@ function RewardCard({ reward, userPoints }: { reward: Reward; userPoints: number
           <span className="text-[10px] font-semibold text-purple-500">{reward.points_required} pts needed</span>
         </div>
       </div>
-      <button
-        disabled
-        className="flex-shrink-0 flex items-center gap-1.5 rounded-2xl px-3 py-2 text-xs font-semibold border transition-all"
+      <div
+        className="flex-shrink-0 flex items-center gap-1.5 rounded-2xl px-3 py-2 text-xs font-semibold border"
         style={{
           background: canAfford ? "linear-gradient(135deg, #C4B5FD, #F9A8D4)" : "#F3F4F6",
           color: canAfford ? "white" : "#9CA3AF",
           borderColor: canAfford ? "transparent" : "#E5E7EB",
-          opacity: 0.8,
         }}
       >
-        {canAfford ? null : <Lock className="w-3 h-3" />}
+        {!canAfford && <Lock className="w-3 h-3" />}
         {canAfford ? "Redeem" : "Locked"}
-      </button>
-    </div>
+      </div>
+    </button>
+  );
+}
+
+// ── Reward detail sheet ─────────────────────────────────────────────────────────
+function RewardDetailSheet({
+  reward,
+  userPoints,
+  onClose,
+}: {
+  reward: Reward;
+  userPoints: number;
+  onClose: () => void;
+}) {
+  const canAfford = userPoints >= reward.points_required;
+  const remaining = Math.max(reward.points_required - userPoints, 0);
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        className="fixed inset-0 z-50 flex flex-col justify-end items-center"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+      >
+        {/* Backdrop */}
+        <motion.div
+          className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+          onClick={onClose}
+        />
+
+        {/* Sheet */}
+        <motion.div
+          className="relative w-full max-w-[430px] rounded-t-3xl px-6 pt-5 pb-10 shadow-2xl"
+          style={{ background: "linear-gradient(160deg, #F5F3FF 0%, #FDF2F8 100%)" }}
+          initial={{ y: "100%" }}
+          animate={{ y: 0 }}
+          exit={{ y: "100%" }}
+          transition={{ type: "spring", damping: 28, stiffness: 300 }}
+        >
+          <div className="w-10 h-1 bg-muted/50 rounded-full mx-auto mb-5" />
+
+          {/* Emoji + title */}
+          <div className="flex flex-col items-center gap-3 mb-6">
+            <div
+              className="w-20 h-20 rounded-3xl flex items-center justify-center text-4xl shadow-md"
+              style={{ background: canAfford ? "linear-gradient(135deg, #EDE9FE, #FCE7F3)" : "#F3F4F6" }}
+            >
+              {REWARD_TYPE_EMOJI[reward.reward_type] ?? "🎁"}
+            </div>
+            <div className="text-center">
+              <p className="text-lg font-bold text-foreground">{reward.reward_name}</p>
+              <p className="text-xs text-muted-foreground mt-1">{reward.reward_description}</p>
+            </div>
+          </div>
+
+          {/* Points info */}
+          <div
+            className="rounded-2xl p-4 mb-4"
+            style={{ background: canAfford ? "linear-gradient(135deg, #EDE9FE, #FCE7F3)" : "#F3F4F6", border: "1px solid #E9D5FF" }}
+          >
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-sm font-semibold text-foreground">Points required</p>
+              <p className="text-sm font-bold text-purple-600">{reward.points_required} pts</p>
+            </div>
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-sm text-muted-foreground">Your balance</p>
+              <p className="text-sm font-semibold text-foreground">{userPoints} pts</p>
+            </div>
+            {/* Progress bar */}
+            <div className="h-2 rounded-full bg-white/60 overflow-hidden">
+              <motion.div
+                className="h-full rounded-full"
+                style={{ background: "linear-gradient(90deg, #C4B5FD, #F9A8D4)" }}
+                initial={{ width: 0 }}
+                animate={{ width: `${Math.min((userPoints / reward.points_required) * 100, 100)}%` }}
+                transition={{ duration: 0.6, ease: "easeOut" }}
+              />
+            </div>
+            {!canAfford && (
+              <p className="text-[11px] text-muted-foreground mt-2 text-center">
+                {remaining} more pts to unlock this reward
+              </p>
+            )}
+          </div>
+
+          {/* Status */}
+          <div className="rounded-2xl px-4 py-3 mb-5 text-center" style={{ background: "rgba(255,255,255,0.60)" }}>
+            <p className="text-sm font-medium text-purple-700">
+              {canAfford
+                ? "🎉 You've earned this reward! Redemption coming soon."
+                : "⏳ Coming soon — keep earning points to unlock this!"}
+            </p>
+          </div>
+
+          <button
+            onClick={onClose}
+            className="w-full py-3.5 rounded-2xl text-sm font-semibold text-white shadow-md"
+            style={{ background: "linear-gradient(135deg, #C4B5FD, #F9A8D4)" }}
+          >
+            Got it
+          </button>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
   );
 }
 
@@ -210,6 +321,7 @@ export default function LunaPoints() {
   const [rewards, setRewards] = useState<Reward[]>(FALLBACK_REWARDS);
   const [loading, setLoading] = useState(true);
   const [activeSection, setActiveSection] = useState<"earn" | "history" | "rewards">("earn");
+  const [selectedReward, setSelectedReward] = useState<Reward | null>(null);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -343,12 +455,26 @@ export default function LunaPoints() {
                   <p className="text-[11px] text-muted-foreground mt-0.5">Coming soon — keep earning 💜</p>
                 </div>
                 {rewards.map((r) => (
-                  <RewardCard key={r.id} reward={r} userPoints={wallet?.total_points ?? 0} />
+                  <RewardCard
+                    key={r.id}
+                    reward={r}
+                    userPoints={wallet?.total_points ?? 0}
+                    onClick={() => setSelectedReward(r)}
+                  />
                 ))}
               </div>
             )}
           </motion.div>
         </AnimatePresence>
+
+        {/* Reward detail sheet */}
+        {selectedReward && (
+          <RewardDetailSheet
+            reward={selectedReward}
+            userPoints={wallet?.total_points ?? 0}
+            onClose={() => setSelectedReward(null)}
+          />
+        )}
 
         {/* Wellness note */}
         <div

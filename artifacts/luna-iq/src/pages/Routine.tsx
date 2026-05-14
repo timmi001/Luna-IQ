@@ -3,6 +3,8 @@ import { useLocation } from "wouter";
 import { ArrowLeft, Plus, X, Check } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { PageTransition } from "@/components/PageTransition";
+import { useAuth } from "@/contexts/AuthContext";
+import { addPoints } from "@/lib/points";
 
 interface RoutineItem {
   id: string;
@@ -43,6 +45,7 @@ function saveRoutine(items: RoutineItem[]) {
 
 export default function Routine() {
   const [, setLocation] = useLocation();
+  const { user } = useAuth();
   const [items, setItems] = useState<RoutineItem[]>([]);
   const [newLabel, setNewLabel] = useState("");
   const [newTime, setNewTime] = useState("");
@@ -54,8 +57,13 @@ export default function Routine() {
 
   const toggle = (id: string) => {
     setItems((prev) => {
+      const item = prev.find((i) => i.id === id);
       const next = prev.map((i) => i.id === id ? { ...i, done: !i.done } : i);
       saveRoutine(next);
+      // Award points when checking an item off (not when unchecking)
+      if (item && !item.done && user?.id) {
+        addPoints(user.id, "quick_tool").catch(() => {});
+      }
       return next;
     });
   };

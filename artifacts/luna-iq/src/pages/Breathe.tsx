@@ -3,6 +3,8 @@ import { useLocation } from "wouter";
 import { ArrowLeft } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { PageTransition } from "@/components/PageTransition";
+import { useAuth } from "@/contexts/AuthContext";
+import { addPoints } from "@/lib/points";
 
 type Phase = "inhale" | "hold" | "exhale" | "idle";
 
@@ -14,6 +16,7 @@ const PHASES: { phase: Phase; label: string; seconds: number; color: string }[] 
 
 export default function Breathe() {
   const [, setLocation] = useLocation();
+  const { user } = useAuth();
   const [running, setRunning] = useState(false);
   const [phaseIdx, setPhaseIdx] = useState(0);
   const [countdown, setCountdown] = useState(4);
@@ -40,6 +43,8 @@ export default function Breathe() {
     setPhaseIdx(0);
     setCountdown(4);
     setRunning(true);
+    // Award points for using this quick tool (once per day)
+    if (user?.id) addPoints(user.id, "quick_tool").catch(() => {});
   };
 
   useEffect(() => {

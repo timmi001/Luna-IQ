@@ -15,13 +15,13 @@ export function BottomNav() {
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 flex justify-center w-full pointer-events-none">
-      <nav className="glass-nav w-full max-w-[430px] h-20 px-4 flex items-center justify-between pb-safe pointer-events-auto rounded-t-3xl">
+      <nav className="glass-nav w-full max-w-[430px] h-14 px-4 flex items-center justify-between pb-safe pointer-events-auto rounded-t-3xl">
         {NAV_ITEMS.map((item) => {
           const isActive = location === item.href;
           return (
             <Link key={item.href} href={item.href}>
               <div
-                className="flex flex-col items-center justify-center w-14 h-14 cursor-pointer relative"
+                className="flex flex-col items-center justify-center w-14 h-12 cursor-pointer relative"
                 data-testid={`nav-${item.label.toLowerCase()}`}
               >
                 {isActive && (

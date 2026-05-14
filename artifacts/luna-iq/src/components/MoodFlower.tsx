@@ -105,7 +105,7 @@ export function MoodFlower({
 }) {
   const id = `mf-${mood.label}`;
   const op = isSelected ? 1 : 0.75;
-  const eSize = emojiSize ?? (isSelected ? 28 : 24);
+  const eSize = emojiSize ?? (isSelected ? 38 : 32);
 
   return (
     <div className="relative" style={{ width: size, height: size }}>
