@@ -16,6 +16,8 @@ const ChatBody = z.object({
   conversationHistory: z
     .array(z.object({ role: z.string(), content: z.string() }))
     .optional(),
+  cyclePhase: z.string().optional(),
+  dayOfCycle: z.number().optional(),
 });
 
 // ── POST /chat — streaming chat via Server-Sent Events ────────────────────────
@@ -26,7 +28,7 @@ router.post("/chat", async (req, res) => {
     return;
   }
 
-  const { userId, message, conversationHistory = [] } = parsed.data;
+  const { userId, message, conversationHistory = [], cyclePhase, dayOfCycle } = parsed.data;
 
   // Flush headers immediately so the client / proxy knows we're alive
   res.setHeader("Content-Type", "text/event-stream");
@@ -90,6 +92,7 @@ router.post("/chat", async (req, res) => {
       conversationHistory,
       (text) => safeWrite({ content: text }),
       controller.signal,
+      cyclePhase !== undefined ? { cyclePhase, dayOfCycle } : undefined,
     );
   } catch (err) {
     logger.error({ err, userId }, "Unexpected chat route error");

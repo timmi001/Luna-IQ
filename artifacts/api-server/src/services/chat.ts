@@ -8,6 +8,11 @@ const CHAT_MODEL = "gemini-2.5-flash";
 
 export type ChatMessage = { role: string; content: string };
 
+export type LiveCycleContext = {
+  cyclePhase?: string;
+  dayOfCycle?: number;
+};
+
 export async function getRecentLogsContext(userId: string): Promise<string> {
   try {
     const logs = await db
@@ -39,12 +44,23 @@ export async function streamChatResponse(
   conversationHistory: ChatMessage[],
   onChunk: (text: string) => void,
   signal?: AbortSignal,
+  liveContext?: LiveCycleContext,
 ): Promise<void> {
   const recentContext = await getRecentLogsContext(userId);
 
+  // Live cycle status is calculated fresh on the client from today's date + cycle start.
+  // It always reflects the user's CURRENT phase, regardless of what was stored in past logs.
+  const liveStatus = liveContext?.cyclePhase
+    ? `User's CURRENT cycle status (calculated right now — use this, not the phase in past logs):
+- Phase: ${liveContext.cyclePhase}
+- Day of cycle: ${liveContext.dayOfCycle ?? "unknown"}
+
+`
+    : "";
+
   const systemContext = `${LUNA_SYSTEM_PROMPT}
 
-User's recent wellness data:
+${liveStatus}User's recent wellness log history (for mood and symptom patterns — phases listed here may be outdated):
 ${recentContext}`;
 
   const chatMessages = [
