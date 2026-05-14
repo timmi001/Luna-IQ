@@ -31,16 +31,18 @@ function LoadingScreen() {
   return (
     <div
       className="min-h-screen flex items-center justify-center"
-      style={{ background: "linear-gradient(160deg, #F5E1E3 0%, #ECD5DC 60%, #E0CDD6 100%)" }}
+      style={{
+        backgroundImage: "url('/luna-splash.jpg')",
+        backgroundSize: "cover",
+        backgroundPosition: "center top",
+      }}
     >
       <motion.div
-        className="w-16 h-16 rounded-3xl flex items-center justify-center shadow-lg"
-        style={{ background: "linear-gradient(135deg, #B4E8E0, #C3898E)" }}
-        animate={{ scale: [1, 1.1, 1], opacity: [0.7, 1, 0.7] }}
-        transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
-      >
-        <span className="text-3xl">🌙</span>
-      </motion.div>
+        className="w-3 h-3 rounded-full"
+        style={{ background: "#B4E8E0", marginTop: "60vh" }}
+        animate={{ scale: [1, 1.6, 1], opacity: [0.4, 1, 0.4] }}
+        transition={{ duration: 1.4, repeat: Infinity, ease: "easeInOut" }}
+      />
     </div>
   );
 }
