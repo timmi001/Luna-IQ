@@ -71,7 +71,9 @@ export default function Insights() {
 
   const fetchUpdates = useCallback(async () => {
     try {
-      const res = await fetch(`${BASE}/api/luna/today-updates/${userId}`);
+      const endpoint = `${BASE}/api/luna/today-updates/${userId}`;
+      console.log("[Luna Insight] Fetching updates — user:", userId, "endpoint:", endpoint);
+      const res = await fetch(endpoint);
       if (res.ok) {
         const { updates } = await res.json() as { updates: DailyUpdate[] };
         setDailyUpdates(updates);
@@ -79,18 +81,22 @@ export default function Insights() {
     } catch {
       // Non-critical
     }
-  }, []);
+  }, [userId]);
 
   const loadInsight = useCallback(async (forceRefresh = false) => {
+    const insightEndpoint = `${BASE}/api/luna/today-insight/${userId}`;
+    console.log("[Luna Insight] Loading insight — user:", userId, "endpoint:", insightEndpoint, "forceRefresh:", forceRefresh);
+
     setLoading(true);
     setError(null);
     try {
       // Check cache first (skip only on manual refresh)
       if (!forceRefresh) {
-        const cacheRes = await fetch(`${BASE}/api/luna/today-insight/${userId}`);
+        const cacheRes = await fetch(insightEndpoint);
         if (cacheRes.ok) {
           const { insight: cached } = await cacheRes.json() as { insight: Insight | null };
           if (cached) {
+            console.log("[Luna Insight] Serving cached insight for user:", userId);
             setAiInsight(cached);
             setLoading(false);
             // Also load any same-day updates
@@ -101,6 +107,7 @@ export default function Insights() {
       }
 
       // No cache — sync today's data then ask Gemini
+      console.log("[Luna Insight] No cache — syncing and generating for user:", userId);
       await syncTodayToBackend(userId);
 
       const res = await fetch(`${BASE}/api/luna/generate-insight`, {
@@ -114,6 +121,7 @@ export default function Insights() {
       }
       if (!res.ok) throw new Error("Failed");
       const data = await res.json() as Insight;
+      console.log("[Luna Insight] Generated fresh insight for user:", userId);
       setAiInsight(data);
       await fetchUpdates();
     } catch {
@@ -121,7 +129,7 @@ export default function Insights() {
     } finally {
       setLoading(false);
     }
-  }, [fetchUpdates]);
+  }, [fetchUpdates, userId]);
 
   useEffect(() => {
     loadInsight(false);

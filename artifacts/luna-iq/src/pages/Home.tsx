@@ -293,16 +293,21 @@ export default function Home() {
 
   const loadInsight = useCallback(async () => {
     if (userId === "guest") return;
+    const insightEndpoint = `${BASE}/api/luna/today-insight/${userId}`;
+    console.log("[Luna Insight] Loading home insight — user:", userId, "endpoint:", insightEndpoint);
     setInsightLoading(true);
     try {
-      const res = await fetch(`${BASE}/api/luna/today-insight/${userId}`);
+      const res = await fetch(insightEndpoint);
       if (res.ok) {
         const { insight: fetched, hasLogs: hl } = await res.json() as {
           insight: Insight | null;
           hasLogs: boolean;
         };
         setHasLogs(hl);
-        if (fetched) setInsight(fetched);
+        if (fetched) {
+          console.log("[Luna Insight] Home insight loaded for user:", userId);
+          setInsight(fetched);
+        }
       }
     } catch {
       // Non-critical
