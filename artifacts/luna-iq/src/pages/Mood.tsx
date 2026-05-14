@@ -182,7 +182,7 @@ export default function Mood() {
                     className="bg-white/80 backdrop-blur-sm rounded-2xl p-3.5 border border-white/80 flex gap-3 items-center shadow-sm"
                   >
                     <div
-                      className="w-11 h-11 rounded-2xl flex items-center justify-center text-xl flex-shrink-0"
+                      className="w-12 h-12 rounded-2xl flex items-center justify-center text-3xl flex-shrink-0"
                       style={{ background: meta?.bg ?? "#f3f4f6" }}
                     >
                       {emoji}

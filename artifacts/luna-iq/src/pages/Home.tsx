@@ -401,7 +401,7 @@ export default function Home() {
                         mood={MOODS.find((m) => m.label === moodLabel) ?? MOODS[0]!}
                         isSelected={false}
                         size={56}
-                        emojiSize={20}
+                        emojiSize={26}
                       />
                     </div>
                   ) : (
