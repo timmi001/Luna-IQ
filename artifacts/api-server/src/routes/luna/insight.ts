@@ -76,9 +76,14 @@ router.get("/logs/:userId", async (req, res) => {
 // Returns cached insight if it exists. If not, checks for today's logs:
 //   - logs found  → generates insight now, caches it, returns it
 //   - no logs     → returns { insight: null, hasLogs: false } (no Gemini call)
+//
+// Cache-Control: no-store prevents the browser and any intermediate proxy from
+// caching this response. The insight must always hit the route handler so that
+// getOrGenerateInsight() can detect new logs and regenerate when needed.
 router.get("/today-insight/:userId", async (req, res) => {
   const { userId } = req.params;
   if (!userId) { res.status(400).json({ error: "userId required" }); return; }
+  res.set("Cache-Control", "no-store");
   try {
     const result = await getOrGenerateInsight(userId);
     res.json(result);
@@ -92,6 +97,7 @@ router.get("/today-insight/:userId", async (req, res) => {
 router.get("/today-updates/:userId", async (req, res) => {
   const { userId } = req.params;
   if (!userId) { res.status(400).json({ error: "userId required" }); return; }
+  res.set("Cache-Control", "no-store");
   try {
     const updates = await getTodayUpdates(userId);
     res.json({ updates });
