@@ -31,9 +31,18 @@ export default function Login() {
     }
   };
 
+  const inputStyle = {
+    background: "rgba(255,255,255,0.12)",
+    border: "1px solid rgba(255,255,255,0.28)",
+  };
+  const onFocus = (e: React.FocusEvent<HTMLInputElement>) =>
+    (e.currentTarget.style.background = "rgba(255,255,255,0.22)");
+  const onBlur = (e: React.FocusEvent<HTMLInputElement>) =>
+    (e.currentTarget.style.background = "rgba(255,255,255,0.12)");
+
   return (
     <>
-      {/* ── Post-login splash transition ── */}
+      {/* ── Post-login splash ── */}
       <AnimatePresence>
         {showSplash && (
           <motion.div
@@ -59,116 +68,118 @@ export default function Login() {
         )}
       </AnimatePresence>
 
-      {/* ── Auth page ── */}
+      {/* ── Page ── */}
       <div
-        className="min-h-screen flex flex-col relative overflow-hidden"
-        style={{
-          backgroundImage: "url('/luna-splash.jpg')",
-          backgroundSize: "cover",
-          backgroundPosition: "center top",
-        }}
+        className="min-h-screen flex flex-col items-center justify-center px-5 py-10"
+        style={{ background: "linear-gradient(160deg, #C3898E 0%, #A57480 45%, #5E4352 100%)" }}
       >
-        {/* Spacer — lets the logo in the image breathe at the top */}
-        <div className="flex-1 min-h-[46vh]" />
-
-        {/* Login card — floats over the cloud area */}
+        {/* Logo */}
         <motion.div
-          className="px-5 pb-10"
-          initial={{ opacity: 0, y: 32 }}
+          className="flex flex-col items-center gap-3 mb-8"
+          initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, ease: "easeOut" }}
+          transition={{ duration: 0.5 }}
         >
           <div
-            className="w-full max-w-sm mx-auto backdrop-blur-2xl rounded-3xl p-7 shadow-2xl"
-            style={{ background: "rgba(255,255,255,0.22)", border: "1px solid rgba(255,255,255,0.35)" }}
+            className="w-20 h-20 rounded-3xl flex items-center justify-center shadow-lg"
+            style={{ background: "rgba(255,255,255,0.20)", border: "1px solid rgba(255,255,255,0.35)" }}
           >
-            <h2 className="text-xl font-semibold text-white mb-1">Welcome back</h2>
-            <p className="text-sm text-white/70 mb-5">Sign in to continue your journey</p>
-
-            {error && (
-              <div
-                className="rounded-2xl px-4 py-3 mb-4 text-sm text-white"
-                style={{ background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.25)" }}
-              >
-                {error}
-              </div>
-            )}
-
-            <form onSubmit={handleLogin} className="flex flex-col gap-3.5">
-              <div className="relative">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/60" />
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Email address"
-                  required
-                  className="w-full pl-11 pr-4 py-3.5 rounded-2xl text-sm text-white placeholder:text-white/50 outline-none transition-all"
-                  style={{
-                    background: "rgba(255,255,255,0.12)",
-                    border: "1px solid rgba(255,255,255,0.28)",
-                  }}
-                  onFocus={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.22)")}
-                  onBlur={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.12)")}
-                />
-              </div>
-
-              <div className="relative">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/60" />
-                <input
-                  type={showPw ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Password"
-                  required
-                  className="w-full pl-11 pr-12 py-3.5 rounded-2xl text-sm text-white placeholder:text-white/50 outline-none transition-all"
-                  style={{
-                    background: "rgba(255,255,255,0.12)",
-                    border: "1px solid rgba(255,255,255,0.28)",
-                  }}
-                  onFocus={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.22)")}
-                  onBlur={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.12)")}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPw(!showPw)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-white/50 hover:text-white/80 transition-colors"
-                >
-                  {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full py-3.5 rounded-2xl font-semibold text-sm transition-all active:scale-[0.98] disabled:opacity-60 flex items-center justify-center gap-2 mt-1"
-                style={{ background: "#B4E8E0", color: "#4A3644" }}
-              >
-                {loading ? (
-                  <motion.div
-                    className="w-4 h-4 rounded-full border-2 border-current border-t-transparent"
-                    animate={{ rotate: 360 }}
-                    transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
-                  />
-                ) : (
-                  <>
-                    <Sparkles className="w-4 h-4" />
-                    Sign in
-                  </>
-                )}
-              </button>
-            </form>
-
-            <p className="text-center text-sm text-white/65 mt-5">
-              New to Luna?{" "}
-              <button
-                onClick={() => setLocation("/signup")}
-                className="text-white font-semibold hover:text-white/80 transition-colors underline underline-offset-2"
-              >
-                Create an account
-              </button>
-            </p>
+            <span className="text-4xl">🌙</span>
           </div>
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-white">Luna IQ</h1>
+            <p className="text-sm text-white/70">Your wellness companion</p>
+          </div>
+        </motion.div>
+
+        {/* Card */}
+        <motion.div
+          className="w-full max-w-sm backdrop-blur-2xl rounded-3xl p-7 shadow-2xl"
+          style={{ background: "rgba(255,255,255,0.18)", border: "1px solid rgba(255,255,255,0.30)" }}
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+        >
+          <h2 className="text-xl font-semibold text-white mb-1">Welcome back</h2>
+          <p className="text-sm text-white/70 mb-5">Sign in to continue your journey</p>
+
+          {error && (
+            <div
+              className="rounded-2xl px-4 py-3 mb-4 text-sm text-white"
+              style={{ background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.25)" }}
+            >
+              {error}
+            </div>
+          )}
+
+          <form onSubmit={handleLogin} className="flex flex-col gap-3.5">
+            <div className="relative">
+              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/60" />
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Email address"
+                required
+                className="w-full pl-11 pr-4 py-3.5 rounded-2xl text-sm text-white placeholder:text-white/50 outline-none transition-all"
+                style={inputStyle}
+                onFocus={onFocus}
+                onBlur={onBlur}
+              />
+            </div>
+
+            <div className="relative">
+              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/60" />
+              <input
+                type={showPw ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Password"
+                required
+                className="w-full pl-11 pr-12 py-3.5 rounded-2xl text-sm text-white placeholder:text-white/50 outline-none transition-all"
+                style={inputStyle}
+                onFocus={onFocus}
+                onBlur={onBlur}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPw(!showPw)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-white/50 hover:text-white/80 transition-colors"
+              >
+                {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-3.5 rounded-2xl font-semibold text-sm transition-all active:scale-[0.98] disabled:opacity-60 flex items-center justify-center gap-2 mt-1"
+              style={{ background: "#B4E8E0", color: "#4A3644" }}
+            >
+              {loading ? (
+                <motion.div
+                  className="w-4 h-4 rounded-full border-2 border-current border-t-transparent"
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
+                />
+              ) : (
+                <>
+                  <Sparkles className="w-4 h-4" />
+                  Sign in
+                </>
+              )}
+            </button>
+          </form>
+
+          <p className="text-center text-sm text-white/65 mt-5">
+            New to Luna?{" "}
+            <button
+              onClick={() => setLocation("/signup")}
+              className="text-white font-semibold hover:text-white/80 transition-colors underline underline-offset-2"
+            >
+              Create an account
+            </button>
+          </p>
         </motion.div>
       </div>
     </>
