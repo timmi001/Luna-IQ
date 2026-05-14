@@ -158,57 +158,104 @@ function detectChangeSignificance(prevLog: LogEntry | null, newLog: LogEntry): "
 
 // ── DB helpers ────────────────────────────────────────────────────────────────
 
-export async function getTodayInsight(userId: string): Promise<InsightResult | null> {
+/**
+ * Returns the most recent insight for today along with its generation timestamp.
+ * Used to decide whether the cache is still valid relative to the latest log.
+ */
+async function getTodayInsightRow(
+  userId: string,
+): Promise<{ insight: InsightResult; createdAt: Date } | null> {
   const today = new Date().toISOString().split("T")[0]!;
   const rows = await db
     .select()
     .from(lunaInsightsTable)
     .where(and(eq(lunaInsightsTable.userId, userId), eq(lunaInsightsTable.date, today)))
+    .orderBy(desc(lunaInsightsTable.createdAt))
     .limit(1);
   if (rows.length === 0) return null;
-  return rows[0]!.insightData as InsightResult;
+  return {
+    insight: rows[0]!.insightData as InsightResult,
+    createdAt: rows[0]!.createdAt,
+  };
 }
 
-// ── Dashboard insight: return cached OR generate if today's logs exist ─────────
-// Called only from the dashboard on load. Never called from log endpoints.
+export async function getTodayInsight(userId: string): Promise<InsightResult | null> {
+  const row = await getTodayInsightRow(userId);
+  return row?.insight ?? null;
+}
+
+/**
+ * Returns the createdAt timestamp of the most recent log for today.
+ * Returns null if no logs exist yet.
+ */
+async function getLatestLogTime(userId: string): Promise<Date | null> {
+  const today = new Date().toISOString().split("T")[0]!;
+  try {
+    const [row] = await db
+      .select({ createdAt: lunaLogsTable.createdAt })
+      .from(lunaLogsTable)
+      .where(and(eq(lunaLogsTable.userId, userId), eq(lunaLogsTable.date, today)))
+      .orderBy(desc(lunaLogsTable.createdAt))
+      .limit(1);
+    return row?.createdAt ?? null;
+  } catch {
+    return null;
+  }
+}
+
+// ── Dashboard insight ─────────────────────────────────────────────────────────
+// Regenerates whenever a log newer than the cached insight exists.
+// This means logging mood after cycle automatically refreshes the insight.
 
 export async function getOrGenerateInsight(
   userId: string,
 ): Promise<{ insight: InsightResult | null; hasLogs: boolean }> {
   const today = new Date().toISOString().split("T")[0]!;
 
-  // 1. Return cached insight if one already exists for today
-  try {
-    const cached = await getTodayInsight(userId);
-    if (cached) return { insight: cached, hasLogs: true };
-  } catch (dbErr) {
-    logger.error({ err: dbErr }, "DB error reading cached insight");
-  }
-
-  // 2. Check if the user has any logs for today
+  // 1. Fetch today's logs to determine if any exist and when the latest one was saved
   let todayLogs: typeof lunaLogsTable.$inferSelect[] = [];
   try {
     todayLogs = await db
       .select()
       .from(lunaLogsTable)
       .where(and(eq(lunaLogsTable.userId, userId), eq(lunaLogsTable.date, today)))
+      .orderBy(desc(lunaLogsTable.createdAt))
       .limit(10);
   } catch (dbErr) {
     logger.error({ err: dbErr }, "DB error checking today's logs");
     return { insight: null, hasLogs: false };
   }
 
-  // 3. No logs today — don't generate anything
+  // 2. No logs at all — nothing to generate from
   if (todayLogs.length === 0) {
     return { insight: null, hasLogs: false };
   }
 
-  // 4. Logs exist — generate the insight now (synchronous, result cached in DB)
+  // 3. Check if a cached insight exists and whether it is still current
+  let cachedRow: { insight: InsightResult; createdAt: Date } | null = null;
+  try {
+    cachedRow = await getTodayInsightRow(userId);
+  } catch (dbErr) {
+    logger.error({ err: dbErr }, "DB error reading cached insight");
+  }
+
+  const latestLogTime = todayLogs[0]!.createdAt;
+
+  // Serve the cache only when it was generated AFTER the most recent log
+  if (cachedRow && cachedRow.createdAt >= latestLogTime) {
+    logger.info({ userId, insightAge: cachedRow.createdAt, latestLog: latestLogTime }, "Serving cached insight — still current");
+    return { insight: cachedRow.insight, hasLogs: true };
+  }
+
+  // 4. New log(s) exist since the last insight (or no insight yet) — regenerate
+  logger.info({ userId, insightAge: cachedRow?.createdAt, latestLog: latestLogTime }, "Regenerating insight — newer log detected");
   try {
     const insight = await generateInsight(userId);
     return { insight, hasLogs: true };
   } catch (err) {
     logger.error({ err, userId }, "getOrGenerateInsight: generation failed");
+    // Return stale cache rather than nothing
+    if (cachedRow) return { insight: cachedRow.insight, hasLogs: true };
     return { insight: null, hasLogs: true };
   }
 }
@@ -229,12 +276,19 @@ const insightInFlight = new Map<string, Promise<InsightResult>>();
 // ── Main insight generation ───────────────────────────────────────────────────
 
 export async function generateInsight(userId: string): Promise<InsightResult> {
-  // Return cached insight if one already exists for today
+  // Only serve the cache if it was generated AFTER the latest log for today.
+  // If a newer log exists, fall through and regenerate.
   try {
-    const cached = await getTodayInsight(userId);
-    if (cached) return cached;
+    const [cachedRow, latestLogTime] = await Promise.all([
+      getTodayInsightRow(userId),
+      getLatestLogTime(userId),
+    ]);
+    if (cachedRow && (!latestLogTime || cachedRow.createdAt >= latestLogTime)) {
+      logger.info({ userId }, "generateInsight: cache still current — returning cached");
+      return cachedRow.insight;
+    }
   } catch (dbErr) {
-    logger.error({ err: dbErr }, "DB error reading cached insight");
+    logger.error({ err: dbErr }, "DB error in generateInsight cache check");
   }
 
   // Dedup: if a generation is already in-flight for this user, share the promise
@@ -289,7 +343,8 @@ async function _generateInsightWork(userId: string): Promise<InsightResult> {
     };
   }
 
-  const latest = logs[0]!;
+  // Use the most recent log for today as the "current" snapshot
+  const latest = logs.find((l) => l.date === today) ?? logs[0]!;
   const patterns = detectPatterns(logs as LogEntry[]);
   const latestSymptoms = Array.isArray(latest.symptoms) ? (latest.symptoms as string[]) : [];
 
@@ -354,7 +409,6 @@ Respond in this EXACT JSON format (no markdown, no extra text):
     };
   } catch (err) {
     logger.error({ err, userId }, "Gemini insight generation failed");
-    // Return a graceful fallback — do NOT throw so the server stays up
     return {
       insight: "I'm here with you, my dear. I wasn't able to generate your full insight right now.",
       pattern: patterns || null,
@@ -363,9 +417,13 @@ Respond in this EXACT JSON format (no markdown, no extra text):
     };
   }
 
-  // Persist so subsequent requests today reuse this insight
+  // Replace any existing insight for today so there is always exactly one row per user per day
   try {
+    await db
+      .delete(lunaInsightsTable)
+      .where(and(eq(lunaInsightsTable.userId, userId), eq(lunaInsightsTable.date, today)));
     await db.insert(lunaInsightsTable).values({ userId, date: today, insightData: result });
+    logger.info({ userId, today }, "Insight regenerated and persisted");
   } catch (dbErr) {
     logger.error({ err: dbErr }, "DB error persisting insight — returning result anyway");
   }
