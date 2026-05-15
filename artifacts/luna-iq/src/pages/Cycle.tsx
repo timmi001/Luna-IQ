@@ -1,9 +1,8 @@
-import { useState, useRef } from "react";
+import { useState, useMemo, useRef } from "react";
 import { storage } from "@/utils/storage";
 import { getCycleDetails, CyclePhase } from "@/utils/cycle";
 import { useAuth } from "@/contexts/AuthContext";
 import { addPoints } from "@/lib/points";
-import { MOODS } from "@/components/MoodFlower";
 
 import { PageTransition } from "@/components/PageTransition";
 import { useToast } from "@/hooks/use-toast";
@@ -91,18 +90,8 @@ function EnergyChart({ cycleLength, currentDay }: { cycleLength: number; current
   );
 }
 
-type MoodDayEntry = { emoji: string; label: string; note: string; bg: string; textColor: string };
-
 // ── Flo-style Calendar ─────────────────────────────────────────────────────────
-function CycleCalendar({
-  lastPeriodStart,
-  cycleLength,
-  moodEntryByDate,
-}: {
-  lastPeriodStart: string | null;
-  cycleLength: number;
-  moodEntryByDate: Record<string, MoodDayEntry>;
-}) {
+function CycleCalendar({ lastPeriodStart, cycleLength }: { lastPeriodStart: string | null; cycleLength: number }) {
   const today = new Date();
   const [viewMonth, setViewMonth] = useState(new Date(today.getFullYear(), today.getMonth(), 1));
   const [selected, setSelected] = useState<Date | null>(today);
@@ -111,13 +100,14 @@ function CycleCalendar({
   const monthEnd = endOfMonth(viewMonth);
   const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
 
+  // Offset so grid starts on Monday (0=Mon … 6=Sun)
   const startWeekday = (getDay(monthStart) + 6) % 7;
   const blanks = Array.from({ length: startWeekday });
 
   const selectedPhase = selected ? getDayPhase(selected, lastPeriodStart, cycleLength) : "Unknown";
   const selectedStyle = PHASE_STYLE[selectedPhase];
-  const selectedMood = selected ? moodEntryByDate[format(selected, "yyyy-MM-dd")] : undefined;
 
+  // Compute ovulation day of each cycle repeat visible in the month
   const ovulationDays: string[] = [];
   if (lastPeriodStart) {
     const start = new Date(lastPeriodStart);
@@ -151,18 +141,16 @@ function CycleCalendar({
       <div className="grid grid-cols-7 gap-y-1.5">
         {blanks.map((_, i) => <div key={`b${i}`} />)}
         {days.map(day => {
-          const dateKey = format(day, "yyyy-MM-dd");
           const phase = getDayPhase(day, lastPeriodStart, cycleLength);
           const style = PHASE_STYLE[phase];
           const todayDay = isToday(day);
           const isSelected = selected ? isSameDay(day, selected) : false;
           const future = isFuture(day);
-          const isOvulation = ovulationDays.includes(dateKey) && phase !== "Unknown";
-          const moodEntry = moodEntryByDate[dateKey];
+          const isOvulation = ovulationDays.includes(format(day, "yyyy-MM-dd")) && phase !== "Unknown";
 
           return (
             <button
-              key={dateKey}
+              key={format(day, "yyyy-MM-dd")}
               onClick={() => setSelected(day)}
               className="relative flex flex-col items-center justify-center py-1 rounded-xl transition-all active:scale-90"
               style={{
@@ -174,9 +162,11 @@ function CycleCalendar({
                 opacity: future && phase === "Unknown" ? 0.4 : 1,
               }}
             >
+              {/* Today ring */}
               {todayDay && !isSelected && (
                 <span className="absolute inset-0.5 rounded-[10px] border-2 pointer-events-none" style={{ borderColor: style.dot }} />
               )}
+              {/* Ovulation drop dot */}
               {isOvulation && !isSelected && (
                 <span className="absolute top-0.5 right-1 w-1 h-1 rounded-full" style={{ background: "#fb923c" }} />
               )}
@@ -184,18 +174,16 @@ function CycleCalendar({
                 style={{ color: isSelected ? "#fff" : todayDay ? style.dot : phase !== "Unknown" ? style.text : "#9ca3af" }}>
                 {format(day, "d")}
               </span>
-              {/* Mood emoji under date number */}
-              {moodEntry && !isSelected ? (
-                <span className="text-[9px] leading-none mt-0.5">{moodEntry.emoji}</span>
-              ) : phase !== "Unknown" && !isSelected ? (
+              {/* Phase dot under number */}
+              {phase !== "Unknown" && !isSelected && (
                 <span className="mt-0.5 w-1 h-1 rounded-full" style={{ background: style.dot }} />
-              ) : null}
+              )}
             </button>
           );
         })}
       </div>
 
-      {/* Selected day info panel */}
+      {/* Selected day info */}
       <AnimatePresence mode="wait">
         {selected && (
           <motion.div
@@ -204,35 +192,16 @@ function CycleCalendar({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="rounded-2xl px-4 py-3 border mt-1 flex flex-col gap-2"
+            className="rounded-2xl px-4 py-3 border mt-1"
             style={{ background: selectedStyle.bg, borderColor: selectedStyle.dot + "44" }}
           >
-            {/* Cycle phase row */}
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: selectedStyle.dot }} />
-                <p className="text-xs font-semibold" style={{ color: selectedStyle.text }}>
-                  {format(selected, "EEEE, MMM d")} · {selectedStyle.label}
-                </p>
-              </div>
-              <p className="text-xs text-muted-foreground leading-relaxed">{PHASE_DESC[selectedPhase]}</p>
+            <div className="flex items-center gap-2 mb-1">
+              <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: selectedStyle.dot }} />
+              <p className="text-xs font-semibold" style={{ color: selectedStyle.text }}>
+                {format(selected, "EEEE, MMM d")} · {selectedStyle.label}
+              </p>
             </div>
-
-            {/* Mood logged that day */}
-            {selectedMood && (
-              <div className="flex items-start gap-2.5 rounded-xl px-3 py-2.5 border"
-                style={{ background: selectedMood.bg + "99", borderColor: selectedMood.bg }}>
-                <span className="text-xl leading-none mt-0.5">{selectedMood.emoji}</span>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-semibold" style={{ color: selectedMood.textColor }}>
-                    Feeling {selectedMood.label}
-                  </p>
-                  {selectedMood.note && (
-                    <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">{selectedMood.note}</p>
-                  )}
-                </div>
-              </div>
-            )}
+            <p className="text-xs text-muted-foreground leading-relaxed">{PHASE_DESC[selectedPhase]}</p>
           </motion.div>
         )}
       </AnimatePresence>
@@ -262,26 +231,11 @@ export default function Cycle() {
   const [savedNote, setSavedNote] = useState(() => getTodaySymptomNote());
   const [showSaved, setShowSaved] = useState(false);
   const symptomRef = useRef<HTMLInputElement>(null);
-  const [moodEntryByDate] = useState<Record<string, MoodDayEntry>>(() => {
+  const [moodMap] = useState<Record<string, string>>(() => {
     try {
       const moods = storage.getMoods();
-      const map: Record<string, MoodDayEntry> = {};
-      moods.forEach((m) => {
-        const dateKey = m.date.split("T")[0]!;
-        if (!map[dateKey]) {
-          const parts = m.mood.split(" ");
-          const emoji = parts[0] ?? "";
-          const label = parts.slice(1).join(" ");
-          const meta = MOODS.find((md) => md.label === label);
-          map[dateKey] = {
-            emoji,
-            label,
-            note: m.note ?? "",
-            bg: meta?.bg ?? "#f3f4f6",
-            textColor: meta?.textColor ?? "#374151",
-          };
-        }
-      });
+      const map: Record<string, string> = {};
+      moods.forEach((m) => { map[m.date.split("T")[0]] = m.mood.split(" ")[0]; });
       return map;
     } catch { return {}; }
   });
@@ -356,6 +310,13 @@ export default function Cycle() {
     }
   };
 
+  const calendarDays = useMemo(() => {
+    return Array.from({ length: 28 }, (_, i) => {
+      const d = addDays(new Date(), -(27 - i));
+      const key = format(d, "yyyy-MM-dd");
+      return { date: d, key, emoji: moodMap[key] ?? null, day: format(d, "d") };
+    });
+  }, [moodMap]);
 
   return (
     <PageTransition className="flex flex-col min-h-screen">
@@ -388,7 +349,7 @@ export default function Cycle() {
 
               {/* Flo-style Calendar */}
               <div className="bg-white rounded-3xl p-5 shadow-sm border border-card-border">
-                <CycleCalendar lastPeriodStart={data.lastPeriodStart} cycleLength={cycleLen} moodEntryByDate={moodEntryByDate} />
+                <CycleCalendar lastPeriodStart={data.lastPeriodStart} cycleLength={cycleLen} />
               </div>
 
               {/* Log form */}
@@ -504,57 +465,26 @@ export default function Cycle() {
             </motion.div>
           )}
 
-          {/* ── MOOD CHECK-INS TAB ── */}
+          {/* ── MOOD CALENDAR TAB ── */}
           {activeTab === "Mood" && (
             <motion.div key="mood" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="flex flex-col gap-4">
-              {(() => {
-                const moods = storage.getMoods().slice(0, 10);
-                if (moods.length === 0) {
-                  return (
-                    <div className="bg-white rounded-3xl p-8 shadow-sm border border-card-border flex flex-col items-center gap-3">
-                      <span className="text-4xl">🌸</span>
-                      <p className="text-sm font-semibold text-foreground">No check-ins yet</p>
-                      <p className="text-xs text-muted-foreground text-center leading-relaxed">
-                        Head over to the Mood tab to log how you're feeling.
-                      </p>
+              <div className="bg-white rounded-3xl p-5 shadow-sm border border-card-border">
+                <p className="text-sm font-semibold mb-1">Mood Calendar</p>
+                <p className="text-xs text-muted-foreground mb-4">Last 28 days</p>
+                <div className="grid grid-cols-7 gap-1.5">
+                  {["Mo","Tu","We","Th","Fr","Sa","Su"].map(d => (
+                    <div key={d} className="text-center text-[9px] text-muted-foreground font-semibold pb-1">{d}</div>
+                  ))}
+                  {calendarDays.map(d => (
+                    <div key={d.key} className="aspect-square rounded-xl flex flex-col items-center justify-center text-center"
+                      style={{ background: d.emoji ? "#fdf4ff" : "#f9fafb", border: `1px solid ${d.emoji ? "#e9d5ff" : "#f3f4f6"}` }}>
+                      {d.emoji
+                        ? <span className="text-base leading-none">{d.emoji}</span>
+                        : <span className="text-[9px] text-muted-foreground/50">{d.day}</span>}
                     </div>
-                  );
-                }
-                return (
-                  <div className="flex flex-col gap-2.5">
-                    <h3 className="text-base font-semibold px-1">Recent check-ins</h3>
-                    {moods.map((entry) => {
-                      const emoji = entry.mood.split(" ")[0];
-                      const label = entry.mood.split(" ").slice(1).join(" ");
-                      const meta = MOODS.find((m) => m.label === label);
-                      return (
-                        <div
-                          key={entry.id}
-                          className="bg-white/80 backdrop-blur-sm rounded-2xl p-3.5 border border-white/80 flex gap-3 items-center shadow-sm"
-                        >
-                          <div
-                            className="w-12 h-12 rounded-2xl flex items-center justify-center text-3xl flex-shrink-0"
-                            style={{ background: meta?.bg ?? "#f3f4f6" }}
-                          >
-                            {emoji}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex justify-between items-baseline mb-0.5">
-                              <span className="font-semibold text-sm" style={{ color: meta?.textColor ?? "#374151" }}>{label}</span>
-                              <span className="text-[10px] text-muted-foreground">
-                                {format(new Date(entry.date), "MMM d, h:mm a")}
-                              </span>
-                            </div>
-                            {entry.note && (
-                              <p className="text-xs text-muted-foreground truncate">{entry.note}</p>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                );
-              })()}
+                  ))}
+                </div>
+              </div>
             </motion.div>
           )}
 
