@@ -14,7 +14,7 @@ export function BottomNav() {
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 flex justify-center w-full pointer-events-none">
-      <nav className="glass-nav w-full max-w-[430px] h-12 px-4 flex items-center justify-between pb-safe pointer-events-auto rounded-t-3xl">
+      <nav className="glass-nav w-full max-w-[430px] h-10 px-4 flex items-center justify-between pb-safe pointer-events-auto rounded-t-3xl">
         {NAV_ITEMS.map((item) => {
           const isActive = location === item.href;
           return (
