@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from "react";
+import { useState, useRef } from "react";
 import { storage } from "@/utils/storage";
 import { getCycleDetails, CyclePhase } from "@/utils/cycle";
 import { useAuth } from "@/contexts/AuthContext";
@@ -60,7 +60,7 @@ const FLOW_OPTIONS = [
   { label: "Heavy",       emoji: "❗" },
 ];
 
-const TABS = ["Cycle", "Energy", "Mood"];
+const TABS = ["Cycle", "Energy"];
 
 // ── Energy chart ───────────────────────────────────────────────────────────────
 const ENERGY_DATA = [55,48,40,38,45,55,65,72,78,82,88,90,95,90,82,75,70,65,60,58,55,52,50,48,50,52,55,58];
@@ -231,15 +231,6 @@ export default function Cycle() {
   const [savedNote, setSavedNote] = useState(() => getTodaySymptomNote());
   const [showSaved, setShowSaved] = useState(false);
   const symptomRef = useRef<HTMLInputElement>(null);
-  const [moodMap] = useState<Record<string, string>>(() => {
-    try {
-      const moods = storage.getMoods();
-      const map: Record<string, string> = {};
-      moods.forEach((m) => { map[m.date.split("T")[0]] = m.mood.split(" ")[0]; });
-      return map;
-    } catch { return {}; }
-  });
-
   const { currentDay, phase, nextPeriodDate } = getCycleDetails(data.lastPeriodStart, data.cycleLength);
   const cycleLen = data.cycleLength;
 
@@ -309,14 +300,6 @@ export default function Cycle() {
       // Silently ignore — local save already succeeded
     }
   };
-
-  const calendarDays = useMemo(() => {
-    return Array.from({ length: 28 }, (_, i) => {
-      const d = addDays(new Date(), -(27 - i));
-      const key = format(d, "yyyy-MM-dd");
-      return { date: d, key, emoji: moodMap[key] ?? null, day: format(d, "d") };
-    });
-  }, [moodMap]);
 
   return (
     <PageTransition className="flex flex-col min-h-screen">
@@ -461,29 +444,6 @@ export default function Cycle() {
                     <p className="text-[10px] text-purple-500 mt-1">{e.tip}</p>
                   </div>
                 ))}
-              </div>
-            </motion.div>
-          )}
-
-          {/* ── MOOD CALENDAR TAB ── */}
-          {activeTab === "Mood" && (
-            <motion.div key="mood" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="flex flex-col gap-4">
-              <div className="bg-white rounded-3xl p-5 shadow-sm border border-card-border">
-                <p className="text-sm font-semibold mb-1">Mood Calendar</p>
-                <p className="text-xs text-muted-foreground mb-4">Last 28 days</p>
-                <div className="grid grid-cols-7 gap-1.5">
-                  {["Mo","Tu","We","Th","Fr","Sa","Su"].map(d => (
-                    <div key={d} className="text-center text-[9px] text-muted-foreground font-semibold pb-1">{d}</div>
-                  ))}
-                  {calendarDays.map(d => (
-                    <div key={d.key} className="aspect-square rounded-xl flex flex-col items-center justify-center text-center"
-                      style={{ background: d.emoji ? "#fdf4ff" : "#f9fafb", border: `1px solid ${d.emoji ? "#e9d5ff" : "#f3f4f6"}` }}>
-                      {d.emoji
-                        ? <span className="text-base leading-none">{d.emoji}</span>
-                        : <span className="text-[9px] text-muted-foreground/50">{d.day}</span>}
-                    </div>
-                  ))}
-                </div>
               </div>
             </motion.div>
           )}
