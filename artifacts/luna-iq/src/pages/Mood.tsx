@@ -1,12 +1,11 @@
 import { useState } from "react";
-import { storage, MoodEntry } from "@/utils/storage";
+import { storage } from "@/utils/storage";
 import { getCycleDetails } from "@/utils/cycle";
 import { AppHeader } from "@/components/AppHeader";
 import { PageTransition } from "@/components/PageTransition";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { format } from "date-fns";
 import { motion, AnimatePresence } from "framer-motion";
 import { MOODS, MoodFlower, type MoodDef } from "@/components/MoodFlower";
 import { useAuth } from "@/contexts/AuthContext";
@@ -158,43 +157,6 @@ export default function Mood() {
           </Button>
         </section>
 
-        {/* History */}
-        {history.length > 0 && (
-          <section>
-            <h3 className="text-base font-semibold mb-3 px-1">Recent check-ins</h3>
-            <div className="flex flex-col gap-2.5">
-              {history.map((entry) => {
-                const emoji = entry.mood.split(" ")[0];
-                const label = entry.mood.split(" ")[1];
-                const meta = MOODS.find((m) => m.label === label);
-                return (
-                  <div
-                    key={entry.id}
-                    className="bg-white/80 backdrop-blur-sm rounded-2xl p-3.5 border border-white/80 flex gap-3 items-center shadow-sm"
-                  >
-                    <div
-                      className="w-12 h-12 rounded-2xl flex items-center justify-center text-3xl flex-shrink-0"
-                      style={{ background: meta?.bg ?? "#f3f4f6" }}
-                    >
-                      {emoji}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex justify-between items-baseline mb-0.5">
-                        <span className="font-semibold text-sm" style={{ color: meta?.textColor ?? "#374151" }}>{label}</span>
-                        <span className="text-[10px] text-muted-foreground">
-                          {format(new Date(entry.date), "MMM d, h:mm a")}
-                        </span>
-                      </div>
-                      {entry.note && (
-                        <p className="text-xs text-muted-foreground truncate">{entry.note}</p>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </section>
-        )}
       </main>
     </PageTransition>
   );
