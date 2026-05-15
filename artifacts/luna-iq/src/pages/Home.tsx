@@ -336,7 +336,7 @@ export default function Home() {
       <PageTransition className="flex flex-col min-h-screen">
         {/* Header */}
         <header className="pl-4 pr-4 pt-12 pb-4 flex items-center justify-between sticky top-0 z-20 bg-background/80 backdrop-blur-md">
-          <div>
+          <div className="flex-1 min-w-0">
             {profileLoading ? (
               <>
                 <div className="h-8 w-52 rounded-xl bg-luna-lavender/40 animate-pulse mb-2" />
@@ -344,10 +344,10 @@ export default function Home() {
               </>
             ) : (
               <>
-                <h1 className="text-2xl font-semibold text-foreground tracking-tight">
+                <h1 className="text-2xl font-semibold text-foreground tracking-tight whitespace-nowrap overflow-hidden text-ellipsis">
                   {greeting}
                 </h1>
-                <p className="text-sm text-muted-foreground mt-1">
+                <p className="text-sm text-muted-foreground mt-1 truncate">
                   {profile?.first_name
                     ? `How are you feeling today, ${profile.first_name}?`
                     : "Ready for a moment of mindfulness?"}
@@ -356,7 +356,7 @@ export default function Home() {
             )}
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-shrink-0 ml-2">
             <button
               onClick={() => setLocation("/notifications")}
               className="relative w-9 h-9 rounded-2xl bg-white shadow-sm border border-card-border flex items-center justify-center active:scale-95 transition-transform"
