@@ -1,13 +1,12 @@
 import { Link, useLocation } from "wouter";
-import { Home, MessageCircleHeart, HeartPulse, CalendarHeart, PenLine } from "lucide-react";
+import { Home, HeartPulse, CalendarHeart, BookHeart } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
-  { icon: Home,               label: "Home",    href: "/" },
-  { icon: MessageCircleHeart, label: "Chat",    href: "/chat" },
-  { icon: PenLine,            label: "Space",   href: "/private-space" },
-  { icon: HeartPulse,         label: "Mood",    href: "/mood" },
-  { icon: CalendarHeart,      label: "Cycle",   href: "/cycle" },
+  { icon: Home,          label: "Home",  href: "/" },
+  { icon: HeartPulse,    label: "Mood",  href: "/mood" },
+  { icon: CalendarHeart, label: "Cycle", href: "/cycle" },
+  { icon: BookHeart,     label: "Diary", href: "/private-space" },
 ];
 
 export function BottomNav() {

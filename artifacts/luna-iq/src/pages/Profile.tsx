@@ -134,7 +134,7 @@ export default function Profile() {
             </div>
           )}
 
-          {/* Luna Points */}
+          {/* Luna Points inline badge — only shown when user has earned points */}
           {lunaPoints > 0 && (
             <div className="flex items-center gap-2 rounded-2xl px-4 py-2" style={{ background: "rgba(230,197,127,0.20)", border: "1px solid rgba(230,197,127,0.40)" }}>
               <span className="text-lg">✨</span>
@@ -188,9 +188,11 @@ export default function Profile() {
             <p className="text-xs text-muted-foreground">View rewards & activity</p>
           </div>
           <div className="flex items-center gap-2">
-            <div className="bg-white/60 rounded-xl px-2.5 py-1">
-              <p className="text-xs font-bold text-foreground">{lunaPoints} pts</p>
-            </div>
+            {lunaPoints > 0 && (
+              <div className="bg-white/60 rounded-xl px-2.5 py-1">
+                <p className="text-xs font-bold text-foreground">{lunaPoints} pts</p>
+              </div>
+            )}
             <ChevronRight className="w-4 h-4 text-muted-foreground" />
           </div>
         </button>

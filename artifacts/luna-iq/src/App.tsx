@@ -140,7 +140,8 @@ function AppShell() {
   const { user, loading } = useAuth();
   const [location] = useLocation();
   const isAuthPage = location === "/login" || location === "/signup";
-  const showNav = !loading && !!user && !isAuthPage;
+  const isFullscreenPage = location === "/chat";
+  const showNav = !loading && !!user && !isAuthPage && !isFullscreenPage;
 
   return (
     <div className="mobile-container">

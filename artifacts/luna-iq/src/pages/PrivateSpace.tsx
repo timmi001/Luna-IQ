@@ -353,7 +353,7 @@ export default function PrivateSpace() {
   );
 
   return (
-    <PageTransition className="flex flex-col min-h-screen pb-8">
+    <PageTransition className="flex flex-col min-h-screen pb-24">
       {/* Header */}
       <header
         className="px-5 pt-12 pb-5 sticky top-0 z-10 backdrop-blur-md"

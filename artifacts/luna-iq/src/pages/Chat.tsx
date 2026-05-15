@@ -2,7 +2,8 @@ import { useState, useRef, useEffect } from "react";
 import { AppHeader } from "@/components/AppHeader";
 import { PageTransition } from "@/components/PageTransition";
 import { motion, AnimatePresence } from "framer-motion";
-import { SendHorizonal, Sparkles, RotateCcw } from "lucide-react";
+import { SendHorizonal, Sparkles, RotateCcw, ArrowLeft } from "lucide-react";
+import { useLocation } from "wouter";
 import { useAuth } from "@/contexts/AuthContext";
 import { storage } from "@/utils/storage";
 import { getCycleDetails } from "@/utils/cycle";
@@ -24,6 +25,7 @@ const SUGGESTIONS = [
 
 export default function Chat() {
   const { user } = useAuth();
+  const [, setLocation] = useLocation();
   const [messages, setMessages] = useState<Message[]>([
     {
       role: "assistant",
@@ -131,13 +133,20 @@ export default function Chat() {
   };
 
   return (
-    <PageTransition className="flex flex-col h-screen max-h-[100dvh] overflow-hidden">
+    <PageTransition className="flex flex-col h-[100dvh] overflow-hidden">
+      {/* Header */}
       <div className="flex items-center justify-between px-5 pt-12 pb-3 flex-shrink-0">
-        <div>
-          <h1 className="text-xl font-semibold text-foreground flex items-center gap-2">
+        <button
+          onClick={() => setLocation("/")}
+          className="w-9 h-9 rounded-2xl bg-white shadow-sm border border-card-border flex items-center justify-center active:scale-95 transition-transform"
+        >
+          <ArrowLeft className="w-4 h-4 text-muted-foreground" />
+        </button>
+        <div className="flex flex-col items-center">
+          <h1 className="text-lg font-semibold text-foreground flex items-center gap-2">
             Luna Chat <Sparkles className="w-4 h-4 text-luna-peach" />
           </h1>
-          <p className="text-xs text-muted-foreground mt-0.5">Your private wellness companion</p>
+          <p className="text-[11px] text-muted-foreground">Your private wellness companion</p>
         </div>
         <button
           onClick={handleReset}
@@ -206,7 +215,7 @@ export default function Chat() {
       </div>
 
       {/* Input */}
-      <div className="px-4 pb-24 pt-2 flex-shrink-0 bg-background/80 backdrop-blur-md border-t border-border/20">
+      <div className="px-4 pb-8 pt-2 flex-shrink-0 bg-background/80 backdrop-blur-md border-t border-border/20">
         <div className="flex items-center gap-2 bg-white rounded-2xl px-4 py-2.5 border border-card-border shadow-sm focus-within:border-purple-300 transition-colors">
           <input
             ref={inputRef}

@@ -164,11 +164,21 @@
 @layer base {
   * {
     @apply border-border;
+    box-sizing: border-box;
+  }
+
+  html {
+    overflow-x: hidden;
+    overscroll-behavior: none;
+    height: 100%;
   }
 
   body {
     @apply font-sans antialiased text-foreground;
     background-color: #5E4352; /* Deep Mauve — fills space outside mobile container */
+    overflow-x: hidden;
+    overscroll-behavior: none;
+    height: 100%;
   }
 }
 
@@ -234,7 +244,7 @@
 
   /* ── Luna core layout ── */
   .mobile-container {
-    @apply w-full max-w-[430px] mx-auto min-h-[100dvh] relative shadow-2xl pb-24 overflow-x-hidden;
+    @apply w-full max-w-[430px] mx-auto min-h-[100dvh] relative shadow-2xl overflow-x-hidden;
     background: linear-gradient(160deg, #F5E1E3 0%, #ECD5DC 60%, #E0CDD6 100%);
   }
 
