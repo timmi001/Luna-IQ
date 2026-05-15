@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { storage } from "@/utils/storage";
 import { getCycleDetails } from "@/utils/cycle";
 import { AppHeader } from "@/components/AppHeader";
 import { PageTransition } from "@/components/PageTransition";
-import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { format, addDays } from "date-fns";
 import { motion, AnimatePresence } from "framer-motion";
 import { MOODS, MoodFlower, type MoodDef } from "@/components/MoodFlower";
 import { useAuth } from "@/contexts/AuthContext";
@@ -41,13 +41,26 @@ export default function Mood() {
   const { user } = useAuth();
   const [selectedMood, setSelectedMood] = useState<string | null>(null);
   const [note, setNote] = useState("");
-  const [history, setHistory] = useState<MoodEntry[]>(storage.getMoods().slice(0, 7));
   const { toast } = useToast();
+
+  const moodMap = useMemo(() => {
+    const moods = storage.getMoods();
+    const map: Record<string, string> = {};
+    moods.forEach((m) => { map[m.date.split("T")[0]!] = m.mood.split(" ")[0]!; });
+    return map;
+  }, []);
+
+  const calendarDays = useMemo(() => {
+    return Array.from({ length: 28 }, (_, i) => {
+      const d = addDays(new Date(), -(27 - i));
+      const key = format(d, "yyyy-MM-dd");
+      return { key, emoji: moodMap[key] ?? null, day: format(d, "d") };
+    });
+  }, [moodMap]);
 
   const handleSave = async () => {
     if (!selectedMood) return;
-    const newMood = storage.addMood({ date: new Date().toISOString(), mood: selectedMood, note });
-    setHistory((prev) => [newMood, ...prev].slice(0, 7));
+    storage.addMood({ date: new Date().toISOString(), mood: selectedMood, note });
     setSelectedMood(null);
     setNote("");
     toast({ title: "Mood logged 🌸", description: "Your feelings have been safely recorded." });
@@ -148,13 +161,45 @@ export default function Mood() {
               onChange={(e) => setNote(e.target.value)}
             />
           </div>
-          <Button
-            className="w-full rounded-2xl h-12 text-sm font-semibold shadow-sm hover:shadow-md transition-all active:scale-[0.98]"
+          <button
             disabled={!selectedMood}
             onClick={handleSave}
+            className="w-full rounded-2xl h-13 text-base font-bold shadow-md active:scale-[0.98] transition-all disabled:opacity-40"
+            style={{
+              background: "linear-gradient(135deg,#7c3aed,#db2777)",
+              color: "#fff",
+              letterSpacing: "0.01em",
+              boxShadow: selectedMood ? "0 4px 16px rgba(124,58,237,0.35)" : undefined,
+              padding: "0.875rem 0",
+            }}
           >
             Save for myself
-          </Button>
+          </button>
+        </section>
+
+        {/* Mood calendar — last 28 days */}
+        <section className="bg-white rounded-3xl p-5 shadow-sm border border-card-border">
+          <p className="text-sm font-semibold mb-1">Mood Calendar</p>
+          <p className="text-xs text-muted-foreground mb-4">Your last 28 days</p>
+          <div className="grid grid-cols-7 gap-1.5">
+            {["Mo","Tu","We","Th","Fr","Sa","Su"].map(d => (
+              <div key={d} className="text-center text-[9px] text-muted-foreground font-semibold pb-1">{d}</div>
+            ))}
+            {calendarDays.map(d => (
+              <div
+                key={d.key}
+                className="aspect-square rounded-xl flex flex-col items-center justify-center text-center"
+                style={{
+                  background: d.emoji ? "#fdf4ff" : "#f9fafb",
+                  border: `1px solid ${d.emoji ? "#e9d5ff" : "#f3f4f6"}`,
+                }}
+              >
+                {d.emoji
+                  ? <span className="text-base leading-none">{d.emoji}</span>
+                  : <span className="text-[9px] text-muted-foreground/50">{d.day}</span>}
+              </div>
+            ))}
+          </div>
         </section>
 
       </main>
