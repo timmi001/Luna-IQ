@@ -335,7 +335,7 @@ export default function Home() {
     <>
       <PageTransition className="flex flex-col min-h-screen">
         {/* Header */}
-        <header className="px-6 pt-12 pb-4 flex items-center justify-between sticky top-0 z-20 bg-background/80 backdrop-blur-md">
+        <header className="pl-4 pr-4 pt-12 pb-4 flex items-center justify-between sticky top-0 z-20 bg-background/80 backdrop-blur-md">
           <div>
             {profileLoading ? (
               <>
