@@ -336,40 +336,42 @@ export default function Home() {
       <PageTransition className="flex flex-col min-h-screen">
         {/* Header */}
         <header className="pl-4 pr-4 pt-10 pb-4 sticky top-0 z-20 bg-background/80 backdrop-blur-md">
-          {/* Icons row — top right */}
-          <div className="flex justify-end items-center gap-2 mb-2">
-            <button
-              onClick={() => setLocation("/notifications")}
-              className="relative w-8 h-8 rounded-2xl bg-white shadow-sm border border-card-border flex items-center justify-center active:scale-95 transition-transform"
-            >
-              <Bell className="w-3.5 h-3.5 text-muted-foreground" />
-              <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-rose-400" />
-            </button>
-            <button
-              onClick={() => setLocation("/profile")}
-              className="w-8 h-8 rounded-2xl flex items-center justify-center shadow-sm border border-card-border active:scale-95 transition-transform"
-              style={{ background: avatar.bg, fontSize: 18 }}
-            >
-              {avatar.emoji}
-            </button>
-          </div>
-
-          {/* Greeting — full width below icons */}
           {profileLoading ? (
             <>
-              <div className="h-8 w-52 rounded-xl bg-luna-lavender/40 animate-pulse mb-2" />
+              <div className="h-7 w-52 rounded-xl bg-luna-lavender/40 animate-pulse mb-2" />
               <div className="h-4 w-40 rounded-lg bg-luna-blush/40 animate-pulse" />
             </>
           ) : (
             <>
+              {/* Big greeting — full width */}
               <h1 className="text-2xl font-semibold text-foreground tracking-tight">
                 {greeting}
               </h1>
-              <p className="text-sm text-muted-foreground mt-1">
-                {profile?.first_name
-                  ? `How are you feeling today, ${profile.first_name}?`
-                  : "Ready for a moment of mindfulness?"}
-              </p>
+
+              {/* Sub-line with icons on the right */}
+              <div className="flex items-center justify-between mt-1">
+                <p className="text-sm text-muted-foreground">
+                  {profile?.first_name
+                    ? `How are you feeling today, ${profile.first_name}?`
+                    : "Ready for a moment of mindfulness?"}
+                </p>
+                <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+                  <button
+                    onClick={() => setLocation("/notifications")}
+                    className="relative w-8 h-8 rounded-2xl bg-white shadow-sm border border-card-border flex items-center justify-center active:scale-95 transition-transform"
+                  >
+                    <Bell className="w-3.5 h-3.5 text-muted-foreground" />
+                    <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-rose-400" />
+                  </button>
+                  <button
+                    onClick={() => setLocation("/profile")}
+                    className="w-8 h-8 rounded-2xl flex items-center justify-center shadow-sm border border-card-border active:scale-95 transition-transform"
+                    style={{ background: avatar.bg, fontSize: 18 }}
+                  >
+                    {avatar.emoji}
+                  </button>
+                </div>
+              </div>
             </>
           )}
         </header>
