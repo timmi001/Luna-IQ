@@ -15,7 +15,7 @@ interface CycleRingProps {
 }
 
 const MOODS = [
-  { emoji: "😢", label: "Sad" },
+  { emoji: "😔", label: "Low" },
   { emoji: "😐", label: "Neutral" },
   { emoji: "🙂", label: "Okay" },
   { emoji: "😊", label: "Good" },
