@@ -108,7 +108,7 @@ export default function Profile() {
                 placeholder="Your full name"
                 maxLength={40}
                 className="flex-1 text-center text-lg font-semibold border-b-2 bg-transparent outline-none text-foreground placeholder:text-muted-foreground"
-                style={{ borderColor: "#C3898E" }}
+                style={{ borderColor: "#B66A78" }}
               />
               <button
                 onClick={saveName}
@@ -116,7 +116,7 @@ export default function Profile() {
                 className="w-8 h-8 rounded-full flex items-center justify-center disabled:opacity-50"
                 style={{ background: "rgba(180,232,224,0.40)" }}
               >
-                <Check className="w-4 h-4" style={{ color: "#4A3644" }} />
+                <Check className="w-4 h-4" style={{ color: "#6E3D56" }} />
               </button>
             </div>
           ) : (
@@ -163,8 +163,8 @@ export default function Profile() {
                   style={{
                     background: av.bg,
                     fontSize: 28,
-                    border: avatarIndex === i ? "2.5px solid #C3898E" : "2px solid transparent",
-                    boxShadow: avatarIndex === i ? "0 0 12px rgba(195,137,142,0.45)" : "none",
+                    border: avatarIndex === i ? "2.5px solid #B66A78" : "2px solid transparent",
+                    boxShadow: avatarIndex === i ? "0 0 12px rgba(182,106,120,0.45)" : "none",
                     transform: avatarIndex === i ? "scale(1.08)" : "scale(1)",
                   }}
                 >

@@ -232,7 +232,7 @@ function InsightModal({
               <button
                 onClick={onLogMood}
                 className="flex items-center gap-2 font-semibold text-sm px-6 py-3 rounded-2xl"
-                style={{ background: "#B4E8E0", color: "#4A3644" }}
+                style={{ background: "#B66A78", color: "#ffffff" }}
               >
                 <PlusCircle className="w-4 h-4" />
                 Log Today's Mood
@@ -482,7 +482,7 @@ export default function Home() {
                 <button
                   onClick={(e) => { e.stopPropagation(); setLocation("/mood"); }}
                   className="self-start text-xs font-semibold px-4 py-2 rounded-2xl transition-all active:scale-95"
-                  style={{ background: "#B4E8E0", color: "#4A3644" }}
+                  style={{ background: "#B66A78", color: "#ffffff" }}
                 >
                   Log mood now →
                 </button>
@@ -524,9 +524,9 @@ export default function Home() {
           <div className="grid grid-cols-2 gap-3">
             <Link href="/chat">
               <div className="rounded-3xl p-5 flex flex-col items-center justify-center text-center aspect-square cursor-pointer shadow-sm transition-all active:scale-[0.97]"
-                style={{ background: "linear-gradient(135deg, rgba(195,137,142,0.25) 0%, rgba(180,232,224,0.25) 100%)", border: "1px solid rgba(195,137,142,0.30)" }}>
+                style={{ background: "linear-gradient(135deg, rgba(182,106,120,0.18) 0%, rgba(246,233,237,0.60) 100%)", border: "1px solid rgba(182,106,120,0.22)" }}>
                 <div className="w-12 h-12 rounded-full flex items-center justify-center shadow-sm mb-3"
-                  style={{ background: "#C3898E", color: "white" }}>
+                  style={{ background: "#B66A78", color: "white" }}>
                   <MessageCircleHeart className="w-6 h-6" />
                 </div>
                 <h3 className="font-semibold text-foreground">Luna Chat</h3>

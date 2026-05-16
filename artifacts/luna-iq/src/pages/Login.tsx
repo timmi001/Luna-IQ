@@ -42,7 +42,7 @@ export default function Login() {
       {/* ── Page ── */}
       <div
         className="min-h-screen flex flex-col items-center justify-center px-5 py-10"
-        style={{ background: "linear-gradient(160deg, #C3898E 0%, #A57480 45%, #5E4352 100%)" }}
+        style={{ background: "linear-gradient(160deg, #B66A78 0%, #8E5264 45%, #6E3D56 100%)" }}
       >
         {/* Logo */}
         <motion.div
@@ -122,7 +122,7 @@ export default function Login() {
               type="submit"
               disabled={loading}
               className="w-full py-3.5 rounded-2xl font-semibold text-sm transition-all active:scale-[0.98] disabled:opacity-60 flex items-center justify-center gap-2 mt-1"
-              style={{ background: "#B4E8E0", color: "#4A3644" }}
+              style={{ background: "#B66A78", color: "#ffffff" }}
             >
               {loading ? (
                 <motion.div
