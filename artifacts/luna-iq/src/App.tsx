@@ -29,17 +29,10 @@ const queryClient = new QueryClient();
 
 function LoadingScreen() {
   return (
-    <div
-      className="min-h-screen flex items-center justify-center"
-      style={{
-        backgroundImage: "url('/luna-splash.jpg')",
-        backgroundSize: "cover",
-        backgroundPosition: "center top",
-      }}
-    >
+    <div className="min-h-screen flex items-center justify-center" style={{ background: "#FFF7FB" }}>
       <motion.div
         className="w-3 h-3 rounded-full"
-        style={{ background: "#B4E8E0", marginTop: "60vh" }}
+        style={{ background: "#C3898E" }}
         animate={{ scale: [1, 1.6, 1], opacity: [0.4, 1, 0.4] }}
         transition={{ duration: 1.4, repeat: Infinity, ease: "easeInOut" }}
       />

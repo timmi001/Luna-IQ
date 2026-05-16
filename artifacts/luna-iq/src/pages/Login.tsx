@@ -24,9 +24,8 @@ export default function Login() {
       } else {
         setError(err.message);
       }
-    } else {
-      setLocation("/");
     }
+    // Navigation is handled automatically by PublicRoute once the auth state updates
   };
 
   const inputStyle = {
