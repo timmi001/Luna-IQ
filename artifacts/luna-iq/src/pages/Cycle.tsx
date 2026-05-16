@@ -336,45 +336,64 @@ export default function Cycle() {
           {activeTab === "Cycle" && (
             <motion.div key="cycle" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="flex flex-col gap-4">
 
-              {/* Live cycle ring with animated floral surround */}
-              <div
-                className="relative flex items-center justify-center mx-auto active:scale-[0.98] transition-transform cursor-pointer"
-                style={{ width: 300, height: 300 }}
+              {/* Live floral ring card */}
+              <motion.button
                 onClick={() => setShowLogModal(true)}
+                className="relative mx-auto overflow-visible rounded-3xl focus:outline-none"
+                style={{ width: "100%", maxWidth: 320 }}
+                whileTap={{ scale: 0.97 }}
+                animate={{ scale: [1, 1.012, 1] }}
+                transition={{ duration: 3.6, repeat: Infinity, ease: "easeInOut" }}
               >
-                {/* Animated flowers behind the ring */}
-                <CycleFlowers phase={phase} />
+                {/* Floral ring image */}
+                <img
+                  src={`${BASE}/cycle-ring-live.jpg`}
+                  alt="Cycle ring"
+                  className="w-full rounded-3xl shadow-md"
+                  style={{ display: "block" }}
+                />
 
-                {/* Live ring centered on top */}
-                <div className="relative z-10">
-                  <CycleRing
-                    phase={phase}
-                    currentDay={currentDay}
-                    cycleLength={cycleLen}
-                    centerContent={
-                      <div className="flex flex-col items-center gap-1">
-                        {daysUntilNextPeriod !== null ? (
-                          <>
-                            <span className="font-bold leading-none" style={{ fontSize: 42, color: "#374151" }}>
-                              {daysUntilNextPeriod}
-                            </span>
-                            <span className="text-xs text-gray-500 leading-snug text-center font-medium">
-                              day{daysUntilNextPeriod !== 1 ? "s" : ""} until<br />next period
-                            </span>
-                          </>
-                        ) : (
-                          <span className="text-xs font-semibold text-gray-500 text-center leading-snug">
-                            Log your<br />first period
-                          </span>
-                        )}
-                        <span className="mt-2 bg-white/90 border border-pink-300 rounded-full px-3 py-0.5 text-[10px] font-semibold text-pink-500">
-                          Log period
-                        </span>
-                      </div>
-                    }
-                  />
+                {/* Live data overlay — centered in the white circle */}
+                <div className="absolute inset-0 flex flex-col items-center justify-center" style={{ paddingBottom: "6%" }}>
+                  {daysUntilNextPeriod !== null ? (
+                    <>
+                      <motion.span
+                        key={daysUntilNextPeriod}
+                        initial={{ opacity: 0, y: -6 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="font-bold leading-none"
+                        style={{ fontSize: 58, color: "#1f2937", lineHeight: 1 }}
+                      >
+                        {daysUntilNextPeriod}
+                      </motion.span>
+                      <span className="text-sm text-gray-600 mt-1 font-medium text-center leading-snug">
+                        day{daysUntilNextPeriod !== 1 ? "s" : ""} until<br />next period
+                      </span>
+                    </>
+                  ) : (
+                    <span className="text-sm font-semibold text-gray-500 text-center leading-snug">
+                      Log your<br />first period
+                    </span>
+                  )}
+
+                  {/* Phase badge */}
+                  {phase !== "Unknown" && (
+                    <motion.span
+                      className="mt-2 text-[10px] font-semibold px-3 py-0.5 rounded-full"
+                      style={{ background: "rgba(255,255,255,0.85)", color: "#be185d", border: "1px solid #fbcfe8" }}
+                      animate={{ opacity: [0.7, 1, 0.7] }}
+                      transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
+                    >
+                      {phase} Phase · Day {currentDay}
+                    </motion.span>
+                  )}
+
+                  {/* Log period pill */}
+                  <div className="mt-3 bg-white/90 border border-pink-300 rounded-full px-5 py-1 shadow-sm">
+                    <span className="text-xs font-semibold text-pink-600">Log period</span>
+                  </div>
                 </div>
-              </div>
+              </motion.button>
 
               {/* Flo-style Calendar */}
               <div className="bg-white rounded-3xl p-5 shadow-sm border border-card-border">
