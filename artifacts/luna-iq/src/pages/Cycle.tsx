@@ -353,6 +353,12 @@ export default function Cycle() {
                   style={{ display: "block" }}
                 />
 
+                {/* White cover to erase baked-in static text from the image */}
+                <div
+                  className="absolute rounded-full bg-white"
+                  style={{ width: "56%", aspectRatio: "1", top: "50%", left: "50%", transform: "translate(-50%, -54%)" }}
+                />
+
                 {/* Live data overlay — centered in the white circle */}
                 <div className="absolute inset-0 flex flex-col items-center justify-center" style={{ paddingBottom: "6%" }}>
                   {daysUntilNextPeriod !== null ? (
