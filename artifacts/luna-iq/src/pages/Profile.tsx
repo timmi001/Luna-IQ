@@ -90,10 +90,12 @@ export default function Profile() {
         {/* Avatar + Name card */}
         <div className="luna-glass rounded-3xl p-6 shadow-sm flex flex-col items-center gap-4">
           <div
-            className="w-24 h-24 rounded-3xl flex items-center justify-center shadow-md"
-            style={{ background: avatar.bg, fontSize: 48 }}
+            className="w-24 h-24 rounded-3xl overflow-hidden shadow-md flex items-center justify-center"
+            style={{ background: (avatar as any).image ? undefined : avatar.bg, fontSize: 48 }}
           >
-            {avatar.emoji}
+            {(avatar as any).image
+              ? <img src={(avatar as any).image} alt="avatar" className="w-full h-full object-cover" />
+              : avatar.emoji}
           </div>
 
           {/* Name */}
