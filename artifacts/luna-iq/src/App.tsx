@@ -15,6 +15,7 @@ import Home from "@/pages/Home";
 import Chat from "@/pages/Chat";
 import Mood from "@/pages/Mood";
 import Cycle from "@/pages/Cycle";
+import Insights from "@/pages/Insights";
 import Profile from "@/pages/Profile";
 import Breathe from "@/pages/Breathe";
 import Water from "@/pages/Water";
@@ -100,6 +101,9 @@ function AppRoutes() {
       </Route>
       <Route path="/cycle">
         <ProtectedRoute><Cycle /></ProtectedRoute>
+      </Route>
+      <Route path="/insights">
+        <ProtectedRoute><Insights /></ProtectedRoute>
       </Route>
       <Route path="/profile">
         <ProtectedRoute><Profile /></ProtectedRoute>
