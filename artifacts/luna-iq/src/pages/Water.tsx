@@ -80,15 +80,6 @@ export default function Water() {
             )}
           </AnimatePresence>
 
-          {/* Girl SVG illustration */}
-          <motion.div
-            animate={wave ? { rotate: [0, -8, 8, -8, 0] } : { rotate: 0 }}
-            transition={{ duration: 0.6 }}
-            className="text-[100px] leading-none select-none mb-2"
-          >
-            🧘‍♀️
-          </motion.div>
-
           {/* Animated water glass */}
           <div className="relative w-16 h-24 rounded-b-2xl rounded-t-md border-2 border-sky-300 overflow-hidden bg-white shadow-md">
             <motion.div
