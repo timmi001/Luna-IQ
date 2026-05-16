@@ -353,6 +353,12 @@ export default function Cycle() {
                   style={{ display: "block" }}
                 />
 
+                {/* White cover to erase baked-in palette icon (top-right) */}
+                <div
+                  className="absolute bg-white rounded-full"
+                  style={{ width: "12%", aspectRatio: "1", top: "6%", right: "4%" }}
+                />
+
                 {/* White cover to erase baked-in static text from the image */}
                 <div
                   className="absolute rounded-full bg-white"
