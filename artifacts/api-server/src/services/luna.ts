@@ -350,18 +350,22 @@ async function _generateInsightWork(userId: string): Promise<InsightResult> {
 
   const recentSummary = logs.slice(0, 7).map((l) => {
     const syms = Array.isArray(l.symptoms) ? (l.symptoms as string[]).join(", ") : "none";
-    return `• ${l.date} — Phase: ${l.cyclePhase} (Day ${l.dayOfCycle ?? "?"}) | Mood: ${l.mood} | Symptoms: ${syms || "none"}`;
+    const moodDisplay = l.mood === "not_logged" ? "not checked in" : l.mood;
+    return `• ${l.date} — Phase: ${l.cyclePhase} (Day ${l.dayOfCycle ?? "?"}) | Mood: ${moodDisplay} | Symptoms: ${syms || "none"}`;
   }).join("\n");
+
+  const moodLoggedToday = latest.mood !== "not_logged";
+  const phaseKnown = latest.cyclePhase !== "Not Set" && latest.cyclePhase !== "Unknown";
+  const moodDisplay = moodLoggedToday ? latest.mood : "not checked in yet today";
 
   const prompt = `${LUNA_SYSTEM_PROMPT}
 
 The user has been logging their health data. Use ALL of the information below to write a personalized, specific insight — not a generic one.
 
 TODAY'S DATA:
-- Cycle phase: ${latest.cyclePhase}
-- Day of cycle: ${latest.dayOfCycle ?? "unknown"}
-- Mood: ${latest.mood}
-- Symptoms logged: ${latestSymptoms.length ? latestSymptoms.join(", ") : "none"}
+- Cycle phase: ${phaseKnown ? `${latest.cyclePhase} (Day ${latest.dayOfCycle ?? "?"})` : "Cycle not set up yet"}
+- Mood today: ${moodDisplay}
+- Symptoms logged today: ${latestSymptoms.length ? latestSymptoms.join(", ") : "none"}
 - Date: ${latest.date}
 
 RECENT LOG HISTORY (last 7 entries):
@@ -370,17 +374,18 @@ ${recentSummary}
 DETECTED PATTERNS:
 ${patterns || "Not enough data for patterns yet — base insight on today's data."}
 
-INSTRUCTIONS:
-- Reference specific things from their logs (mention their actual mood, actual symptoms, actual cycle phase by name)
+IMPORTANT RULES FOR THIS INSIGHT:
+${!moodLoggedToday ? "- The user has NOT checked in with their mood today. Do NOT say what their mood is. Instead, gently acknowledge their cycle phase and invite them to log how they feel." : "- The user has logged their mood as: " + latest.mood + ". Acknowledge this mood by name and validate it."}
+${!phaseKnown ? "- The user has not set up their cycle tracker yet. Focus on general wellness and gently encourage them to set up cycle tracking." : "- Mention the " + latest.cyclePhase + " phase by name and explain what that typically means for energy, emotions, or the body."}
+- Reference specific things from their logs (symptoms, moods, phases) — never be generic
 - If they have symptoms like cramps, bloating, fatigue — acknowledge it by name
-- If their mood has been low or anxious multiple times — acknowledge that gently
 - Keep suggestions simple and realistic for a busy African woman's daily life
 
 Respond in this EXACT JSON format (no markdown, no extra text):
 {
-  "insight": "A warm, specific insight that directly references their logged mood and symptoms today (2-3 sentences)",
-  "pattern": "A specific pattern noticed from their log history, or null if fewer than 3 logs",
-  "suggestion": "One practical, simple self-care suggestion based on their current phase and symptoms (1-2 sentences)",
+  "insight": "A warm, specific 2-3 sentence insight based on their actual data. If mood not logged today, focus on cycle phase. If cycle not set, focus on general wellness.",
+  "pattern": "A specific pattern noticed from log history, or null if fewer than 3 logs",
+  "suggestion": "One practical, simple self-care suggestion appropriate for their current phase and logged symptoms (1-2 sentences)",
   "reassurance": "A short, warm closing message in a relatable African tone (1 sentence, end with an emoji)"
 }`;
 

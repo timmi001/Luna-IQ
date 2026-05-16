@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db, lunaLogsTable } from "@workspace/db";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, and } from "drizzle-orm";
 import {
   getOrGenerateInsight,
   generateInsight,
@@ -30,6 +30,30 @@ router.post("/log", async (req, res) => {
     return;
   }
   const data = parsed.data;
+
+  // Deduplication: if the latest log for today already has identical mood,
+  // phase, and symptoms, skip the insert to avoid spurious cache invalidation
+  // and unnecessary Gemini regeneration.
+  try {
+    const [latestToday] = await db
+      .select()
+      .from(lunaLogsTable)
+      .where(and(eq(lunaLogsTable.userId, data.userId), eq(lunaLogsTable.date, data.date)))
+      .orderBy(desc(lunaLogsTable.createdAt))
+      .limit(1);
+
+    if (
+      latestToday &&
+      latestToday.mood === data.mood &&
+      latestToday.cyclePhase === data.cyclePhase &&
+      JSON.stringify(latestToday.symptoms) === JSON.stringify(data.symptoms)
+    ) {
+      res.status(200).json({ log: latestToday, duplicate: true });
+      return;
+    }
+  } catch (err) {
+    logger.warn({ err }, "Dedup check failed — proceeding with insert");
+  }
 
   let saved: typeof lunaLogsTable.$inferSelect | undefined;
   try {

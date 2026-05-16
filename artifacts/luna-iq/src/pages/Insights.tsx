@@ -16,14 +16,20 @@ async function syncTodayToBackend(userId: string) {
     const cycleData = storage.getCycle();
     const { phase, currentDay } = getCycleDetails(cycleData.lastPeriodStart, cycleData.cycleLength);
     const latestMood = storage.getLatestMood();
-    const today = new Date().toISOString().split("T")[0]!;
 
-    if (phase === "Unknown") return;
+    // Use local date (not UTC) so midnight-to-1am users in WAT/UTC+1 are handled correctly
+    const now = new Date();
+    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 
     const symptoms = storage.getSymptomsArray(today);
 
-    const moodToday =
-      latestMood && latestMood.date.startsWith(today) ? latestMood.mood : "neutral";
+    // Only mark mood as logged if it was genuinely logged today (local date)
+    const moodLoggedToday = latestMood && (
+      latestMood.date.startsWith(today) ||
+      // Also check UTC date in case stored as ISO string from a different day
+      new Date(latestMood.date).toDateString() === now.toDateString()
+    );
+    const moodToday = moodLoggedToday ? latestMood!.mood : "not_logged";
 
     await fetch(`${BASE}/api/luna/log`, {
       method: "POST",
@@ -31,8 +37,9 @@ async function syncTodayToBackend(userId: string) {
       body: JSON.stringify({
         userId,
         date: today,
-        cyclePhase: phase,
-        dayOfCycle: currentDay,
+        // Send "Not Set" when cycle isn't configured yet — backend handles it gracefully
+        cyclePhase: phase === "Unknown" ? "Not Set" : phase,
+        dayOfCycle: currentDay > 0 ? currentDay : undefined,
         mood: moodToday,
         symptoms,
       }),
@@ -84,45 +91,36 @@ export default function Insights() {
   }, [userId]);
 
   const loadInsight = useCallback(async (forceRefresh = false) => {
-    const insightEndpoint = `${BASE}/api/luna/today-insight/${userId}`;
-    console.log("[Luna Insight] Loading insight — user:", userId, "endpoint:", insightEndpoint, "forceRefresh:", forceRefresh);
-
     setLoading(true);
     setError(null);
     try {
-      // Check cache first (skip only on manual refresh)
-      if (!forceRefresh) {
-        const cacheRes = await fetch(insightEndpoint);
-        if (cacheRes.ok) {
-          const { insight: cached } = await cacheRes.json() as { insight: Insight | null };
-          if (cached) {
-            console.log("[Luna Insight] Serving cached insight for user:", userId);
-            setAiInsight(cached);
-            setLoading(false);
-            // Also load any same-day updates
-            await fetchUpdates();
-            return;
-          }
-        }
-      }
-
-      // No cache — sync today's data then ask Gemini
-      console.log("[Luna Insight] No cache — syncing and generating for user:", userId);
+      // Always sync current cycle phase + mood to backend first.
+      // The backend deduplicates identical logs, so this only triggers
+      // a Gemini regeneration when data has actually changed.
       await syncTodayToBackend(userId);
 
-      const res = await fetch(`${BASE}/api/luna/generate-insight`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId }),
-      });
-      if (res.status === 429) {
-        setError("Luna is taking a short rest — daily limit reached. Check back tomorrow!");
-        return;
+      if (forceRefresh) {
+        // Force: bypass cache entirely and ask Gemini for a fresh insight
+        const res = await fetch(`${BASE}/api/luna/generate-insight`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId }),
+        });
+        if (res.status === 429) {
+          setError("Luna is taking a short rest — daily limit reached. Check back tomorrow!");
+          return;
+        }
+        if (!res.ok) throw new Error("Failed");
+        const data = await res.json() as Insight;
+        setAiInsight(data);
+      } else {
+        // Normal: GET /today-insight handles cache vs regeneration automatically
+        const res = await fetch(`${BASE}/api/luna/today-insight/${userId}`);
+        if (!res.ok) throw new Error("Failed");
+        const { insight: fetched } = await res.json() as { insight: Insight | null };
+        if (fetched) setAiInsight(fetched);
       }
-      if (!res.ok) throw new Error("Failed");
-      const data = await res.json() as Insight;
-      console.log("[Luna Insight] Generated fresh insight for user:", userId);
-      setAiInsight(data);
+
       await fetchUpdates();
     } catch {
       setError("Couldn't reach Luna right now. Try again in a moment.");
