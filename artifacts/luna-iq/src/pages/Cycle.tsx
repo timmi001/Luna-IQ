@@ -344,21 +344,36 @@ export default function Cycle() {
                   onCenterTap={() => setShowLogModal(true)}
                   centerContent={
                     <div className="flex flex-col items-center gap-1">
-                      {daysUntilNextPeriod !== null ? (
-                        <>
-                          <span className="font-bold leading-none" style={{ fontSize: 42, color: "#374151" }}>
-                            {daysUntilNextPeriod}
-                          </span>
-                          <span className="text-xs text-gray-500 leading-snug text-center font-medium">
-                            day{daysUntilNextPeriod !== 1 ? "s" : ""} until<br />next period
-                          </span>
-                        </>
-                      ) : (
-                        <span className="text-xs font-semibold text-gray-500 text-center leading-snug">
-                          Log your<br />first period
-                        </span>
-                      )}
-                      <span className="mt-2 bg-pink-50 border border-pink-200 rounded-full px-3 py-0.5 text-[10px] font-semibold text-pink-500">
+                      {/* Phase name */}
+                      <span className="text-[11px] font-bold tracking-wide" style={{ color: phase !== "Unknown" ? "#c084fc" : "#9CA3AF" }}>
+                        {phase !== "Unknown" ? phase + " Phase" : "Log your cycle"}
+                      </span>
+
+                      {/* Flower */}
+                      <div className="relative" style={{ width: 100, height: 100 }}>
+                        {/* Glow */}
+                        <div className="absolute rounded-full" style={{ inset: "8px", background: "radial-gradient(circle, rgba(167,139,250,0.45) 0%, transparent 70%)", filter: "blur(10px)", animation: "pulse 3s ease-in-out infinite" }} />
+                        {/* Petals */}
+                        {[0,1,2,3,4,5].map(i => (
+                          <div key={i} style={{ position: "absolute", width: 18, height: 32, left: "calc(50% - 9px)", top: "calc(50% - 32px)", borderRadius: "50%", background: "linear-gradient(to bottom, #ede9fe 0%, #a78bfa 100%)", transformOrigin: "50% 100%", transform: `rotate(${i * 60}deg)`, opacity: 0.78 }} />
+                        ))}
+                        {/* Center circle with countdown */}
+                        <div className="absolute flex flex-col items-center justify-center rounded-full" style={{ width: 46, height: 46, left: "calc(50% - 23px)", top: "calc(50% - 23px)", background: "linear-gradient(135deg, #fdf4ff 0%, #ede9fe 100%)", border: "2.5px solid #ddd6fe", boxShadow: "0 0 18px rgba(167,139,250,0.55)", zIndex: 2 }}>
+                          {daysUntilNextPeriod !== null ? (
+                            <>
+                              <span className="font-bold leading-none" style={{ fontSize: 16, color: "#374151" }}>{daysUntilNextPeriod}</span>
+                              <span style={{ fontSize: 7, color: "#9CA3AF", lineHeight: 1.2, textAlign: "center" }}>days</span>
+                            </>
+                          ) : (
+                            <span style={{ fontSize: 20 }}>🌙</span>
+                          )}
+                        </div>
+                      </div>
+
+                      <span className="text-[10px] text-gray-400">
+                        {daysUntilNextPeriod !== null ? "until next period" : "tap to log"}
+                      </span>
+                      <span className="mt-1 bg-pink-50 border border-pink-200 rounded-full px-3 py-0.5 text-[10px] font-semibold text-pink-500">
                         Log period
                       </span>
                     </div>
