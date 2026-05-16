@@ -1,0 +1,147 @@
+Fix the Luna IQ app loading/auth flow issue completely.
+
+Current problems:
+1. After login/signup, the greeting header and user first name stay stuck on loading.
+2. The homepage sometimes loads before the profile finishes loading.
+3. The loading screen/banner takes too long.
+4. During app usage, the greeting should NEVER freeze or stay loading.
+5. After refresh/login, the homepage should appear quickly and smoothly.
+
+GOAL:
+- App should initialize auth instantly.
+- Loading screen should only appear briefly (1–2 seconds max).
+- Homepage should render immediately after auth is ready.
+- Greeting and user first_name should appear automatically once profile loads.
+- If profile is still loading, show fallback text instead of infinite loading.
+- Never block the whole app waiting for profile fetch.
+- Profile fetch should happen in background.
+- Avoid loading loops and stuck states.
+
+Make these changes:
+
+────────────────────
+1. AUTH INITIALIZATION
+────────────────────
+
+In AuthContext.tsx:
+
+- Separate auth loading from profile loading.
+- Auth should finish immediately once session is known.
+- Do NOT keep loading=true while fetching profile.
+- Profile loading must happen in background.
+
+Use this logic:
+
+- loading = only for auth initialization
+- profile can be null temporarily without blocking UI
+
+Ensure:
+- INITIAL_SESSION immediately sets loading=false
+- SIGNED_IN immediately sets loading=false
+- Profile fetch happens AFTER auth state update
+
+Prevent loading from hanging forever.
+
+Add timeout protection:
+- Force loading=false after 2 seconds maximum.
+
+────────────────────
+2. FAST PROFILE STATE
+────────────────────
+
+When user logs in:
+
+Immediately create temporary profile fallback:
+
+{
+  first_name: "Luna",
+  full_name: "",
+}
+
+until Supabase profile finishes loading.
+
+Then replace with real profile data once fetched.
+
+This prevents greeting skeleton from freezing.
+
+────────────────────
+3. HOME PAGE FIX
+────────────────────
+
+In Home.tsx:
+
+Never show infinite loading spinner for greeting.
+
+Replace any logic like:
+
+if (!profile) return loading...
+
+with safe fallback rendering.
+
+Greeting should always render:
+
+Hi, {profile?.first_name || "Luna"} 💜
+
+Do NOT block homepage rendering waiting for profile.
+
+────────────────────
+4. LOADING SCREEN OPTIMIZATION
+────────────────────
+
+Improve LoadingScreen behavior:
+
+- Show for only 800ms–1500ms maximum.
+- Add smooth fade transition.
+- Never stay forever.
+- Remove any auth/profile dependency causing looping.
+
+After loading screen:
+→ show homepage immediately.
+
+────────────────────
+5. PREVENT RE-RENDERS
+────────────────────
+
+Optimize AuthProvider:
+
+- Prevent unnecessary setProfile calls.
+- Prevent auth listener loops.
+- Prevent profile fetch on every render.
+
+Only fetch profile:
+- on SIGNED_IN
+- on INITIAL_SESSION
+
+NOT repeatedly.
+
+────────────────────
+6. DEBUGGING
+────────────────────
+
+Add console logs:
+
+[Luna Auth] loading false
+[Luna Auth] profile fetched
+[Luna Home] rendering greeting
+
+to verify the flow.
+
+────────────────────
+7. FINAL RESULT
+────────────────────
+
+Expected behavior:
+
+User logs in →
+small smooth loading banner →
+homepage appears quickly →
+greeting instantly shows:
+“Hi, Sarah 💜”
+
+No freezing.
+No stuck loading.
+No blank homepage.
+No infinite spinner.
+No delay after refresh.
+
+Keep all existing UI design and animations intact.

@@ -146,6 +146,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const initializedRef   = useRef(false);
   const currentUserIdRef = useRef<string | null>(null);
+  const loadingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   /**
    * fetchingForRef — holds the userId of any in-flight fetchProfile call.
@@ -179,23 +180,56 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
     fetchingForRef.current = uid;
+
+    // ── Immediate stub profile ────────────────────────────────────────────────
+    // Set a temporary profile right away so the greeting renders instantly
+    // while the real Supabase fetch runs in the background.
+    if (mountedRef.current && currentUserIdRef.current === uid) {
+      const stubFirstName =
+        meta?.first_name?.trim() ||
+        (meta?.full_name?.trim() ? meta.full_name.trim().split(/\s+/)[0]! : "") ||
+        (email ? (email.split("@")[0] ?? "") : "") ||
+        "";
+      setProfile(prev => prev ?? {
+        id: uid,
+        first_name: stubFirstName,
+        full_name: meta?.full_name?.trim() || stubFirstName,
+        date_of_birth: null,
+        avatar_index: 0,
+        luna_points: 0,
+        birthday_last_shown_at: null,
+        created_at: new Date().toISOString(),
+      });
+      console.log("[Luna Auth] Stub profile set | first_name:", stubFirstName || "(empty)");
+    }
+
     if (mountedRef.current) setProfileLoading(true);
 
     try {
       const p = await fetchProfile(uid, email, meta);
       if (mountedRef.current && currentUserIdRef.current === uid) {
-        console.log("[Luna Auth] setProfile | first_name:", p?.first_name ?? "(null)");
-        setProfile(p);
+        console.log("[Luna Auth] setProfile (real) | first_name:", p?.first_name ?? "(null)");
+        if (p) setProfile(p);
       }
     } finally {
       if (fetchingForRef.current === uid) fetchingForRef.current = null;
       if (mountedRef.current) setProfileLoading(false);
+      console.log("[Luna Auth] loading false — profile fetch complete");
     }
   };
 
   useEffect(() => {
     // Use an object ref so the mounted flag can be shared with nested async fns
     const mountedRef = { current: true };
+
+    // ── 2-second hard timeout — never stay loading forever ───────────────────
+    loadingTimeoutRef.current = setTimeout(() => {
+      if (mountedRef.current && !initializedRef.current) {
+        initializedRef.current = true;
+        setLoading(false);
+        console.log("[Luna Auth] loading forced false after 2s timeout");
+      }
+    }, 2000);
 
     // ── Fast-path initialization ─────────────────────────────────────────────
     //
@@ -325,6 +359,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => {
       mountedRef.current = false;
       subscription.unsubscribe();
+      if (loadingTimeoutRef.current) clearTimeout(loadingTimeoutRef.current);
     };
   }, []);
 
