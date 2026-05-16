@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { Mail, Lock, Eye, EyeOff, Sparkles } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
@@ -11,7 +11,6 @@ export default function Login() {
   const [showPw, setShowPw] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [showSplash, setShowSplash] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,8 +25,7 @@ export default function Login() {
         setError(err.message);
       }
     } else {
-      setShowSplash(true);
-      setTimeout(() => setLocation("/"), 1800);
+      setLocation("/");
     }
   };
 
@@ -42,32 +40,6 @@ export default function Login() {
 
   return (
     <>
-      {/* ── Post-login splash ── */}
-      <AnimatePresence>
-        {showSplash && (
-          <motion.div
-            className="fixed inset-0 z-[100] flex flex-col items-center justify-center"
-            style={{
-              backgroundImage: "url('/luna-splash.jpg')",
-              backgroundSize: "cover",
-              backgroundPosition: "center top",
-            }}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.45, ease: "easeOut" }}
-          >
-            <motion.p
-              className="text-white/80 text-sm font-medium tracking-wide mt-auto mb-12"
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5, duration: 0.4 }}
-            >
-              Welcome back ✨
-            </motion.p>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
       {/* ── Page ── */}
       <div
         className="min-h-screen flex flex-col items-center justify-center px-5 py-10"
