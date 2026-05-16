@@ -6,8 +6,12 @@ interface CycleRingProps {
   phase: CyclePhase;
   currentDay: number;
   cycleLength: number;
-  selectedMood: string;
-  onMoodSelect: (emoji: string, label: string) => void;
+  selectedMood?: string;
+  onMoodSelect?: (emoji: string, label: string) => void;
+  /** When provided, replaces the mood-picker flower with custom center content */
+  centerContent?: React.ReactNode;
+  /** When provided, the whole center area becomes a tap target */
+  onCenterTap?: () => void;
 }
 
 const MOODS = [
@@ -51,7 +55,7 @@ function textAnchor(deg: number): "start" | "middle" | "end" {
   return "middle";
 }
 
-export function CycleRing({ phase, currentDay, cycleLength, selectedMood, onMoodSelect }: CycleRingProps) {
+export function CycleRing({ phase, currentDay, cycleLength, selectedMood = "🌙", onMoodSelect, centerContent, onCenterTap }: CycleRingProps) {
   const [showMoodPicker, setShowMoodPicker] = useState(false);
 
   let acc = 0;
@@ -79,7 +83,7 @@ export function CycleRing({ phase, currentDay, cycleLength, selectedMood, onMood
   const handleFlowerTap = () => setShowMoodPicker((v) => !v);
 
   const handleMoodSelect = (emoji: string, label: string) => {
-    onMoodSelect(emoji, label);
+    onMoodSelect?.(emoji, label);
     setShowMoodPicker(false);
   };
 
@@ -146,106 +150,111 @@ export function CycleRing({ phase, currentDay, cycleLength, selectedMood, onMood
           )}
         </svg>
 
-        {/* Center flower overlay */}
+        {/* Center overlay */}
         <div className="absolute inset-0 flex items-center justify-center">
-          <div className="flex flex-col items-center gap-1">
-            {/* Phase name */}
-            <span
-              className="text-xs font-bold tracking-wide text-center px-2"
-              style={{ color: phaseColor, fontSize: "11px", letterSpacing: "0.04em" }}
-            >
-              {phase !== "Unknown" ? phase + " Phase" : "Log your cycle"}
-            </span>
-
-            {/* Flower */}
+          {centerContent ? (
+            /* Custom center — used by Cycle page */
             <button
-              onClick={handleFlowerTap}
-              className="relative focus:outline-none"
-              style={{ width: 100, height: 100 }}
-              aria-label="Set your mood"
+              onClick={onCenterTap}
+              className="flex flex-col items-center gap-1 focus:outline-none"
             >
-              {/* Glow */}
-              <div
-                className="absolute rounded-full"
-                style={{
-                  inset: "8px",
-                  background: "radial-gradient(circle, rgba(167,139,250,0.45) 0%, transparent 70%)",
-                  filter: "blur(10px)",
-                  animation: "pulse 3s ease-in-out infinite",
-                }}
-              />
-              {/* Petals */}
-              {[0, 1, 2, 3, 4, 5].map((i) => (
+              {centerContent}
+            </button>
+          ) : (
+            /* Default flower + mood picker — used by Home/other pages */
+            <div className="flex flex-col items-center gap-1">
+              <span
+                className="text-xs font-bold tracking-wide text-center px-2"
+                style={{ color: phaseColor, fontSize: "11px", letterSpacing: "0.04em" }}
+              >
+                {phase !== "Unknown" ? phase + " Phase" : "Log your cycle"}
+              </span>
+
+              <button
+                onClick={handleFlowerTap}
+                className="relative focus:outline-none"
+                style={{ width: 100, height: 100 }}
+                aria-label="Set your mood"
+              >
                 <div
-                  key={i}
+                  className="absolute rounded-full"
                   style={{
-                    position: "absolute",
-                    width: 18,
-                    height: 32,
-                    left: "calc(50% - 9px)",
-                    top: "calc(50% - 32px)",
-                    borderRadius: "50%",
-                    background: "linear-gradient(to bottom, #ede9fe 0%, #a78bfa 100%)",
-                    transformOrigin: "50% 100%",
-                    transform: `rotate(${i * 60}deg)`,
-                    opacity: 0.78,
+                    inset: "8px",
+                    background: "radial-gradient(circle, rgba(167,139,250,0.45) 0%, transparent 70%)",
+                    filter: "blur(10px)",
+                    animation: "pulse 3s ease-in-out infinite",
                   }}
                 />
-              ))}
-              {/* Center circle */}
-              <div
-                className="absolute flex items-center justify-center rounded-full"
-                style={{
-                  width: 46,
-                  height: 46,
-                  left: "calc(50% - 23px)",
-                  top: "calc(50% - 23px)",
-                  background: "linear-gradient(135deg, #fdf4ff 0%, #ede9fe 100%)",
-                  border: "2.5px solid #ddd6fe",
-                  boxShadow: "0 0 18px rgba(167,139,250,0.55)",
-                  fontSize: 22,
-                  zIndex: 2,
-                }}
-              >
-                {selectedMood || "🌙"}
-              </div>
-            </button>
+                {[0, 1, 2, 3, 4, 5].map((i) => (
+                  <div
+                    key={i}
+                    style={{
+                      position: "absolute",
+                      width: 18,
+                      height: 32,
+                      left: "calc(50% - 9px)",
+                      top: "calc(50% - 32px)",
+                      borderRadius: "50%",
+                      background: "linear-gradient(to bottom, #ede9fe 0%, #a78bfa 100%)",
+                      transformOrigin: "50% 100%",
+                      transform: `rotate(${i * 60}deg)`,
+                      opacity: 0.78,
+                    }}
+                  />
+                ))}
+                <div
+                  className="absolute flex items-center justify-center rounded-full"
+                  style={{
+                    width: 46,
+                    height: 46,
+                    left: "calc(50% - 23px)",
+                    top: "calc(50% - 23px)",
+                    background: "linear-gradient(135deg, #fdf4ff 0%, #ede9fe 100%)",
+                    border: "2.5px solid #ddd6fe",
+                    boxShadow: "0 0 18px rgba(167,139,250,0.55)",
+                    fontSize: 22,
+                    zIndex: 2,
+                  }}
+                >
+                  {selectedMood}
+                </div>
+              </button>
 
-            {/* Day counter */}
-            <span className="text-xs text-center" style={{ color: "#9CA3AF", fontSize: "10px" }}>
-              {phase !== "Unknown"
-                ? `Day ${currentDay} of ${cycleLength}`
-                : "tap 🌙 to log mood"}
-            </span>
-          </div>
+              <span className="text-xs text-center" style={{ color: "#9CA3AF", fontSize: "10px" }}>
+                {phase !== "Unknown" ? `Day ${currentDay} of ${cycleLength}` : "tap 🌙 to log mood"}
+              </span>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Mood picker */}
-      <AnimatePresence>
-        {showMoodPicker && (
-          <motion.div
-            initial={{ opacity: 0, y: 8, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 8, scale: 0.95 }}
-            transition={{ duration: 0.2 }}
-            className="flex gap-3 justify-center mt-1"
-          >
-            {MOODS.map((m) => (
-              <motion.button
-                key={m.emoji}
-                whileTap={{ scale: 0.85 }}
-                whileHover={{ scale: 1.2 }}
-                onClick={() => handleMoodSelect(m.emoji, m.label)}
-                className="flex flex-col items-center gap-1 p-2 rounded-2xl bg-white shadow-sm border border-purple-100"
-              >
-                <span style={{ fontSize: 24 }}>{m.emoji}</span>
-                <span className="text-[9px] text-muted-foreground font-medium">{m.label}</span>
-              </motion.button>
-            ))}
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Mood picker (only in default mode) */}
+      {!centerContent && (
+        <AnimatePresence>
+          {showMoodPicker && (
+            <motion.div
+              initial={{ opacity: 0, y: 8, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 8, scale: 0.95 }}
+              transition={{ duration: 0.2 }}
+              className="flex gap-3 justify-center mt-1"
+            >
+              {MOODS.map((m) => (
+                <motion.button
+                  key={m.emoji}
+                  whileTap={{ scale: 0.85 }}
+                  whileHover={{ scale: 1.2 }}
+                  onClick={() => handleMoodSelect(m.emoji, m.label)}
+                  className="flex flex-col items-center gap-1 p-2 rounded-2xl bg-white shadow-sm border border-purple-100"
+                >
+                  <span style={{ fontSize: 24 }}>{m.emoji}</span>
+                  <span className="text-[9px] text-muted-foreground font-medium">{m.label}</span>
+                </motion.button>
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      )}
     </div>
   );
 }

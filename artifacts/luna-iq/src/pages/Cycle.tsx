@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { addPoints } from "@/lib/points";
 
 import { PageTransition } from "@/components/PageTransition";
+import { CycleRing } from "@/components/CycleRing";
 import { useToast } from "@/hooks/use-toast";
 import { format, addDays, startOfMonth, endOfMonth, eachDayOfInterval, getDay, differenceInDays, isSameDay, isToday, isFuture } from "date-fns";
 import { ChevronLeft, ChevronRight, SendHorizonal, X } from "lucide-react";
@@ -334,41 +335,36 @@ export default function Cycle() {
           {activeTab === "Cycle" && (
             <motion.div key="cycle" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="flex flex-col gap-4">
 
-              {/* Phase ring hero — tap to open log modal */}
-              <button
-                onClick={() => setShowLogModal(true)}
-                className="relative w-full rounded-3xl overflow-hidden shadow-md active:scale-[0.98] transition-transform"
-                style={{ aspectRatio: "1.15" }}
-              >
-                <img
-                  src={`${BASE}/phase-ring.jpg`}
-                  alt="Cycle phase ring"
-                  className="w-full h-full object-cover"
-                />
-                {/* Countdown overlay */}
-                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <div className="text-center" style={{ marginTop: "4%" }}>
-                    {daysUntilNextPeriod !== null ? (
-                      <>
-                        <p className="font-bold text-gray-800 leading-none" style={{ fontSize: 52 }}>
-                          {daysUntilNextPeriod}
-                        </p>
-                        <p className="text-sm text-gray-600 mt-1 leading-snug font-medium">
-                          day{daysUntilNextPeriod !== 1 ? "s" : ""} until<br />next period
-                        </p>
-                      </>
-                    ) : (
-                      <>
-                        <p className="text-lg font-semibold text-gray-700">Log your</p>
-                        <p className="text-lg font-semibold text-gray-700">first period</p>
-                      </>
-                    )}
-                    <div className="mt-4 bg-white/80 backdrop-blur-sm rounded-full px-6 py-1.5 border border-pink-200 inline-block">
-                      <span className="text-sm font-semibold text-pink-600">Log period</span>
+              {/* Live cycle ring — tap center to open log modal */}
+              <div className="flex justify-center">
+                <CycleRing
+                  phase={phase}
+                  currentDay={currentDay}
+                  cycleLength={cycleLen}
+                  onCenterTap={() => setShowLogModal(true)}
+                  centerContent={
+                    <div className="flex flex-col items-center gap-1">
+                      {daysUntilNextPeriod !== null ? (
+                        <>
+                          <span className="font-bold leading-none" style={{ fontSize: 42, color: "#374151" }}>
+                            {daysUntilNextPeriod}
+                          </span>
+                          <span className="text-xs text-gray-500 leading-snug text-center font-medium">
+                            day{daysUntilNextPeriod !== 1 ? "s" : ""} until<br />next period
+                          </span>
+                        </>
+                      ) : (
+                        <span className="text-xs font-semibold text-gray-500 text-center leading-snug">
+                          Log your<br />first period
+                        </span>
+                      )}
+                      <span className="mt-2 bg-pink-50 border border-pink-200 rounded-full px-3 py-0.5 text-[10px] font-semibold text-pink-500">
+                        Log period
+                      </span>
                     </div>
-                  </div>
-                </div>
-              </button>
+                  }
+                />
+              </div>
 
               {/* Flo-style Calendar */}
               <div className="bg-white rounded-3xl p-5 shadow-sm border border-card-border">
