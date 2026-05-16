@@ -5,8 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { addPoints } from "@/lib/points";
 
 import { PageTransition } from "@/components/PageTransition";
-import { CycleRing } from "@/components/CycleRing";
-import { CycleFlowers } from "@/components/CycleFlowers";
+import { LiveCycleRing } from "@/components/LiveCycleRing";
 import { useToast } from "@/hooks/use-toast";
 import { format, addDays, startOfMonth, endOfMonth, eachDayOfInterval, getDay, differenceInDays, isSameDay, isToday, isFuture } from "date-fns";
 import { ChevronLeft, ChevronRight, SendHorizonal, X } from "lucide-react";
@@ -336,76 +335,14 @@ export default function Cycle() {
           {activeTab === "Cycle" && (
             <motion.div key="cycle" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="flex flex-col gap-4">
 
-              {/* Live floral ring card */}
-              <motion.button
+              {/* Live cycle ring */}
+              <LiveCycleRing
+                phase={phase}
+                currentDay={currentDay}
+                cycleLength={cycleLen}
+                daysUntilNextPeriod={daysUntilNextPeriod}
                 onClick={() => setShowLogModal(true)}
-                className="relative mx-auto overflow-visible rounded-3xl focus:outline-none"
-                style={{ width: "100%", maxWidth: 320 }}
-                whileTap={{ scale: 0.97 }}
-                animate={{ scale: [1, 1.012, 1] }}
-                transition={{ duration: 3.6, repeat: Infinity, ease: "easeInOut" }}
-              >
-                {/* Floral ring image */}
-                <img
-                  src={`${BASE}/cycle-ring-live.jpg`}
-                  alt="Cycle ring"
-                  className="w-full rounded-3xl shadow-md"
-                  style={{ display: "block" }}
-                />
-
-                {/* White cover to erase baked-in palette icon (top-right) */}
-                <div
-                  className="absolute z-10 bg-white"
-                  style={{ width: "22%", aspectRatio: "1", top: 6, right: 6, borderRadius: "0 1.25rem 0 50%" }}
-                />
-
-                {/* White cover to erase baked-in static text from the image */}
-                <div
-                  className="absolute rounded-full bg-white"
-                  style={{ width: "56%", aspectRatio: "1", top: "50%", left: "50%", transform: "translate(-50%, -54%)" }}
-                />
-
-                {/* Live data overlay — centered in the white circle */}
-                <div className="absolute inset-0 flex flex-col items-center justify-center" style={{ paddingBottom: "6%" }}>
-                  {daysUntilNextPeriod !== null ? (
-                    <>
-                      <motion.span
-                        key={daysUntilNextPeriod}
-                        initial={{ opacity: 0, y: -6 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="font-bold leading-none"
-                        style={{ fontSize: 58, color: "#1f2937", lineHeight: 1 }}
-                      >
-                        {daysUntilNextPeriod}
-                      </motion.span>
-                      <span className="text-sm text-gray-600 mt-1 font-medium text-center leading-snug">
-                        day{daysUntilNextPeriod !== 1 ? "s" : ""} until<br />next period
-                      </span>
-                    </>
-                  ) : (
-                    <span className="text-sm font-semibold text-gray-500 text-center leading-snug">
-                      Log your<br />first period
-                    </span>
-                  )}
-
-                  {/* Phase badge */}
-                  {phase !== "Unknown" && (
-                    <motion.span
-                      className="mt-2 text-[10px] font-semibold px-3 py-0.5 rounded-full"
-                      style={{ background: "rgba(255,255,255,0.85)", color: "#be185d", border: "1px solid #fbcfe8" }}
-                      animate={{ opacity: [0.7, 1, 0.7] }}
-                      transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
-                    >
-                      {phase} Phase · Day {currentDay}
-                    </motion.span>
-                  )}
-
-                  {/* Log period pill */}
-                  <div className="mt-3 bg-white/90 border border-pink-300 rounded-full px-5 py-1 shadow-sm">
-                    <span className="text-xs font-semibold text-pink-600">Log period</span>
-                  </div>
-                </div>
-              </motion.button>
+              />
 
               {/* Flo-style Calendar */}
               <div className="bg-white rounded-3xl p-5 shadow-sm border border-card-border">
