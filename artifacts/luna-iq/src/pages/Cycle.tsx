@@ -7,7 +7,7 @@ import { addPoints } from "@/lib/points";
 import { PageTransition } from "@/components/PageTransition";
 import { useToast } from "@/hooks/use-toast";
 import { format, addDays, startOfMonth, endOfMonth, eachDayOfInterval, getDay, differenceInDays, isSameDay, isToday, isFuture } from "date-fns";
-import { ChevronLeft, ChevronRight, SendHorizonal } from "lucide-react";
+import { ChevronLeft, ChevronRight, SendHorizonal, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -225,6 +225,7 @@ export default function Cycle() {
   const { toast } = useToast();
   const [data, setData] = useState(storage.getCycle());
   const [activeTab, setActiveTab] = useState("Cycle");
+  const [showLogModal, setShowLogModal] = useState(false);
   const [flow, setFlow] = useState<string | null>(null);
   const [logDate, setLogDate] = useState(format(new Date(), "MM/dd/yyyy"));
   const [symptomInput, setSymptomInput] = useState("");
@@ -237,6 +238,9 @@ export default function Cycle() {
   const ovulationDay = Math.round(cycleLen / 2) - 1;
   const periodDays = 5;
   const nextPeriodStr = nextPeriodDate ? format(nextPeriodDate, "MMM d") : "--";
+  const daysUntilNextPeriod = nextPeriodDate
+    ? Math.max(0, Math.ceil((nextPeriodDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)))
+    : null;
   const ovulationStr = data.lastPeriodStart
     ? format(addDays(new Date(data.lastPeriodStart), ovulationDay), "MMM d")
     : "--";
@@ -335,64 +339,41 @@ export default function Cycle() {
                 <CycleCalendar lastPeriodStart={data.lastPeriodStart} cycleLength={cycleLen} />
               </div>
 
-              {/* Log form */}
-              <div className="bg-white rounded-3xl p-5 shadow-sm border border-card-border">
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Log Your Cycle</p>
-                <div className="flex flex-wrap gap-2 mb-4">
-                  {FLOW_OPTIONS.map(f => (
-                    <button key={f.label} onClick={() => setFlow(f.label)}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-all active:scale-95"
-                      style={flow === f.label
-                        ? { background: "linear-gradient(135deg,#ede9fe,#fce7f3)", borderColor: "#8b5cf6", color: "#4c1d95" }
-                        : { background: "#f3f4f6", borderColor: "#d1d5db", color: "#4b5563" }}>
-                      <span>{f.emoji}</span>{f.label}
-                    </button>
-                  ))}
-                </div>
-                <div className="mb-4">
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold mb-1.5">Date (MM/DD/YYYY)</p>
-                  <input value={logDate} onChange={e => setLogDate(e.target.value)} placeholder="MM/DD/YYYY"
-                    className="w-full bg-muted/30 rounded-xl px-3 py-2.5 text-sm outline-none border border-border/30 focus:border-purple-300 transition-colors" />
-                </div>
-                {/* Symptoms */}
-                <div className="mb-4">
-                  <div className="flex items-center justify-between mb-1.5">
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Symptoms</p>
-                    <AnimatePresence>
-                      {showSaved && (
-                        <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-[10px] text-emerald-500 font-semibold">✓ Logged</motion.span>
-                      )}
-                    </AnimatePresence>
-                  </div>
-                  {savedNote && (
-                    <p className="text-[11px] text-foreground/70 mb-1.5 leading-relaxed bg-luna-blush/10 rounded-xl px-3 py-2 border border-luna-blush/20">{savedNote}</p>
-                  )}
-                  <div className="flex items-center gap-2 bg-muted/30 rounded-xl px-3 py-2 border border-border/30 focus-within:border-purple-300 transition-colors">
-                    <input
-                      ref={symptomRef}
-                      value={symptomInput}
-                      onChange={(e) => setSymptomInput(e.target.value)}
-                      onKeyDown={(e) => { if (e.key === "Enter") handleSaveSymptom(); }}
-                      placeholder={savedNote ? "Add more symptoms…" : "e.g. cramps, headache, bloating…"}
-                      className="flex-1 bg-transparent text-xs text-foreground placeholder:text-muted-foreground outline-none"
-                    />
-                    <button
-                      onClick={handleSaveSymptom}
-                      disabled={!symptomInput.trim()}
-                      className="w-6 h-6 rounded-lg flex items-center justify-center transition-all disabled:opacity-30 active:scale-90"
-                      style={{ background: symptomInput.trim() ? "linear-gradient(135deg,#f9a8d4,#c4b5fd)" : "transparent" }}
-                    >
-                      <SendHorizonal className="w-3 h-3 text-white" />
-                    </button>
+              {/* Phase ring hero — tap to open log modal */}
+              <button
+                onClick={() => setShowLogModal(true)}
+                className="relative w-full rounded-3xl overflow-hidden shadow-md active:scale-[0.98] transition-transform"
+                style={{ aspectRatio: "1.15" }}
+              >
+                <img
+                  src={`${BASE}/phase-ring.jpg`}
+                  alt="Cycle phase ring"
+                  className="w-full h-full object-cover"
+                />
+                {/* Countdown overlay */}
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <div className="text-center" style={{ marginTop: "4%" }}>
+                    {daysUntilNextPeriod !== null ? (
+                      <>
+                        <p className="font-bold text-gray-800 leading-none" style={{ fontSize: 52 }}>
+                          {daysUntilNextPeriod}
+                        </p>
+                        <p className="text-sm text-gray-600 mt-1 leading-snug font-medium">
+                          day{daysUntilNextPeriod !== 1 ? "s" : ""} until<br />next period
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <p className="text-lg font-semibold text-gray-700">Log your</p>
+                        <p className="text-lg font-semibold text-gray-700">first period</p>
+                      </>
+                    )}
+                    <div className="mt-4 bg-white/80 backdrop-blur-sm rounded-full px-6 py-1.5 border border-pink-200 inline-block">
+                      <span className="text-sm font-semibold text-pink-600">Log period</span>
+                    </div>
                   </div>
                 </div>
-
-                <button onClick={handleLogCycle}
-                  className="w-full py-3.5 rounded-2xl text-white text-sm font-semibold shadow-md active:scale-[0.98] transition-transform"
-                  style={{ background: "linear-gradient(135deg,#c4b5fd,#f9a8d4)" }}>
-                  + Log for Today
-                </button>
-              </div>
+              </button>
 
               {/* Cycle Summary */}
               <div className="bg-white rounded-2xl p-4 border border-card-border shadow-sm">
@@ -450,6 +431,113 @@ export default function Cycle() {
 
         </AnimatePresence>
       </main>
+
+      {/* ── Log Cycle Modal ── */}
+      <AnimatePresence>
+        {showLogModal && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              key="backdrop"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowLogModal(false)}
+              className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
+            />
+
+            {/* Bottom sheet */}
+            <motion.div
+              key="modal"
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", stiffness: 340, damping: 34 }}
+              className="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-3xl shadow-2xl max-h-[88vh] overflow-y-auto"
+            >
+              {/* Handle + header */}
+              <div className="flex items-center justify-between px-5 pt-4 pb-3 border-b border-border/20">
+                <div className="w-10 h-1 rounded-full bg-muted/40 absolute left-1/2 -translate-x-1/2 top-2" />
+                <p className="text-sm font-semibold text-foreground">Log Your Cycle</p>
+                <button
+                  onClick={() => setShowLogModal(false)}
+                  className="w-8 h-8 rounded-full bg-muted/30 flex items-center justify-center active:scale-90 transition-transform"
+                >
+                  <X className="w-4 h-4 text-muted-foreground" />
+                </button>
+              </div>
+
+              {/* Form */}
+              <div className="px-5 py-4 flex flex-col gap-4 pb-8">
+                {/* Flow options */}
+                <div>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold mb-2">Flow Intensity</p>
+                  <div className="flex flex-wrap gap-2">
+                    {FLOW_OPTIONS.map(f => (
+                      <button key={f.label} onClick={() => setFlow(f.label)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-all active:scale-95"
+                        style={flow === f.label
+                          ? { background: "linear-gradient(135deg,#ede9fe,#fce7f3)", borderColor: "#8b5cf6", color: "#4c1d95" }
+                          : { background: "#f3f4f6", borderColor: "#d1d5db", color: "#4b5563" }}>
+                        <span>{f.emoji}</span>{f.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Date */}
+                <div>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold mb-1.5">Date (MM/DD/YYYY)</p>
+                  <input value={logDate} onChange={e => setLogDate(e.target.value)} placeholder="MM/DD/YYYY"
+                    className="w-full bg-muted/30 rounded-xl px-3 py-2.5 text-sm outline-none border border-border/30 focus:border-purple-300 transition-colors" />
+                </div>
+
+                {/* Symptoms */}
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Symptoms</p>
+                    <AnimatePresence>
+                      {showSaved && (
+                        <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-[10px] text-emerald-500 font-semibold">✓ Logged</motion.span>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                  {savedNote && (
+                    <p className="text-[11px] text-foreground/70 mb-1.5 leading-relaxed bg-luna-blush/10 rounded-xl px-3 py-2 border border-luna-blush/20">{savedNote}</p>
+                  )}
+                  <div className="flex items-center gap-2 bg-muted/30 rounded-xl px-3 py-2 border border-border/30 focus-within:border-purple-300 transition-colors">
+                    <input
+                      ref={symptomRef}
+                      value={symptomInput}
+                      onChange={(e) => setSymptomInput(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === "Enter") handleSaveSymptom(); }}
+                      placeholder={savedNote ? "Add more symptoms…" : "e.g. cramps, headache, bloating…"}
+                      className="flex-1 bg-transparent text-xs text-foreground placeholder:text-muted-foreground outline-none"
+                    />
+                    <button
+                      onClick={handleSaveSymptom}
+                      disabled={!symptomInput.trim()}
+                      className="w-6 h-6 rounded-lg flex items-center justify-center transition-all disabled:opacity-30 active:scale-90"
+                      style={{ background: symptomInput.trim() ? "linear-gradient(135deg,#f9a8d4,#c4b5fd)" : "transparent" }}
+                    >
+                      <SendHorizonal className="w-3 h-3 text-white" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Submit */}
+                <button
+                  onClick={async () => { await handleLogCycle(); setShowLogModal(false); }}
+                  className="w-full py-3.5 rounded-2xl text-white text-sm font-semibold shadow-md active:scale-[0.98] transition-transform"
+                  style={{ background: "linear-gradient(135deg,#c4b5fd,#f9a8d4)" }}
+                >
+                  + Log for Today
+                </button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </PageTransition>
   );
 }
