@@ -168,8 +168,8 @@ export default function Chat() {
               className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
             >
               {msg.role === "assistant" && (
-                <div className="w-7 h-7 rounded-full bg-luna-lavender/60 flex items-center justify-center text-sm flex-shrink-0 mr-2 mt-1">
-                  🌙
+                <div className="w-7 h-7 rounded-full overflow-hidden flex-shrink-0 mr-2 mt-1 shadow-sm">
+                  <img src="/luna-icon.jpg" alt="Luna" className="w-full h-full object-cover" />
                 </div>
               )}
               <div

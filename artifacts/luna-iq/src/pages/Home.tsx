@@ -14,7 +14,7 @@ const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 const AVATARS = [
   { emoji: "🌸", bg: "#FFF0F9" },
   { emoji: "🦋", bg: "#F5F3FF" },
-  { emoji: "🌙", bg: "#EEF2FF" },
+  { emoji: "", bg: "#EEF2FF", image: "/luna-icon.jpg" },
   { emoji: "🌺", bg: "#FFF7ED" },
   { emoji: "✨", bg: "#FEFCE8" },
   { emoji: "🌷", bg: "#FFF0F6" },
@@ -150,11 +150,11 @@ function LutealIcon() {
 function UnknownCycleIcon() {
   return (
     <motion.div
-      className="text-3xl"
+      className="w-10 h-10 rounded-full overflow-hidden shadow-sm"
       animate={{ opacity: [0.6, 1, 0.6] }}
       transition={{ duration: 2.5, repeat: Infinity }}
     >
-      🌙
+      <img src="/luna-icon.jpg" alt="Luna" className="w-full h-full object-cover" />
     </motion.div>
   );
 }
@@ -359,10 +359,12 @@ export default function Home() {
               </button>
               <button
                 onClick={() => setLocation("/profile")}
-                className="w-8 h-8 rounded-2xl flex items-center justify-center shadow-sm border border-card-border active:scale-95 transition-transform"
-                style={{ background: avatar.bg, fontSize: 18 }}
+                className="w-8 h-8 rounded-2xl overflow-hidden shadow-sm border border-card-border active:scale-95 transition-transform flex items-center justify-center"
+                style={{ background: (avatar as any).image ? undefined : avatar.bg, fontSize: 18 }}
               >
-                {avatar.emoji}
+                {(avatar as any).image
+                  ? <img src={(avatar as any).image} alt="avatar" className="w-full h-full object-cover" />
+                  : avatar.emoji}
               </button>
             </div>
           </div>

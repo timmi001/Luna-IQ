@@ -10,7 +10,7 @@ import { supabase } from "@/lib/supabase";
 const AVATARS = [
   { emoji: "🌸", bg: "#FFF0F9", label: "Blossom" },
   { emoji: "🦋", bg: "#F5F3FF", label: "Butterfly" },
-  { emoji: "🌙", bg: "#EEF2FF", label: "Luna" },
+  { emoji: "", bg: "#EEF2FF", label: "Luna", image: "/luna-icon.jpg" },
   { emoji: "🌺", bg: "#FFF7ED", label: "Hibiscus" },
   { emoji: "✨", bg: "#FEFCE8", label: "Sparkle" },
   { emoji: "🌷", bg: "#FFF0F6", label: "Tulip" },
@@ -157,7 +157,7 @@ export default function Profile() {
                 className="flex flex-col items-center gap-1 focus:outline-none"
               >
                 <div
-                  className="w-14 h-14 rounded-2xl flex items-center justify-center transition-all"
+                  className="w-14 h-14 rounded-2xl flex items-center justify-center transition-all overflow-hidden"
                   style={{
                     background: av.bg,
                     fontSize: 28,
@@ -166,7 +166,9 @@ export default function Profile() {
                     transform: avatarIndex === i ? "scale(1.08)" : "scale(1)",
                   }}
                 >
-                  {av.emoji}
+                  {(av as any).image
+                    ? <img src={(av as any).image} alt={av.label} className="w-full h-full object-cover" />
+                    : av.emoji}
                 </div>
                 <span className="text-[9px] text-muted-foreground">{av.label}</span>
               </button>
@@ -179,9 +181,8 @@ export default function Profile() {
           onClick={() => setLocation("/luna-points")}
           className="w-full rounded-3xl p-5 shadow-sm flex items-center gap-4 active:scale-[0.98] transition-all text-left overflow-hidden relative luna-glass"
         >
-          <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl flex-shrink-0"
-            style={{ background: "linear-gradient(135deg, #B4E8E0, #C3898E)" }}>
-            🌙
+          <div className="w-12 h-12 rounded-2xl overflow-hidden flex-shrink-0 shadow-sm">
+            <img src="/luna-icon.jpg" alt="Luna" className="w-full h-full object-cover" />
           </div>
           <div className="flex-1">
             <p className="text-sm font-semibold text-foreground">Luna Points</p>

@@ -83,7 +83,9 @@ function WalletCard({ wallet }: { wallet: Wallet | null }) {
 
       <div className="relative">
         <div className="flex items-center gap-2 mb-4">
-          <span className="text-xl">🌙</span>
+          <div className="w-6 h-6 rounded-full overflow-hidden shadow-sm flex-shrink-0">
+            <img src="/luna-icon.jpg" alt="Luna" className="w-full h-full object-cover" />
+          </div>
           <p className="text-white/80 text-sm font-medium">Luna Points</p>
         </div>
 
