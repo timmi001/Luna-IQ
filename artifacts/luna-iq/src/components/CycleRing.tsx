@@ -172,52 +172,18 @@ export function CycleRing({ phase, currentDay, cycleLength, selectedMood = "🌙
 
               <button
                 onClick={handleFlowerTap}
-                className="relative focus:outline-none"
-                style={{ width: 100, height: 100 }}
+                className="flex items-center justify-center rounded-full focus:outline-none"
+                style={{
+                  width: 56,
+                  height: 56,
+                  background: "linear-gradient(135deg, #fdf4ff 0%, #ede9fe 100%)",
+                  border: "2.5px solid #ddd6fe",
+                  boxShadow: "0 2px 12px rgba(167,139,250,0.35)",
+                  fontSize: 26,
+                }}
                 aria-label="Set your mood"
               >
-                <div
-                  className="absolute rounded-full"
-                  style={{
-                    inset: "8px",
-                    background: "radial-gradient(circle, rgba(167,139,250,0.45) 0%, transparent 70%)",
-                    filter: "blur(10px)",
-                    animation: "pulse 3s ease-in-out infinite",
-                  }}
-                />
-                {[0, 1, 2, 3, 4, 5].map((i) => (
-                  <div
-                    key={i}
-                    style={{
-                      position: "absolute",
-                      width: 18,
-                      height: 32,
-                      left: "calc(50% - 9px)",
-                      top: "calc(50% - 32px)",
-                      borderRadius: "50%",
-                      background: "linear-gradient(to bottom, #ede9fe 0%, #a78bfa 100%)",
-                      transformOrigin: "50% 100%",
-                      transform: `rotate(${i * 60}deg)`,
-                      opacity: 0.78,
-                    }}
-                  />
-                ))}
-                <div
-                  className="absolute flex items-center justify-center rounded-full"
-                  style={{
-                    width: 46,
-                    height: 46,
-                    left: "calc(50% - 23px)",
-                    top: "calc(50% - 23px)",
-                    background: "linear-gradient(135deg, #fdf4ff 0%, #ede9fe 100%)",
-                    border: "2.5px solid #ddd6fe",
-                    boxShadow: "0 0 18px rgba(167,139,250,0.55)",
-                    fontSize: 22,
-                    zIndex: 2,
-                  }}
-                >
-                  {selectedMood}
-                </div>
+                {selectedMood}
               </button>
 
               <span className="text-xs text-center" style={{ color: "#9CA3AF", fontSize: "10px" }}>
