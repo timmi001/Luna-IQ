@@ -334,11 +334,6 @@ export default function Cycle() {
           {activeTab === "Cycle" && (
             <motion.div key="cycle" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="flex flex-col gap-4">
 
-              {/* Flo-style Calendar */}
-              <div className="bg-white rounded-3xl p-5 shadow-sm border border-card-border">
-                <CycleCalendar lastPeriodStart={data.lastPeriodStart} cycleLength={cycleLen} />
-              </div>
-
               {/* Phase ring hero — tap to open log modal */}
               <button
                 onClick={() => setShowLogModal(true)}
@@ -374,6 +369,11 @@ export default function Cycle() {
                   </div>
                 </div>
               </button>
+
+              {/* Flo-style Calendar */}
+              <div className="bg-white rounded-3xl p-5 shadow-sm border border-card-border">
+                <CycleCalendar lastPeriodStart={data.lastPeriodStart} cycleLength={cycleLen} />
+              </div>
 
               {/* Cycle Summary */}
               <div className="bg-white rounded-2xl p-4 border border-card-border shadow-sm">
