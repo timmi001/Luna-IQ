@@ -39,18 +39,18 @@
   --color-destructive-foreground: hsl(var(--destructive-foreground));
   --color-destructive-border: var(--destructive-border);
 
-  /* Luna brand tokens */
-  --color-luna-rose:    #B66A78;   /* Luna Rose — primary brand */
-  --color-luna-plum:    #6E3D56;   /* Deep Lunar Plum — dark & text */
-  --color-luna-glow:    #F6E9ED;   /* Soft Glow Tint — accent surface */
+  /* Luna brand tokens — original palette */
+  --color-luna-blush:    hsl(342 66% 90%);   /* #F7D6E0 */
+  --color-luna-lavender: hsl(251 100% 95%);  /* #E9E4FF */
+  --color-luna-peach:    hsl(20 80% 92%);    /* #FDDEC7 */
+  --color-luna-mint:     hsl(150 50% 92%);   /* #D5F5E3 */
 
-  /* Legacy aliases — kept so existing class names still work */
-  --color-luna-blush:    #B66A78;
-  --color-luna-lavender: #F6E9ED;
-  --color-luna-peach:    #E6DED8;
-  --color-luna-mint:     #F3EFEC;
-  --color-luna-gold:     #B66A78;
-  --color-luna-mauve:    #6E3D56;
+  /* Aliases so existing class names still work */
+  --color-luna-rose:  hsl(342 66% 90%);
+  --color-luna-plum:  hsl(251 40% 25%);
+  --color-luna-glow:  hsl(342 66% 90%);
+  --color-luna-gold:  hsl(20 80% 92%);
+  --color-luna-mauve: hsl(310 15% 30%);
 
   --font-sans: var(--app-font-sans);
   --font-serif: var(--app-font-serif);
@@ -64,53 +64,53 @@
   --radius-3xl: calc(var(--radius) + 20px);
 }
 
-/* ── LIGHT MODE — Luna brand palette ─────────────────────────────────────── */
+/* ── LIGHT MODE — original Luna palette ─────────────────────────────────── */
 :root {
-  --button-outline: rgba(0,0,0, .06);
-  --badge-outline: rgba(0,0,0, .06);
+  --button-outline: rgba(0,0,0, .05);
+  --badge-outline: rgba(0,0,0, .05);
   --opaque-button-border-intensity: -8;
 
-  --elevate-1: rgba(0,0,0, .03);
-  --elevate-2: rgba(0,0,0, .06);
+  --elevate-1: rgba(0,0,0, .02);
+  --elevate-2: rgba(0,0,0, .05);
 
-  /* ── Base — warm neutral foundation ── */
-  --background:   30 29% 97%;        /* #FAF8F6 main background */
-  --foreground:   329 20% 22%;       /* deep plum-tinted text */
-  --border:       26 22% 88%;        /* #E6DED8 dividers */
+  /* ── Base ── */
+  --background:   330 100% 98%;   /* #FFF7FB */
+  --foreground:   310 15% 30%;    /* soft dark purple/grey */
+  --border:       330 30% 92%;    /* soft pinkish border */
 
-  /* ── Cards — elevated surfaces ── */
-  --card:              0 0% 100%;    /* #FFFFFF */
-  --card-foreground:   329 20% 22%;
-  --card-border:       26 22% 89%;   /* #E6DED8 */
+  /* ── Cards ── */
+  --card:              0 0% 100%;
+  --card-foreground:   310 15% 30%;
+  --card-border:       330 30% 94%;
 
   /* ── Popover ── */
   --popover:            0 0% 100%;
-  --popover-foreground: 329 20% 22%;
-  --popover-border:     26 22% 89%;
+  --popover-foreground: 310 15% 30%;
+  --popover-border:     330 30% 94%;
 
-  /* ── Primary — Luna Rose ── */
-  --primary:            349 34% 57%;   /* #B66A78 */
-  --primary-foreground: 0 0% 100%;    /* white on rose */
+  /* ── Primary — Soft Lavender ── */
+  --primary:            251 60% 80%;   /* #C3B8F0 */
+  --primary-foreground: 251 40% 25%;
 
-  /* ── Secondary — secondary surface ── */
-  --secondary:            26 23% 94%;   /* #F3EFEC */
-  --secondary-foreground: 329 20% 22%;
+  /* ── Secondary — Soft Blush ── */
+  --secondary:            342 60% 85%;   /* #F0AABF */
+  --secondary-foreground: 342 40% 25%;
 
   /* ── Muted ── */
-  --muted:            26 23% 95%;
-  --muted-foreground: 329 14% 50%;
+  --muted:            330 40% 95%;
+  --muted-foreground: 310 10% 50%;
 
-  /* ── Accent — Soft Glow Tint ── */
-  --accent:            342 42% 94%;   /* #F6E9ED */
-  --accent-foreground: 349 34% 40%;   /* darker rose on glow */
+  /* ── Accent — Blush ── */
+  --accent:            342 66% 90%;   /* #F7D6E0 */
+  --accent-foreground: 342 40% 30%;
 
   /* ── Destructive ── */
-  --destructive:            0 72% 56%;
-  --destructive-foreground: 0 0% 100%;
+  --destructive:            0 70% 85%;
+  --destructive-foreground: 0 60% 30%;
 
   /* ── Form ── */
-  --input: 26 22% 91%;
-  --ring:  349 34% 57%;   /* Luna Rose focus ring */
+  --input: 330 30% 92%;
+  --ring:  251 60% 80%;
 
   /* ── Typography ── */
   --app-font-sans: 'Outfit', 'Inter', sans-serif;
@@ -118,35 +118,35 @@
   --app-font-mono: Menlo, monospace;
   --radius: 1.5rem;
 
-  /* ── Shadows — Luna Rose tinted ── */
-  --shadow-2xs: 0px 2px 8px  rgba(182,106,120,0.10);
-  --shadow-xs:  0px 4px 12px rgba(182,106,120,0.13);
-  --shadow-sm:  0px 6px 16px rgba(182,106,120,0.15);
-  --shadow:     0px 8px 24px rgba(182,106,120,0.18);
-  --shadow-md:  0px 12px 32px rgba(182,106,120,0.22);
-  --shadow-lg:  0px 16px 40px rgba(182,106,120,0.26);
-  --shadow-xl:  0px 24px 48px rgba(182,106,120,0.30);
-  --shadow-2xl: 0px 32px 64px rgba(182,106,120,0.36);
+  /* ── Shadows — original blush tinted ── */
+  --shadow-2xs: 0px 2px 8px  rgba(233,200,215,0.10);
+  --shadow-xs:  0px 4px 12px rgba(233,200,215,0.15);
+  --shadow-sm:  0px 6px 16px rgba(233,200,215,0.20);
+  --shadow:     0px 8px 24px rgba(233,200,215,0.25);
+  --shadow-md:  0px 12px 32px rgba(233,200,215,0.30);
+  --shadow-lg:  0px 16px 40px rgba(233,200,215,0.35);
+  --shadow-xl:  0px 24px 48px rgba(233,200,215,0.40);
+  --shadow-2xl: 0px 32px 64px rgba(233,200,215,0.45);
 
   --tracking-normal: 0em;
   --spacing: 0.25rem;
 
   /* ── Sidebar ── */
-  --sidebar:                    30 29% 97%;
-  --sidebar-foreground:         329 20% 22%;
-  --sidebar-border:             26 22% 88%;
-  --sidebar-primary:            349 34% 57%;
-  --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent:             342 42% 94%;
-  --sidebar-accent-foreground:  329 20% 22%;
-  --sidebar-ring:               349 34% 57%;
+  --sidebar:                    330 100% 98%;
+  --sidebar-foreground:         310 15% 30%;
+  --sidebar-border:             330 30% 92%;
+  --sidebar-primary:            251 60% 80%;
+  --sidebar-primary-foreground: 251 40% 25%;
+  --sidebar-accent:             342 66% 90%;
+  --sidebar-accent-foreground:  342 40% 30%;
+  --sidebar-ring:               251 60% 80%;
 
   /* ── Charts ── */
-  --chart-1: 349 34% 57%;
-  --chart-2: 342 42% 80%;
-  --chart-3: 26 23% 75%;
-  --chart-4: 329 20% 55%;
-  --chart-5: 329 29% 33%;
+  --chart-1: 342 66% 90%;
+  --chart-2: 251 100% 95%;
+  --chart-3: 20 80% 92%;
+  --chart-4: 150 50% 92%;
+  --chart-5: 45 80% 90%;
 
   /* ── Computed borders ── */
   --primary-border:     hsl(from hsl(var(--primary))     h s calc(l + var(--opaque-button-border-intensity)) / alpha);
@@ -176,7 +176,7 @@
 
   body {
     @apply font-sans antialiased text-foreground;
-    background-color: #6E3D56; /* Deep Lunar Plum — fills space outside mobile container */
+    background-color: #7B6B8D; /* muted lavender-plum outside container */
     overflow-x: hidden;
     overscroll-behavior: none;
     height: 100%;
@@ -246,7 +246,7 @@
   /* ── Luna core layout ── */
   .mobile-container {
     @apply w-full max-w-[430px] mx-auto min-h-[100dvh] relative shadow-2xl overflow-x-hidden;
-    background: linear-gradient(160deg, #F6E9ED 0%, #F3EFEC 60%, #FAF8F6 100%);
+    background: linear-gradient(160deg, #F5E1E3 0%, #ECD5DC 60%, #E0CDD6 100%);
   }
 
   /* ── Glassmorphism card ── */
@@ -259,10 +259,10 @@
 
   /* ── Bottom nav ── */
   .glass-nav {
-    background: rgba(255, 255, 255, 0.92);
+    background: rgba(255, 255, 255, 0.88);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    border-top: 1px solid #E6DED8;
-    box-shadow: 0 -8px 32px rgba(182, 106, 120, 0.14);
+    border-top: 1px solid rgba(255, 255, 255, 0.60);
+    box-shadow: 0 -8px 32px rgba(233, 200, 215, 0.20);
   }
 }

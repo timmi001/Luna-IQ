@@ -89,7 +89,7 @@ export default function Signup() {
   return (
     <div
       className="min-h-screen flex flex-col items-center justify-center px-5 py-10"
-      style={{ background: "linear-gradient(160deg, #B66A78 0%, #8E5264 45%, #6E3D56 100%)" }}
+      style={{ background: "linear-gradient(160deg, #FFF7FB 0%, #F3EEFF 50%, #FFF0F6 100%)" }}
     >
       {/* Logo */}
       <motion.div
@@ -215,7 +215,7 @@ export default function Signup() {
             type="submit"
             disabled={loading}
             className="w-full py-3.5 rounded-2xl font-semibold text-sm transition-all active:scale-[0.98] disabled:opacity-60 flex items-center justify-center gap-2 mt-1"
-            style={{ background: "#B66A78", color: "#ffffff" }}
+            style={{ background: "linear-gradient(135deg, #8B5CF6, #A855F7)", color: "#ffffff" }}
           >
             {loading ? (
               <motion.div

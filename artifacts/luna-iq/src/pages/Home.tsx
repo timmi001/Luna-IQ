@@ -232,7 +232,7 @@ function InsightModal({
               <button
                 onClick={onLogMood}
                 className="flex items-center gap-2 font-semibold text-sm px-6 py-3 rounded-2xl"
-                style={{ background: "#B66A78", color: "#ffffff" }}
+                style={{ background: "linear-gradient(135deg, #8B5CF6, #A855F7)", color: "#ffffff" }}
               >
                 <PlusCircle className="w-4 h-4" />
                 Log Today's Mood
@@ -482,7 +482,7 @@ export default function Home() {
                 <button
                   onClick={(e) => { e.stopPropagation(); setLocation("/mood"); }}
                   className="self-start text-xs font-semibold px-4 py-2 rounded-2xl transition-all active:scale-95"
-                  style={{ background: "#B66A78", color: "#ffffff" }}
+                  style={{ background: "linear-gradient(135deg, #8B5CF6, #A855F7)", color: "#ffffff" }}
                 >
                   Log mood now →
                 </button>
@@ -524,9 +524,9 @@ export default function Home() {
           <div className="grid grid-cols-2 gap-3">
             <Link href="/chat">
               <div className="rounded-3xl p-5 flex flex-col items-center justify-center text-center aspect-square cursor-pointer shadow-sm transition-all active:scale-[0.97]"
-                style={{ background: "linear-gradient(135deg, rgba(182,106,120,0.18) 0%, rgba(246,233,237,0.60) 100%)", border: "1px solid rgba(182,106,120,0.22)" }}>
+                style={{ background: "linear-gradient(135deg, rgba(139,92,246,0.15) 0%, rgba(233,228,255,0.70) 100%)", border: "1px solid rgba(167,139,250,0.25)" }}>
                 <div className="w-12 h-12 rounded-full flex items-center justify-center shadow-sm mb-3"
-                  style={{ background: "#B66A78", color: "white" }}>
+                  style={{ background: "linear-gradient(135deg, #8B5CF6, #A855F7)", color: "white" }}>
                   <MessageCircleHeart className="w-6 h-6" />
                 </div>
                 <h3 className="font-semibold text-foreground">Luna Chat</h3>
