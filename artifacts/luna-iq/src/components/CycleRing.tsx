@@ -100,7 +100,7 @@ export function CycleRing({ phase, currentDay, cycleLength, selectedMood = "🌙
           <circle
             cx={CX} cy={CY} r={RING_R}
             fill="none"
-            stroke="#F3F4F6"
+            stroke="white"
             strokeWidth={RING_SW}
           />
 

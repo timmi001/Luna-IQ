@@ -335,35 +335,48 @@ export default function Cycle() {
           {activeTab === "Cycle" && (
             <motion.div key="cycle" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="flex flex-col gap-4">
 
-              {/* Live cycle ring — tap center to open log modal */}
-              <div className="flex justify-center">
-                <CycleRing
-                  phase={phase}
-                  currentDay={currentDay}
-                  cycleLength={cycleLen}
-                  onCenterTap={() => setShowLogModal(true)}
-                  centerContent={
-                    <div className="flex flex-col items-center gap-1">
-                      {daysUntilNextPeriod !== null ? (
-                        <>
-                          <span className="font-bold leading-none" style={{ fontSize: 42, color: "#374151" }}>
-                            {daysUntilNextPeriod}
-                          </span>
-                          <span className="text-xs text-gray-500 leading-snug text-center font-medium">
-                            day{daysUntilNextPeriod !== 1 ? "s" : ""} until<br />next period
-                          </span>
-                        </>
-                      ) : (
-                        <span className="text-xs font-semibold text-gray-500 text-center leading-snug">
-                          Log your<br />first period
-                        </span>
-                      )}
-                      <span className="mt-2 bg-pink-50 border border-pink-200 rounded-full px-3 py-0.5 text-[10px] font-semibold text-pink-500">
-                        Log period
-                      </span>
-                    </div>
-                  }
+              {/* Live cycle ring with floral surround */}
+              <div
+                className="relative flex items-center justify-center mx-auto rounded-3xl overflow-hidden active:scale-[0.98] transition-transform cursor-pointer"
+                style={{ width: 300, height: 300 }}
+                onClick={() => setShowLogModal(true)}
+              >
+                {/* Flower background image */}
+                <img
+                  src={`${BASE}/cycle-flowers.jpg`}
+                  alt=""
+                  className="absolute inset-0 w-full h-full object-cover"
+                  aria-hidden="true"
                 />
+                {/* Live ring centered on top — flowers peek out around the edges */}
+                <div className="relative z-10">
+                  <CycleRing
+                    phase={phase}
+                    currentDay={currentDay}
+                    cycleLength={cycleLen}
+                    centerContent={
+                      <div className="flex flex-col items-center gap-1">
+                        {daysUntilNextPeriod !== null ? (
+                          <>
+                            <span className="font-bold leading-none" style={{ fontSize: 42, color: "#374151" }}>
+                              {daysUntilNextPeriod}
+                            </span>
+                            <span className="text-xs text-gray-500 leading-snug text-center font-medium">
+                              day{daysUntilNextPeriod !== 1 ? "s" : ""} until<br />next period
+                            </span>
+                          </>
+                        ) : (
+                          <span className="text-xs font-semibold text-gray-500 text-center leading-snug">
+                            Log your<br />first period
+                          </span>
+                        )}
+                        <span className="mt-2 bg-white/90 border border-pink-300 rounded-full px-3 py-0.5 text-[10px] font-semibold text-pink-500">
+                          Log period
+                        </span>
+                      </div>
+                    }
+                  />
+                </div>
               </div>
 
               {/* Flo-style Calendar */}
