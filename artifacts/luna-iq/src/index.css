@@ -39,18 +39,18 @@
   --color-destructive-foreground: hsl(var(--destructive-foreground));
   --color-destructive-border: var(--destructive-border);
 
-  /* Luna brand tokens — original palette */
-  --color-luna-blush:    hsl(342 66% 90%);   /* #F7D6E0 */
-  --color-luna-lavender: hsl(251 100% 95%);  /* #E9E4FF */
-  --color-luna-peach:    hsl(20 80% 92%);    /* #FDDEC7 */
-  --color-luna-mint:     hsl(150 50% 92%);   /* #D5F5E3 */
+  /* Luna brand tokens — rich jewel palette */
+  --color-luna-blush:    #F472B6;   /* vivid pink */
+  --color-luna-lavender: #A855F7;   /* vivid purple */
+  --color-luna-peach:    #FB923C;   /* vivid peach */
+  --color-luna-mint:     #34D399;   /* vivid mint */
 
-  /* Aliases so existing class names still work */
-  --color-luna-rose:  hsl(342 66% 90%);
-  --color-luna-plum:  hsl(251 40% 25%);
-  --color-luna-glow:  hsl(342 66% 90%);
-  --color-luna-gold:  hsl(20 80% 92%);
-  --color-luna-mauve: hsl(310 15% 30%);
+  /* Aliases */
+  --color-luna-rose:  #EC4899;
+  --color-luna-plum:  #4C1D95;
+  --color-luna-glow:  #F0ABFC;
+  --color-luna-gold:  #FBBF24;
+  --color-luna-mauve: #6D28D9;
 
   --font-sans: var(--app-font-sans);
   --font-serif: var(--app-font-serif);
@@ -64,53 +64,53 @@
   --radius-3xl: calc(var(--radius) + 20px);
 }
 
-/* ── LIGHT MODE — original Luna palette ─────────────────────────────────── */
+/* ── LIGHT MODE — rich jewel-tone Luna palette ───────────────────────────── */
 :root {
-  --button-outline: rgba(0,0,0, .05);
-  --badge-outline: rgba(0,0,0, .05);
-  --opaque-button-border-intensity: -8;
+  --button-outline: rgba(0,0,0, .08);
+  --badge-outline: rgba(0,0,0, .08);
+  --opaque-button-border-intensity: -10;
 
-  --elevate-1: rgba(0,0,0, .02);
-  --elevate-2: rgba(0,0,0, .05);
+  --elevate-1: rgba(0,0,0, .03);
+  --elevate-2: rgba(0,0,0, .07);
 
   /* ── Base ── */
-  --background:   330 100% 98%;   /* #FFF7FB */
-  --foreground:   310 15% 30%;    /* soft dark purple/grey */
-  --border:       330 30% 92%;    /* soft pinkish border */
+  --background:   270 60% 97%;      /* rich lavender-white #F5EEFF */
+  --foreground:   270 60% 10%;      /* deep purple-black text */
+  --border:       270 40% 85%;      /* vivid lavender border */
 
   /* ── Cards ── */
   --card:              0 0% 100%;
-  --card-foreground:   310 15% 30%;
-  --card-border:       330 30% 94%;
+  --card-foreground:   270 60% 10%;
+  --card-border:       270 35% 88%;
 
   /* ── Popover ── */
   --popover:            0 0% 100%;
-  --popover-foreground: 310 15% 30%;
-  --popover-border:     330 30% 94%;
+  --popover-foreground: 270 60% 10%;
+  --popover-border:     270 35% 88%;
 
-  /* ── Primary — Soft Lavender ── */
-  --primary:            251 60% 80%;   /* #C3B8F0 */
-  --primary-foreground: 251 40% 25%;
+  /* ── Primary — Rich Violet ── */
+  --primary:            271 81% 56%;    /* #7C3AED */
+  --primary-foreground: 0 0% 100%;
 
-  /* ── Secondary — Soft Blush ── */
-  --secondary:            342 60% 85%;   /* #F0AABF */
-  --secondary-foreground: 342 40% 25%;
+  /* ── Secondary — Deep Rose ── */
+  --secondary:            328 81% 55%;   /* #DB2777 */
+  --secondary-foreground: 0 0% 100%;
 
   /* ── Muted ── */
-  --muted:            330 40% 95%;
-  --muted-foreground: 310 10% 50%;
+  --muted:            270 30% 93%;
+  --muted-foreground: 270 20% 45%;
 
-  /* ── Accent — Blush ── */
-  --accent:            342 66% 90%;   /* #F7D6E0 */
-  --accent-foreground: 342 40% 30%;
+  /* ── Accent — Vivid Fuchsia ── */
+  --accent:            293 91% 73%;    /* #E879F9 */
+  --accent-foreground: 270 60% 10%;
 
   /* ── Destructive ── */
-  --destructive:            0 70% 85%;
-  --destructive-foreground: 0 60% 30%;
+  --destructive:            0 84% 60%;
+  --destructive-foreground: 0 0% 100%;
 
   /* ── Form ── */
-  --input: 330 30% 92%;
-  --ring:  251 60% 80%;
+  --input: 270 35% 88%;
+  --ring:  271 81% 56%;
 
   /* ── Typography ── */
   --app-font-sans: 'Outfit', 'Inter', sans-serif;
@@ -118,35 +118,35 @@
   --app-font-mono: Menlo, monospace;
   --radius: 1.5rem;
 
-  /* ── Shadows — original blush tinted ── */
-  --shadow-2xs: 0px 2px 8px  rgba(233,200,215,0.10);
-  --shadow-xs:  0px 4px 12px rgba(233,200,215,0.15);
-  --shadow-sm:  0px 6px 16px rgba(233,200,215,0.20);
-  --shadow:     0px 8px 24px rgba(233,200,215,0.25);
-  --shadow-md:  0px 12px 32px rgba(233,200,215,0.30);
-  --shadow-lg:  0px 16px 40px rgba(233,200,215,0.35);
-  --shadow-xl:  0px 24px 48px rgba(233,200,215,0.40);
-  --shadow-2xl: 0px 32px 64px rgba(233,200,215,0.45);
+  /* ── Shadows — vivid violet tinted ── */
+  --shadow-2xs: 0px 2px 8px  rgba(124,58,237,0.12);
+  --shadow-xs:  0px 4px 12px rgba(124,58,237,0.16);
+  --shadow-sm:  0px 6px 16px rgba(124,58,237,0.20);
+  --shadow:     0px 8px 24px rgba(124,58,237,0.24);
+  --shadow-md:  0px 12px 32px rgba(124,58,237,0.28);
+  --shadow-lg:  0px 16px 40px rgba(124,58,237,0.32);
+  --shadow-xl:  0px 24px 48px rgba(124,58,237,0.36);
+  --shadow-2xl: 0px 32px 64px rgba(124,58,237,0.42);
 
   --tracking-normal: 0em;
   --spacing: 0.25rem;
 
   /* ── Sidebar ── */
-  --sidebar:                    330 100% 98%;
-  --sidebar-foreground:         310 15% 30%;
-  --sidebar-border:             330 30% 92%;
-  --sidebar-primary:            251 60% 80%;
-  --sidebar-primary-foreground: 251 40% 25%;
-  --sidebar-accent:             342 66% 90%;
-  --sidebar-accent-foreground:  342 40% 30%;
-  --sidebar-ring:               251 60% 80%;
+  --sidebar:                    270 60% 97%;
+  --sidebar-foreground:         270 60% 10%;
+  --sidebar-border:             270 40% 85%;
+  --sidebar-primary:            271 81% 56%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent:             293 91% 73%;
+  --sidebar-accent-foreground:  270 60% 10%;
+  --sidebar-ring:               271 81% 56%;
 
   /* ── Charts ── */
-  --chart-1: 342 66% 90%;
-  --chart-2: 251 100% 95%;
-  --chart-3: 20 80% 92%;
-  --chart-4: 150 50% 92%;
-  --chart-5: 45 80% 90%;
+  --chart-1: 271 81% 56%;
+  --chart-2: 328 81% 55%;
+  --chart-3: 293 91% 73%;
+  --chart-4: 24 94% 55%;
+  --chart-5: 142 71% 45%;
 
   /* ── Computed borders ── */
   --primary-border:     hsl(from hsl(var(--primary))     h s calc(l + var(--opaque-button-border-intensity)) / alpha);
@@ -176,7 +176,7 @@
 
   body {
     @apply font-sans antialiased text-foreground;
-    background-color: #7B6B8D; /* muted lavender-plum outside container */
+    background-color: #2E1065; /* deep violet outside container */
     overflow-x: hidden;
     overscroll-behavior: none;
     height: 100%;
@@ -246,23 +246,23 @@
   /* ── Luna core layout ── */
   .mobile-container {
     @apply w-full max-w-[430px] mx-auto min-h-[100dvh] relative shadow-2xl overflow-x-hidden;
-    background: linear-gradient(160deg, #F5E1E3 0%, #ECD5DC 60%, #E0CDD6 100%);
+    background: linear-gradient(160deg, #F5EEFF 0%, #FCE7FF 50%, #FDE8F4 100%);
   }
 
   /* ── Glassmorphism card ── */
   .luna-glass {
-    background: rgba(255, 255, 255, 0.50);
+    background: rgba(255, 255, 255, 0.65);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.60);
+    border: 1px solid rgba(168, 85, 247, 0.20);
   }
 
   /* ── Bottom nav ── */
   .glass-nav {
-    background: rgba(255, 255, 255, 0.88);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border-top: 1px solid rgba(255, 255, 255, 0.60);
-    box-shadow: 0 -8px 32px rgba(233, 200, 215, 0.20);
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border-top: 1px solid rgba(168, 85, 247, 0.20);
+    box-shadow: 0 -8px 32px rgba(124, 58, 237, 0.16);
   }
 }
