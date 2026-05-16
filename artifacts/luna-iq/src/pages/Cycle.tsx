@@ -6,6 +6,7 @@ import { addPoints } from "@/lib/points";
 
 import { PageTransition } from "@/components/PageTransition";
 import { CycleRing } from "@/components/CycleRing";
+import { CycleFlowers } from "@/components/CycleFlowers";
 import { useToast } from "@/hooks/use-toast";
 import { format, addDays, startOfMonth, endOfMonth, eachDayOfInterval, getDay, differenceInDays, isSameDay, isToday, isFuture } from "date-fns";
 import { ChevronLeft, ChevronRight, SendHorizonal, X } from "lucide-react";
@@ -335,20 +336,16 @@ export default function Cycle() {
           {activeTab === "Cycle" && (
             <motion.div key="cycle" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="flex flex-col gap-4">
 
-              {/* Live cycle ring with floral surround */}
+              {/* Live cycle ring with animated floral surround */}
               <div
-                className="relative flex items-center justify-center mx-auto rounded-3xl overflow-hidden active:scale-[0.98] transition-transform cursor-pointer"
+                className="relative flex items-center justify-center mx-auto active:scale-[0.98] transition-transform cursor-pointer"
                 style={{ width: 300, height: 300 }}
                 onClick={() => setShowLogModal(true)}
               >
-                {/* Flower background image */}
-                <img
-                  src={`${BASE}/cycle-flowers.jpg`}
-                  alt=""
-                  className="absolute inset-0 w-full h-full object-cover"
-                  aria-hidden="true"
-                />
-                {/* Live ring centered on top — flowers peek out around the edges */}
+                {/* Animated flowers behind the ring */}
+                <CycleFlowers phase={phase} />
+
+                {/* Live ring centered on top */}
                 <div className="relative z-10">
                   <CycleRing
                     phase={phase}
