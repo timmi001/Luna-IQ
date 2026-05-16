@@ -80,11 +80,8 @@ export default function Login() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <div
-            className="w-20 h-20 rounded-3xl flex items-center justify-center shadow-lg"
-            style={{ background: "rgba(255,255,255,0.20)", border: "1px solid rgba(255,255,255,0.35)" }}
-          >
-            <span className="text-4xl">🌙</span>
+          <div className="w-24 h-24 rounded-full overflow-hidden shadow-xl" style={{ border: "2px solid rgba(255,255,255,0.4)" }}>
+            <img src="/luna-icon.jpg" alt="Luna IQ" className="w-full h-full object-cover" />
           </div>
           <div className="text-center">
             <h1 className="text-2xl font-bold text-white">Luna IQ</h1>
