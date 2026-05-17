@@ -5,7 +5,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { addPoints } from "@/lib/points";
 
 import { PageTransition } from "@/components/PageTransition";
-import { LiveCycleRing } from "@/components/LiveCycleRing";
 import { useToast } from "@/hooks/use-toast";
 import { format, addDays, startOfMonth, endOfMonth, eachDayOfInterval, getDay, differenceInDays, isSameDay, isToday, isFuture } from "date-fns";
 import { ChevronLeft, ChevronRight, SendHorizonal, X } from "lucide-react";
@@ -334,15 +333,6 @@ export default function Cycle() {
           {/* ── CYCLE TAB ── */}
           {activeTab === "Cycle" && (
             <motion.div key="cycle" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="flex flex-col gap-4">
-
-              {/* Live cycle ring */}
-              <LiveCycleRing
-                phase={phase}
-                currentDay={currentDay}
-                cycleLength={cycleLen}
-                daysUntilNextPeriod={daysUntilNextPeriod}
-                onClick={() => setShowLogModal(true)}
-              />
 
               {/* Flo-style Calendar */}
               <div className="bg-white rounded-3xl p-5 shadow-sm border border-card-border">
