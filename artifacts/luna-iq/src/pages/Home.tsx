@@ -1,9 +1,11 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { Link, useLocation } from "wouter";
-import { Bell, MessageCircleHeart, Wind, Droplets, ListChecks, Sparkles, X, Lightbulb, Heart, PlusCircle, ChevronRight } from "lucide-react";
+import { Bell, MessageCircleHeart, Wind, Droplets, ListChecks, Sparkles, X, Lightbulb, Heart, PlusCircle, ChevronRight, SendHorizonal } from "lucide-react";
 import { MOODS, MoodFlower } from "@/components/MoodFlower";
 import { motion, AnimatePresence } from "framer-motion";
-import { differenceInDays } from "date-fns";
+import { differenceInDays, format } from "date-fns";
+import { useToast } from "@/hooks/use-toast";
+import { addPoints } from "@/lib/points";
 import { storage } from "@/utils/storage";
 import { getCycleDetails, getPhaseColor, CyclePhase } from "@/utils/cycle";
 import { LiveCycleRing } from "@/components/LiveCycleRing";
@@ -275,11 +277,25 @@ export default function Home() {
   const { user, profile, refreshProfile } = useAuth();
   const userId = user?.id ?? "guest";
 
+  const { toast } = useToast();
+
   const [insight, setInsight] = useState<Insight | null>(null);
   const [insightLoading, setInsightLoading] = useState(true);
   const [hasLogs, setHasLogs] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [showBirthday, setShowBirthday] = useState(true);
+
+  // Cycle log modal state
+  const [showLogModal, setShowLogModal] = useState(false);
+  const [flow, setFlow] = useState<string | null>(null);
+  const [logDate, setLogDate] = useState(format(new Date(), "MM/dd/yyyy"));
+  const [symptomInput, setSymptomInput] = useState("");
+  const [savedNote, setSavedNote] = useState(() => {
+    const today = new Date().toISOString().split("T")[0]!;
+    return storage.getSymptomsNote ? storage.getSymptomsNote(today) : "";
+  });
+  const [showSaved, setShowSaved] = useState(false);
+  const symptomRef = useRef<HTMLInputElement>(null);
 
   const latestMood = storage.getLatestMood();
   const cycleData = storage.getCycle();
@@ -335,6 +351,54 @@ export default function Home() {
     : null;
 
   const phaseColorClass = phase !== "Unknown" ? getPhaseColor(phase as CyclePhase) : "bg-gray-50 border-gray-200 text-gray-500";
+
+  const handleSaveSymptom = () => {
+    const trimmed = symptomInput.trim();
+    if (!trimmed) return;
+    const updated = savedNote ? `${savedNote}, ${trimmed}` : trimmed;
+    const today = new Date().toISOString().split("T")[0]!;
+    setSavedNote(updated);
+    storage.saveSymptomsNote(today, updated);
+    setSymptomInput("");
+    setShowSaved(true);
+    setTimeout(() => setShowSaved(false), 1600);
+  };
+
+  const handleLogCycle = async () => {
+    if (!flow) { toast({ title: "Select a flow intensity first", variant: "destructive" }); return; }
+    const parts = logDate.split("/");
+    let iso = "";
+    if (parts.length === 3) iso = `${parts[2]}-${parts[0]!.padStart(2, "0")}-${parts[1]!.padStart(2, "0")}`;
+    if (!iso || isNaN(Date.parse(iso))) {
+      toast({ title: "Invalid date", description: "Use MM/DD/YYYY format", variant: "destructive" }); return;
+    }
+    const updated = { lastPeriodStart: iso, cycleLength: cycleData.cycleLength };
+    storage.saveCycle(updated);
+    toast({ title: "Cycle logged 🌸", description: `${flow} flow on ${logDate}` });
+    if (user?.id) {
+      addPoints(user.id, "cycle_log").then(({ awarded, bonus }) => {
+        if (awarded) toast({
+          title: "+5 Luna Points earned 💜",
+          description: bonus > 0 ? `Streak bonus: +${bonus} pts! 🔥` : "Tracking your cycle is an act of self-care 🌸",
+        });
+      }).catch(() => {});
+    }
+    const symptomList = [`Flow: ${flow}`, ...savedNote.split(",").map((s) => s.trim()).filter(Boolean)];
+    try {
+      await fetch(`${BASE}/api/luna/log`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: user?.id ?? "guest",
+          date: iso,
+          cyclePhase: "Menstrual",
+          dayOfCycle: 1,
+          mood: "neutral",
+          symptoms: symptomList,
+        }),
+      });
+    } catch { /* Silently ignore — local save already succeeded */ }
+  };
 
   return (
     <>
@@ -396,7 +460,7 @@ export default function Home() {
               currentDay={currentDay}
               cycleLength={cycleData.cycleLength}
               daysUntilNextPeriod={daysUntilNextPeriod}
-              onClick={() => setLocation("/cycle")}
+              onClick={() => setShowLogModal(true)}
             />
           </div>
 
@@ -539,6 +603,118 @@ export default function Home() {
           onLogMood={() => { setModalOpen(false); setLocation("/mood"); }}
         />
       )}
+
+      {/* ── Log Cycle Modal ── */}
+      <AnimatePresence>
+        {showLogModal && (
+          <>
+            <motion.div
+              key="cycle-backdrop"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowLogModal(false)}
+              className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
+            />
+            <motion.div
+              key="cycle-modal"
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", stiffness: 340, damping: 34 }}
+              className="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-3xl shadow-2xl max-h-[88vh] overflow-y-auto"
+            >
+              <div className="flex items-center justify-between px-5 pt-4 pb-3 border-b border-border/20">
+                <div className="w-10 h-1 rounded-full bg-muted/40 absolute left-1/2 -translate-x-1/2 top-2" />
+                <p className="text-sm font-semibold text-foreground">Log Your Cycle</p>
+                <button
+                  onClick={() => setShowLogModal(false)}
+                  className="w-8 h-8 rounded-full bg-muted/30 flex items-center justify-center active:scale-90 transition-transform"
+                >
+                  <X className="w-4 h-4 text-muted-foreground" />
+                </button>
+              </div>
+
+              <div className="px-5 py-4 flex flex-col gap-4 pb-8">
+                {/* Flow options */}
+                <div>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold mb-2">Flow Intensity</p>
+                  <div className="flex flex-wrap gap-2">
+                    {[
+                      { label: "No Bleeding", emoji: "⚪" },
+                      { label: "Spotting",    emoji: "🩸" },
+                      { label: "Light",       emoji: "💧" },
+                      { label: "Medium",      emoji: "🌊" },
+                      { label: "Heavy",       emoji: "❗" },
+                    ].map(f => (
+                      <button key={f.label} onClick={() => setFlow(f.label)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-all active:scale-95"
+                        style={flow === f.label
+                          ? { background: "linear-gradient(135deg,#ede9fe,#fce7f3)", borderColor: "#8b5cf6", color: "#4c1d95" }
+                          : { background: "#f3f4f6", borderColor: "#d1d5db", color: "#4b5563" }}>
+                        <span>{f.emoji}</span>{f.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Date */}
+                <div>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold mb-1.5">Date (MM/DD/YYYY)</p>
+                  <input
+                    value={logDate}
+                    onChange={e => setLogDate(e.target.value)}
+                    placeholder="MM/DD/YYYY"
+                    className="w-full bg-muted/30 rounded-xl px-3 py-2.5 text-sm outline-none border border-border/30 focus:border-purple-300 transition-colors"
+                  />
+                </div>
+
+                {/* Symptoms */}
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Symptoms</p>
+                    <AnimatePresence>
+                      {showSaved && (
+                        <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-[10px] text-emerald-500 font-semibold">✓ Logged</motion.span>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                  {savedNote && (
+                    <p className="text-[11px] text-foreground/70 mb-1.5 leading-relaxed bg-luna-blush/10 rounded-xl px-3 py-2 border border-luna-blush/20">{savedNote}</p>
+                  )}
+                  <div className="flex items-center gap-2 bg-muted/30 rounded-xl px-3 py-2 border border-border/30 focus-within:border-purple-300 transition-colors">
+                    <input
+                      ref={symptomRef}
+                      value={symptomInput}
+                      onChange={(e) => setSymptomInput(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === "Enter") handleSaveSymptom(); }}
+                      placeholder={savedNote ? "Add more symptoms…" : "e.g. cramps, headache, bloating…"}
+                      className="flex-1 bg-transparent text-xs text-foreground placeholder:text-muted-foreground outline-none"
+                    />
+                    <button
+                      onClick={handleSaveSymptom}
+                      disabled={!symptomInput.trim()}
+                      className="w-6 h-6 rounded-lg flex items-center justify-center transition-all disabled:opacity-30 active:scale-90"
+                      style={{ background: symptomInput.trim() ? "linear-gradient(135deg,#f9a8d4,#c4b5fd)" : "transparent" }}
+                    >
+                      <SendHorizonal className="w-3 h-3 text-white" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Submit */}
+                <button
+                  onClick={async () => { await handleLogCycle(); setShowLogModal(false); }}
+                  className="w-full py-3.5 rounded-2xl text-white text-sm font-semibold shadow-md active:scale-[0.98] transition-transform"
+                  style={{ background: "linear-gradient(135deg,#c4b5fd,#f9a8d4)" }}
+                >
+                  + Log for Today
+                </button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </>
   );
 }
