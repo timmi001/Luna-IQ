@@ -3,8 +3,10 @@ import { Link, useLocation } from "wouter";
 import { Bell, MessageCircleHeart, Wind, Droplets, ListChecks, Sparkles, X, Lightbulb, Heart, PlusCircle, ChevronRight } from "lucide-react";
 import { MOODS, MoodFlower } from "@/components/MoodFlower";
 import { motion, AnimatePresence } from "framer-motion";
+import { differenceInDays } from "date-fns";
 import { storage } from "@/utils/storage";
 import { getCycleDetails, getPhaseColor, CyclePhase } from "@/utils/cycle";
+import { LiveCycleRing } from "@/components/LiveCycleRing";
 import { PageTransition } from "@/components/PageTransition";
 import { useAuth } from "@/contexts/AuthContext";
 import { BirthdayBanner } from "@/components/BirthdayBanner";
@@ -281,7 +283,10 @@ export default function Home() {
 
   const latestMood = storage.getLatestMood();
   const cycleData = storage.getCycle();
-  const { phase, currentDay } = getCycleDetails(cycleData.lastPeriodStart, cycleData.cycleLength);
+  const { phase, currentDay, nextPeriodDate } = getCycleDetails(cycleData.lastPeriodStart, cycleData.cycleLength);
+  const daysUntilNextPeriod = nextPeriodDate
+    ? Math.max(0, differenceInDays(nextPeriodDate, new Date()))
+    : null;
 
   const avatarIndex = profile?.avatar_index ?? 0;
   const avatar = AVATARS[avatarIndex] ?? AVATARS[0]!;
@@ -383,57 +388,14 @@ export default function Home() {
             />
           )}
 
-          {/* Today's Check-in */}
-          <div className="luna-glass rounded-3xl p-5 shadow-sm relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-28 h-28 bg-luna-mint/20 rounded-full blur-2xl -mr-8 -mt-8 pointer-events-none" />
-            <h2 className="text-base font-semibold text-foreground mb-3">Today's Check-in</h2>
-
-            <div className="flex gap-3">
-              {/* Mood card */}
-              <Link href="/mood" className="flex-1">
-                <motion.div
-                  whileTap={{ scale: 0.96 }}
-                  className="bg-white/80 rounded-2xl p-4 border border-border/40 cursor-pointer flex flex-col gap-2 min-h-[96px] shadow-sm"
-                >
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Mood</p>
-                  {latestMood ? (
-                    <div className="-ml-1 -mt-1">
-                      <MoodFlower
-                        mood={MOODS.find((m) => m.label === moodLabel) ?? MOODS[0]!}
-                        isSelected={false}
-                        size={56}
-                        emojiSize={26}
-                      />
-                    </div>
-                  ) : (
-                    <span className="text-4xl leading-none">🤍</span>
-                  )}
-                  <p className="text-sm font-semibold text-foreground/80">{moodLabel}</p>
-                </motion.div>
-              </Link>
-
-              {/* Cycle card */}
-              <Link href="/cycle" className="flex-1">
-                <motion.div
-                  whileTap={{ scale: 0.96 }}
-                  className={`rounded-2xl p-4 border cursor-pointer flex flex-col gap-1 min-h-[96px] ${phaseColorClass}`}
-                >
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Cycle</p>
-                  <div className="flex-1 flex items-center">
-                    <CyclePhaseIcon phase={phase} />
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-foreground/80 leading-tight">
-                      {phase !== "Unknown" ? phase : "Not logged"}
-                    </p>
-                    {phase !== "Unknown" && (
-                      <p className="text-xs text-muted-foreground">Day {currentDay}</p>
-                    )}
-                  </div>
-                </motion.div>
-              </Link>
-            </div>
-          </div>
+          {/* Cycle Ring */}
+          <LiveCycleRing
+            phase={phase}
+            currentDay={currentDay}
+            cycleLength={cycleData.cycleLength}
+            daysUntilNextPeriod={daysUntilNextPeriod}
+            onClick={() => setLocation("/cycle")}
+          />
 
           {/* Luna Insight Preview Card */}
           <motion.div
