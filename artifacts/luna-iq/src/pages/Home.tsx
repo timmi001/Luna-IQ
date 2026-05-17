@@ -3,10 +3,8 @@ import { Link, useLocation } from "wouter";
 import { Bell, MessageCircleHeart, Wind, Droplets, ListChecks, Sparkles, X, Lightbulb, Heart, PlusCircle, ChevronRight } from "lucide-react";
 import { MOODS, MoodFlower } from "@/components/MoodFlower";
 import { motion, AnimatePresence } from "framer-motion";
-import { differenceInDays } from "date-fns";
 import { storage } from "@/utils/storage";
 import { getCycleDetails, getPhaseColor, CyclePhase } from "@/utils/cycle";
-import { LiveCycleRing } from "@/components/LiveCycleRing";
 import { PageTransition } from "@/components/PageTransition";
 import { useAuth } from "@/contexts/AuthContext";
 import { BirthdayBanner } from "@/components/BirthdayBanner";
@@ -283,10 +281,7 @@ export default function Home() {
 
   const latestMood = storage.getLatestMood();
   const cycleData = storage.getCycle();
-  const { phase, currentDay, nextPeriodDate } = getCycleDetails(cycleData.lastPeriodStart, cycleData.cycleLength);
-  const daysUntilNextPeriod = nextPeriodDate
-    ? Math.max(0, differenceInDays(nextPeriodDate, new Date()))
-    : null;
+  const { phase, currentDay } = getCycleDetails(cycleData.lastPeriodStart, cycleData.cycleLength);
 
   const avatarIndex = profile?.avatar_index ?? 0;
   const avatar = AVATARS[avatarIndex] ?? AVATARS[0]!;
@@ -388,14 +383,6 @@ export default function Home() {
             />
           )}
 
-          {/* Cycle Ring */}
-          <LiveCycleRing
-            phase={phase}
-            currentDay={currentDay}
-            cycleLength={cycleData.cycleLength}
-            daysUntilNextPeriod={daysUntilNextPeriod}
-            onClick={() => setLocation("/cycle")}
-          />
 
           {/* Luna Insight Preview Card */}
           <motion.div
