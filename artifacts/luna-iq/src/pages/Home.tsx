@@ -287,6 +287,7 @@ export default function Home() {
 
   // Cycle log modal state
   const [showLogModal, setShowLogModal] = useState(false);
+  const [selectedModalMood, setSelectedModalMood] = useState<string | null>(null);
   const [flow, setFlow] = useState<string | null>(null);
   const [logDate, setLogDate] = useState(format(new Date(), "MM/dd/yyyy"));
   const [symptomInput, setSymptomInput] = useState("");
@@ -636,6 +637,65 @@ export default function Home() {
               </div>
 
               <div className="px-5 py-4 flex flex-col gap-4 pb-8">
+                {/* Mood picker */}
+                <div>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold mb-3">Tap to express your mood</p>
+                  <div className="flex justify-around mb-3">
+                    {MOODS.slice(0, 4).map((m) => {
+                      const key = `${m.emoji} ${m.label}`;
+                      const isSelected = selectedModalMood === key;
+                      return (
+                        <motion.button
+                          key={m.label}
+                          whileTap={{ scale: 0.86 }}
+                          animate={{ scale: isSelected ? 1.08 : 1 }}
+                          transition={{ type: "spring", stiffness: 320, damping: 22 }}
+                          onClick={() => setSelectedModalMood(key)}
+                          className="flex flex-col items-center gap-1 focus:outline-none"
+                        >
+                          <MoodFlower mood={m} isSelected={isSelected} />
+                          <span className="text-[10px] font-semibold" style={{ color: isSelected ? m.textColor : "#aaa" }}>{m.label}</span>
+                        </motion.button>
+                      );
+                    })}
+                  </div>
+                  <div className="flex justify-around px-8">
+                    {MOODS.slice(4).map((m) => {
+                      const key = `${m.emoji} ${m.label}`;
+                      const isSelected = selectedModalMood === key;
+                      return (
+                        <motion.button
+                          key={m.label}
+                          whileTap={{ scale: 0.86 }}
+                          animate={{ scale: isSelected ? 1.08 : 1 }}
+                          transition={{ type: "spring", stiffness: 320, damping: 22 }}
+                          onClick={() => setSelectedModalMood(key)}
+                          className="flex flex-col items-center gap-1 focus:outline-none"
+                        >
+                          <MoodFlower mood={m} isSelected={isSelected} />
+                          <span className="text-[10px] font-semibold" style={{ color: isSelected ? m.textColor : "#aaa" }}>{m.label}</span>
+                        </motion.button>
+                      );
+                    })}
+                  </div>
+                  <AnimatePresence>
+                    {selectedModalMood && (() => {
+                      const sel = MOODS.find((m) => `${m.emoji} ${m.label}` === selectedModalMood);
+                      return sel ? (
+                        <motion.div
+                          initial={{ opacity: 0, y: 8 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -4 }}
+                          className="mt-3 py-2.5 rounded-2xl text-center text-xs font-semibold"
+                          style={{ background: sel.bg, color: sel.textColor }}
+                        >
+                          {sel.emoji} Feeling {sel.label.toLowerCase()} today
+                        </motion.div>
+                      ) : null;
+                    })()}
+                  </AnimatePresence>
+                </div>
+
                 {/* Flow options */}
                 <div>
                   <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold mb-2">Flow Intensity</p>
