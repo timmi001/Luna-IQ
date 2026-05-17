@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { ChevronLeft, Search, Plus, Trash2, Pencil, X } from "lucide-react";
+import { ChevronLeft, Search, Trash2, Pencil, X } from "lucide-react";
 import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { format } from "date-fns";
@@ -457,16 +457,6 @@ export default function PrivateSpace() {
           ))}
         </AnimatePresence>
       </main>
-
-      {/* FAB */}
-      <motion.button
-        whileTap={{ scale: 0.92 }}
-        onClick={() => { setEditing(null); setShowForm(true); }}
-        className="fixed bottom-8 right-5 w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg z-40"
-        style={{ background: "linear-gradient(135deg, #C4B5FD, #F9A8D4)" }}
-      >
-        <Plus className="w-6 h-6 text-white" strokeWidth={2.5} />
-      </motion.button>
 
       {/* Backdrop + Form */}
       <AnimatePresence>

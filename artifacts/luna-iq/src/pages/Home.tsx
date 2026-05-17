@@ -393,7 +393,7 @@ export default function Home() {
               <Link href="/mood" className="flex-1">
                 <motion.div
                   whileTap={{ scale: 0.96 }}
-                  className="bg-gradient-to-br from-luna-blush/60 to-pink-100 rounded-2xl p-4 border border-luna-blush/60 cursor-pointer flex flex-col gap-2 min-h-[96px]"
+                  className="bg-white/80 rounded-2xl p-4 border border-border/40 cursor-pointer flex flex-col gap-2 min-h-[96px] shadow-sm"
                 >
                   <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Mood</p>
                   {latestMood ? (

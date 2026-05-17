@@ -346,7 +346,7 @@ export default function LunaPoints() {
   ] as const;
 
   return (
-    <PageTransition className="flex flex-col min-h-screen pb-10">
+    <PageTransition className="flex flex-col min-h-screen pb-28">
       {/* Header */}
       <header className="px-5 pt-12 pb-4 flex items-center gap-3 sticky top-0 z-10 bg-background/80 backdrop-blur-md">
         <button
