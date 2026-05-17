@@ -60,35 +60,6 @@ const FLOW_OPTIONS = [
   { label: "Heavy",       emoji: "❗" },
 ];
 
-const TABS = ["Cycle", "Energy"];
-
-// ── Energy chart ───────────────────────────────────────────────────────────────
-const ENERGY_DATA = [55,48,40,38,45,55,65,72,78,82,88,90,95,90,82,75,70,65,60,58,55,52,50,48,50,52,55,58];
-
-function EnergyChart({ cycleLength, currentDay }: { cycleLength: number; currentDay: number }) {
-  const w = 320, h = 100, pad = 12;
-  const pts = ENERGY_DATA.slice(0, cycleLength);
-  const max = 100, min = 30;
-  const xs = pts.map((_, i) => pad + (i / (pts.length - 1)) * (w - pad * 2));
-  const ys = pts.map((v) => pad + ((max - v) / (max - min)) * (h - pad * 2));
-  const d = xs.map((x, i) => `${i === 0 ? "M" : "L"} ${x} ${ys[i]}`).join(" ");
-  const fill = xs.map((x, i) => `${i === 0 ? "M" : "L"} ${x} ${ys[i]}`).join(" ") + ` L ${xs[xs.length-1]} ${h} L ${xs[0]} ${h} Z`;
-  const ci = Math.min(currentDay - 1, pts.length - 1);
-  return (
-    <svg viewBox={`0 0 ${w} ${h}`} className="w-full" style={{ height: 100 }}>
-      <defs>
-        <linearGradient id="eg" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#c4b5fd" stopOpacity="0.5" />
-          <stop offset="100%" stopColor="#c4b5fd" stopOpacity="0.02" />
-        </linearGradient>
-      </defs>
-      <path d={fill} fill="url(#eg)" />
-      <path d={d} fill="none" stroke="#a78bfa" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-      <circle cx={xs[ci]} cy={ys[ci]} r="4" fill="#7c3aed" />
-      <line x1={xs[ci]} y1={pad} x2={xs[ci]} y2={h} stroke="#7c3aed" strokeWidth="1" strokeDasharray="3 2" opacity="0.4" />
-    </svg>
-  );
-}
 
 // ── Flo-style Calendar ─────────────────────────────────────────────────────────
 function CycleCalendar({ lastPeriodStart, cycleLength }: { lastPeriodStart: string | null; cycleLength: number }) {
@@ -224,7 +195,6 @@ export default function Cycle() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [data, setData] = useState(storage.getCycle());
-  const [activeTab, setActiveTab] = useState("Cycle");
   const [showLogModal, setShowLogModal] = useState(false);
   const [flow, setFlow] = useState<string | null>(null);
   const [logDate, setLogDate] = useState(format(new Date(), "MM/dd/yyyy"));
@@ -312,87 +282,34 @@ export default function Cycle() {
         <p className="text-sm text-muted-foreground mt-0.5">Track and understand your rhythm</p>
       </header>
 
-      {/* Tabs */}
-      <div className="px-5 mb-2">
-        <div className="flex gap-1 bg-white rounded-2xl p-1 border border-card-border shadow-sm">
-          {TABS.map(t => (
-            <button key={t} onClick={() => setActiveTab(t)}
-              className="flex-1 py-1.5 rounded-xl text-xs font-semibold transition-all"
-              style={activeTab === t
-                ? { background: "linear-gradient(135deg,#7c3aed,#db2777)", color: "#fff", boxShadow: "0 2px 8px rgba(124,58,237,0.35)" }
-                : { color: "#6b7280" }}>
-              {t}
-            </button>
-          ))}
-        </div>
-      </div>
-
       <main className="flex-1 px-5 pb-20 flex flex-col gap-4 overflow-y-auto">
-        <AnimatePresence mode="wait">
 
-          {/* ── CYCLE TAB ── */}
-          {activeTab === "Cycle" && (
-            <motion.div key="cycle" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="flex flex-col gap-4">
+        {/* Flo-style Calendar */}
+        <div className="bg-white rounded-3xl p-5 shadow-sm border border-card-border">
+          <CycleCalendar lastPeriodStart={data.lastPeriodStart} cycleLength={cycleLen} />
+        </div>
 
-              {/* Flo-style Calendar */}
-              <div className="bg-white rounded-3xl p-5 shadow-sm border border-card-border">
-                <CycleCalendar lastPeriodStart={data.lastPeriodStart} cycleLength={cycleLen} />
-              </div>
-
-              {/* Cycle Summary */}
-              <div className="bg-white rounded-2xl p-4 border border-card-border shadow-sm">
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Cycle Summary</p>
-                <div className="grid grid-cols-2 gap-3">
-                  {[
-                    { label: "Period Days",   value: `${periodDays} days`, icon: "🩸" },
-                    { label: "Ovulation Day", value: ovulationStr,          icon: "🌸" },
-                    { label: "Cycle Length",  value: `${cycleLen} days`,   icon: "📅" },
-                    { label: "Next Period",   value: nextPeriodStr,          icon: "🔄" },
-                  ].map(s => (
-                    <div key={s.label} className="flex items-center gap-2 bg-muted/20 rounded-xl p-3 border border-border/20">
-                      <span className="text-lg">{s.icon}</span>
-                      <div>
-                        <p className="text-xs font-semibold text-foreground">{s.value}</p>
-                        <p className="text-[10px] text-muted-foreground">{s.label}</p>
-                      </div>
-                    </div>
-                  ))}
+        {/* Cycle Summary */}
+        <div className="bg-white rounded-2xl p-4 border border-card-border shadow-sm">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Cycle Summary</p>
+          <div className="grid grid-cols-2 gap-3">
+            {[
+              { label: "Period Days",   value: `${periodDays} days`, icon: "🩸" },
+              { label: "Ovulation Day", value: ovulationStr,          icon: "🌸" },
+              { label: "Cycle Length",  value: `${cycleLen} days`,   icon: "📅" },
+              { label: "Next Period",   value: nextPeriodStr,          icon: "🔄" },
+            ].map(s => (
+              <div key={s.label} className="flex items-center gap-2 bg-muted/20 rounded-xl p-3 border border-border/20">
+                <span className="text-lg">{s.icon}</span>
+                <div>
+                  <p className="text-xs font-semibold text-foreground">{s.value}</p>
+                  <p className="text-[10px] text-muted-foreground">{s.label}</p>
                 </div>
               </div>
+            ))}
+          </div>
+        </div>
 
-              {/* Energy chart */}
-              <div className="bg-white rounded-3xl p-5 shadow-sm border border-card-border">
-                <p className="text-sm font-semibold mb-1">Energy across your cycle</p>
-                <p className="text-xs text-muted-foreground mb-4">Purple dot marks today</p>
-                <EnergyChart cycleLength={cycleLen} currentDay={currentDay} />
-                <div className="flex justify-between mt-1 px-3">
-                  {["Day 1","Day 7","Day 14","Day 21",`Day ${cycleLen}`].map(l => (
-                    <span key={l} className="text-[9px] text-muted-foreground">{l}</span>
-                  ))}
-                </div>
-              </div>
-
-              {/* Energy cards */}
-              <div className="grid grid-cols-2 gap-3">
-                {[
-                  { phase: "Menstrual",  energy: "Low",       tip: "Rest & restore",      color: "#f87171" },
-                  { phase: "Follicular", energy: "Rising",    tip: "Start new things",    color: "#86efac" },
-                  { phase: "Ovulation",  energy: "Peak",      tip: "Social & bold tasks", color: "#fdba74" },
-                  { phase: "Luteal",     energy: "Declining", tip: "Reflect & complete",  color: "#c4b5fd" },
-                ].map(e => (
-                  <div key={e.phase} className="bg-white rounded-2xl p-3 border border-card-border shadow-sm">
-                    <div className="w-2 h-2 rounded-full mb-2" style={{ background: e.color }} />
-                    <p className="text-xs font-semibold text-foreground">{e.phase}</p>
-                    <p className="text-[10px] text-muted-foreground">{e.energy} energy</p>
-                    <p className="text-[10px] text-purple-500 mt-1">{e.tip}</p>
-                  </div>
-                ))}
-              </div>
-            </motion.div>
-          )}
-
-
-        </AnimatePresence>
       </main>
 
       {/* ── Log Cycle Modal ── */}
