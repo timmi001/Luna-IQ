@@ -360,6 +360,18 @@ export default function Cycle() {
                 </div>
               </div>
 
+              {/* Energy chart */}
+              <div className="bg-white rounded-3xl p-5 shadow-sm border border-card-border">
+                <p className="text-sm font-semibold mb-1">Energy across your cycle</p>
+                <p className="text-xs text-muted-foreground mb-4">Purple dot marks today</p>
+                <EnergyChart cycleLength={cycleLen} currentDay={currentDay} />
+                <div className="flex justify-between mt-1 px-3">
+                  {["Day 1","Day 7","Day 14","Day 21",`Day ${cycleLen}`].map(l => (
+                    <span key={l} className="text-[9px] text-muted-foreground">{l}</span>
+                  ))}
+                </div>
+              </div>
+
               {/* Energy cards */}
               <div className="grid grid-cols-2 gap-3">
                 {[
@@ -379,21 +391,6 @@ export default function Cycle() {
             </motion.div>
           )}
 
-          {/* ── ENERGY TAB ── */}
-          {activeTab === "Energy" && (
-            <motion.div key="energy" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="flex flex-col gap-4">
-              <div className="bg-white rounded-3xl p-5 shadow-sm border border-card-border">
-                <p className="text-sm font-semibold mb-1">Energy across your cycle</p>
-                <p className="text-xs text-muted-foreground mb-4">Purple dot marks today</p>
-                <EnergyChart cycleLength={cycleLen} currentDay={currentDay} />
-                <div className="flex justify-between mt-1 px-3">
-                  {["Day 1","Day 7","Day 14","Day 21",`Day ${cycleLen}`].map(l => (
-                    <span key={l} className="text-[9px] text-muted-foreground">{l}</span>
-                  ))}
-                </div>
-              </div>
-            </motion.div>
-          )}
 
         </AnimatePresence>
       </main>
