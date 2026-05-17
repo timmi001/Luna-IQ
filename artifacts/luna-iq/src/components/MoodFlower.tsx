@@ -3,7 +3,7 @@ export const MOODS = [
   { emoji: "😊", label: "Confident",  bg: "#FFE0B2", textColor: "#7C3D00" },
   { emoji: "😌", label: "Calm",       bg: "#C8F7E4", textColor: "#065F46" },
   { emoji: "😰", label: "Anxious",    bg: "#DBEAFE", textColor: "#1E3A8A" },
-  { emoji: "🤔", label: "Reflective", bg: "#EDE9FE", textColor: "#4C1D95" },
+  { emoji: "😤", label: "Irritated", bg: "#EDE9FE", textColor: "#4C1D95" },
   { emoji: "😔", label: "Low",        bg: "#E2E8F0", textColor: "#334155" },
   { emoji: "😫", label: "Stressed",   bg: "#FFE4E6", textColor: "#9F1239" },
 ];
