@@ -436,6 +436,85 @@ Respond in this EXACT JSON format (no markdown, no extra text):
   return result;
 }
 
+// ── Cycle-log instant insight ─────────────────────────────────────────────────
+// Called immediately after the user submits the cycle log modal.
+// Returns a focused, personalised insight for what they just entered.
+
+export async function generateCycleLogInsight(params: {
+  userId: string;
+  mood: string | null;
+  flow: string;
+  date: string;
+  cyclePhase: string;
+  dayOfCycle: number | null;
+  symptoms: string[];
+}): Promise<InsightResult> {
+  const { mood, flow, date, cyclePhase, dayOfCycle, symptoms } = params;
+  const moodLine   = mood ? `Mood: ${mood}` : "Mood: not logged";
+  const symLine    = symptoms.length > 0 ? symptoms.join(", ") : "none";
+  const phaseLabel = cyclePhase !== "Unknown" && cyclePhase !== "Not Set"
+    ? `${cyclePhase} (Day ${dayOfCycle ?? "?"})`
+    : "Cycle phase not set";
+
+  const prompt = `${LUNA_SYSTEM_PROMPT}
+
+A user just logged their menstrual cycle. Write a warm, personal insight specifically about what they just shared. Make it feel like you truly read every detail they entered.
+
+WHAT THEY JUST LOGGED:
+- Date: ${date}
+- Flow intensity: ${flow}
+- Cycle phase: ${phaseLabel}
+- ${moodLine}
+- Symptoms today: ${symLine}
+
+RULES:
+- Mention their specific flow intensity (${flow}) by name
+- If symptoms were listed, name at least one
+- If mood was logged, acknowledge it warmly
+- Tie your insight to the cycle phase if known
+- Suggestions must be realistic for a busy African woman's everyday life
+- Never be generic — every sentence should feel personal to this specific log
+
+Respond in this EXACT JSON format (no markdown, no extra text):
+{
+  "insight": "Warm, specific 2–3 sentence insight referencing what they actually logged",
+  "pattern": null,
+  "suggestion": "One simple, practical self-care tip fitting their current phase and symptoms (1–2 sentences)",
+  "reassurance": "Short warm closing in a relatable African-sisterly tone, end with one emoji"
+}`;
+
+  try {
+    const response = await withRetry(
+      () => withTimeout(
+        getGenAI().models.generateContent({
+          model: "gemini-2.5-flash",
+          contents: [{ role: "user", parts: [{ text: prompt }] }],
+          config: { maxOutputTokens: 1024, responseMimeType: "application/json" },
+        }),
+        20_000,
+        "generateCycleLogInsight",
+      ),
+      "generateCycleLogInsight",
+    );
+    const text = response.text ?? "{}";
+    const parsed = JSON.parse(text) as Partial<InsightResult>;
+    return {
+      insight:     parsed.insight     ?? "Thank you for checking in today. 💜",
+      pattern:     null,
+      suggestion:  parsed.suggestion  ?? "Stay hydrated and be gentle with yourself.",
+      reassurance: parsed.reassurance ?? "You're doing great. 🌸",
+    };
+  } catch (err) {
+    logger.error({ err, userId: params.userId }, "generateCycleLogInsight failed");
+    return {
+      insight: "Thank you for logging today, my dear. 💜",
+      pattern: null,
+      suggestion: "Drink warm water, rest when you can, and be kind to yourself.",
+      reassurance: "I'm always here with you. 🌸",
+    };
+  }
+}
+
 // ── Same-day update logic ─────────────────────────────────────────────────────
 
 export async function processDailyUpdate(

@@ -5,6 +5,7 @@ import {
   getOrGenerateInsight,
   generateInsight,
   getTodayUpdates,
+  generateCycleLogInsight,
 } from "../../services/luna.js";
 import { logger } from "../../lib/logger.js";
 import { z } from "zod";
@@ -128,6 +129,33 @@ router.get("/today-updates/:userId", async (req, res) => {
   } catch (err) {
     logger.error({ err, userId }, "DB error fetching today updates");
     res.json({ updates: [] });
+  }
+});
+
+// ── POST /cycle-log-insight ───────────────────────────────────────────────────
+const CycleLogInsightBody = z.object({
+  userId: z.string(),
+  mood: z.string().nullable().optional(),
+  flow: z.string(),
+  date: z.string(),
+  cyclePhase: z.string(),
+  dayOfCycle: z.number().nullable().optional(),
+  symptoms: z.array(z.string()).default([]),
+});
+
+router.post("/cycle-log-insight", async (req, res) => {
+  const parsed = CycleLogInsightBody.safeParse(req.body);
+  if (!parsed.success) { res.status(400).json({ error: "Invalid body" }); return; }
+  try {
+    const result = await generateCycleLogInsight({
+      ...parsed.data,
+      mood: parsed.data.mood ?? null,
+      dayOfCycle: parsed.data.dayOfCycle ?? null,
+    });
+    res.json(result);
+  } catch (err) {
+    logger.error({ err }, "cycle-log-insight error");
+    res.status(500).json({ error: "Failed to generate insight" });
   }
 });
 

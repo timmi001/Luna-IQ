@@ -289,6 +289,10 @@ export default function Home() {
   const [showLogModal, setShowLogModal] = useState(false);
   const [selectedModalMood, setSelectedModalMood] = useState<string | null>(null);
   const [flow, setFlow] = useState<string | null>(null);
+  const [cycleInsight, setCycleInsight] = useState<{
+    insight: string; suggestion: string; reassurance: string;
+  } | null>(null);
+  const [cycleInsightLoading, setCycleInsightLoading] = useState(false);
   const [logDate, setLogDate] = useState(format(new Date(), "MM/dd/yyyy"));
   const [symptomInput, setSymptomInput] = useState("");
   const [savedNote, setSavedNote] = useState(() => {
@@ -375,7 +379,6 @@ export default function Home() {
     }
     const updated = { lastPeriodStart: iso, cycleLength: cycleData.cycleLength };
     storage.saveCycle(updated);
-    toast({ title: "Cycle logged 🌸", description: `${flow} flow on ${logDate}` });
     if (user?.id) {
       addPoints(user.id, "cycle_log").then(({ awarded, bonus }) => {
         if (awarded) toast({
@@ -385,6 +388,8 @@ export default function Home() {
       }).catch(() => {});
     }
     const symptomList = [`Flow: ${flow}`, ...savedNote.split(",").map((s) => s.trim()).filter(Boolean)];
+
+    // Save log to backend
     try {
       await fetch(`${BASE}/api/luna/log`, {
         method: "POST",
@@ -392,13 +397,47 @@ export default function Home() {
         body: JSON.stringify({
           userId: user?.id ?? "guest",
           date: iso,
-          cyclePhase: "Menstrual",
-          dayOfCycle: 1,
-          mood: "neutral",
+          cyclePhase: phase !== "Unknown" ? phase : "Menstrual",
+          dayOfCycle: currentDay > 0 ? currentDay : 1,
+          mood: selectedModalMood ?? "not_logged",
           symptoms: symptomList,
         }),
       });
-    } catch { /* Silently ignore — local save already succeeded */ }
+    } catch { /* Silently ignore */ }
+
+    // Generate personalised insight from what they entered
+    setCycleInsightLoading(true);
+    setCycleInsight(null);
+    try {
+      const res = await fetch(`${BASE}/api/luna/cycle-log-insight`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: user?.id ?? "guest",
+          mood: selectedModalMood,
+          flow,
+          date: iso,
+          cyclePhase: phase !== "Unknown" ? phase : "Menstrual",
+          dayOfCycle: currentDay > 0 ? currentDay : null,
+          symptoms: symptomList,
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json() as { insight: string; suggestion: string; reassurance: string };
+        setCycleInsight(data);
+      }
+    } catch { /* Show fallback */ }
+    setCycleInsightLoading(false);
+  };
+
+  const closeCycleModal = () => {
+    setShowLogModal(false);
+    setCycleInsight(null);
+    setCycleInsightLoading(false);
+    setFlow(null);
+    setSelectedModalMood(null);
+    setLogDate(format(new Date(), "MM/dd/yyyy"));
+    setSymptomInput("");
   };
 
   return (
@@ -614,7 +653,7 @@ export default function Home() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              onClick={() => setShowLogModal(false)}
+              onClick={closeCycleModal}
               className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
             />
             <motion.div
@@ -629,7 +668,7 @@ export default function Home() {
                 <div className="w-10 h-1 rounded-full bg-muted/40 absolute left-1/2 -translate-x-1/2 top-2" />
                 <p className="text-sm font-semibold text-foreground">Log Your Cycle</p>
                 <button
-                  onClick={() => setShowLogModal(false)}
+                  onClick={closeCycleModal}
                   className="w-8 h-8 rounded-full bg-muted/30 flex items-center justify-center active:scale-90 transition-transform"
                 >
                   <X className="w-4 h-4 text-muted-foreground" />
@@ -637,6 +676,93 @@ export default function Home() {
               </div>
 
               <div className="px-5 py-4 flex flex-col gap-4 pb-8">
+
+                {/* ── Insight result screen ── */}
+                {(cycleInsightLoading || cycleInsight) && (
+                  <AnimatePresence mode="wait">
+                    {cycleInsightLoading ? (
+                      <motion.div
+                        key="loading"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0 }}
+                        className="flex flex-col items-center gap-3 py-8"
+                      >
+                        <div className="flex items-center gap-2">
+                          {["#c4b5fd","#f9a8d4","#6ee7b7"].map((c, i) => (
+                            <motion.div
+                              key={c}
+                              className="w-2.5 h-2.5 rounded-full"
+                              style={{ background: c }}
+                              animate={{ scale: [1, 1.5, 1], opacity: [0.5, 1, 0.5] }}
+                              transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.2 }}
+                            />
+                          ))}
+                        </div>
+                        <p className="text-sm text-muted-foreground text-center">Luna is reading your log…</p>
+                      </motion.div>
+                    ) : cycleInsight ? (
+                      <motion.div
+                        key="insight"
+                        initial={{ opacity: 0, y: 14 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="flex flex-col gap-4"
+                      >
+                        {/* Logged summary chips */}
+                        <div className="flex flex-wrap gap-1.5">
+                          {flow && (
+                            <span className="text-[10px] font-semibold px-2.5 py-1 rounded-full" style={{ background: "#ede9fe", color: "#4c1d95" }}>
+                              {flow === "No Bleeding" ? "⚪" : flow === "Spotting" ? "🩸" : flow === "Light" ? "💧" : flow === "Medium" ? "🌊" : "❗"} {flow}
+                            </span>
+                          )}
+                          {selectedModalMood && (
+                            <span className="text-[10px] font-semibold px-2.5 py-1 rounded-full" style={{ background: "#fce7f3", color: "#be185d" }}>
+                              {selectedModalMood}
+                            </span>
+                          )}
+                          {savedNote && savedNote.split(",").filter(Boolean).map(s => (
+                            <span key={s} className="text-[10px] font-semibold px-2.5 py-1 rounded-full" style={{ background: "#f0fdf4", color: "#15803d" }}>
+                              {s.trim()}
+                            </span>
+                          ))}
+                        </div>
+
+                        {/* Insight */}
+                        <div className="rounded-3xl p-4 flex flex-col gap-3" style={{ background: "linear-gradient(135deg,#faf5ff,#fce7f3)" }}>
+                          <div className="flex items-center gap-2">
+                            <Sparkles className="w-4 h-4 text-purple-500" />
+                            <p className="text-xs font-bold uppercase tracking-wider text-purple-600">Luna's Insight</p>
+                          </div>
+                          <p className="text-sm text-foreground leading-relaxed">{cycleInsight.insight}</p>
+                        </div>
+
+                        {/* Suggestion */}
+                        <div className="rounded-2xl p-4 border border-emerald-100 flex gap-3 items-start" style={{ background: "#f0fdf4" }}>
+                          <span className="text-lg">🌿</span>
+                          <div>
+                            <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 mb-0.5">Self-care tip</p>
+                            <p className="text-xs text-emerald-900 leading-relaxed">{cycleInsight.suggestion}</p>
+                          </div>
+                        </div>
+
+                        {/* Reassurance */}
+                        <p className="text-xs text-muted-foreground text-center italic">{cycleInsight.reassurance}</p>
+
+                        <button
+                          onClick={closeCycleModal}
+                          className="w-full py-3.5 rounded-2xl text-white text-sm font-semibold shadow-md active:scale-[0.98] transition-transform"
+                          style={{ background: "linear-gradient(135deg,#7c3aed,#db2777)" }}
+                        >
+                          Done ✓
+                        </button>
+                      </motion.div>
+                    ) : null}
+                  </AnimatePresence>
+                )}
+
+                {/* ── Form (hidden while loading/showing insight) ── */}
+                {!cycleInsightLoading && !cycleInsight && <>
+
                 {/* Mood picker */}
                 <div>
                   <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold mb-3">Tap to express your mood</p>
@@ -764,12 +890,14 @@ export default function Home() {
 
                 {/* Submit */}
                 <button
-                  onClick={async () => { await handleLogCycle(); setShowLogModal(false); }}
+                  onClick={handleLogCycle}
                   className="w-full py-3.5 rounded-2xl text-white text-sm font-semibold shadow-md active:scale-[0.98] transition-transform"
                   style={{ background: "linear-gradient(135deg,#c4b5fd,#f9a8d4)" }}
                 >
                   + Log for Today
                 </button>
+
+                </>}
               </div>
             </motion.div>
           </>
