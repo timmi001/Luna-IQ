@@ -289,9 +289,6 @@ export default function Home() {
   const [showLogModal, setShowLogModal] = useState(false);
   const [selectedModalMood, setSelectedModalMood] = useState<string | null>(null);
   const [flow, setFlow] = useState<string | null>(null);
-  const [cycleInsight, setCycleInsight] = useState<{
-    insight: string; suggestion: string; reassurance: string;
-  } | null>(null);
   const [cycleInsightLoading, setCycleInsightLoading] = useState(false);
   const [logDate, setLogDate] = useState(format(new Date(), "MM/dd/yyyy"));
   const [symptomInput, setSymptomInput] = useState("");
@@ -407,7 +404,6 @@ export default function Home() {
 
     // Generate personalised insight from what they entered
     setCycleInsightLoading(true);
-    setCycleInsight(null);
     try {
       const res = await fetch(`${BASE}/api/luna/cycle-log-insight`, {
         method: "POST",
@@ -424,7 +420,9 @@ export default function Home() {
       });
       if (res.ok) {
         const data = await res.json() as { insight: string; suggestion: string; reassurance: string };
-        setCycleInsight(data);
+        setInsight({ insight: data.insight, pattern: null, suggestion: data.suggestion, reassurance: data.reassurance });
+        setShowLogModal(false);
+        setModalOpen(true);
       }
     } catch { /* Show fallback */ }
     setCycleInsightLoading(false);
@@ -432,7 +430,6 @@ export default function Home() {
 
   const closeCycleModal = () => {
     setShowLogModal(false);
-    setCycleInsight(null);
     setCycleInsightLoading(false);
     setFlow(null);
     setSelectedModalMood(null);
@@ -677,91 +674,30 @@ export default function Home() {
 
               <div className="px-5 py-4 flex flex-col gap-4 pb-8">
 
-                {/* ── Insight result screen ── */}
-                {(cycleInsightLoading || cycleInsight) && (
-                  <AnimatePresence mode="wait">
-                    {cycleInsightLoading ? (
-                      <motion.div
-                        key="loading"
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0 }}
-                        className="flex flex-col items-center gap-3 py-8"
-                      >
-                        <div className="flex items-center gap-2">
-                          {["#c4b5fd","#f9a8d4","#6ee7b7"].map((c, i) => (
-                            <motion.div
-                              key={c}
-                              className="w-2.5 h-2.5 rounded-full"
-                              style={{ background: c }}
-                              animate={{ scale: [1, 1.5, 1], opacity: [0.5, 1, 0.5] }}
-                              transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.2 }}
-                            />
-                          ))}
-                        </div>
-                        <p className="text-sm text-muted-foreground text-center">Luna is reading your log…</p>
-                      </motion.div>
-                    ) : cycleInsight ? (
-                      <motion.div
-                        key="insight"
-                        initial={{ opacity: 0, y: 14 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="flex flex-col gap-4"
-                      >
-                        {/* Logged summary chips */}
-                        <div className="flex flex-wrap gap-1.5">
-                          {flow && (
-                            <span className="text-[10px] font-semibold px-2.5 py-1 rounded-full" style={{ background: "#ede9fe", color: "#4c1d95" }}>
-                              {flow === "No Bleeding" ? "⚪" : flow === "Spotting" ? "🩸" : flow === "Light" ? "💧" : flow === "Medium" ? "🌊" : "❗"} {flow}
-                            </span>
-                          )}
-                          {selectedModalMood && (
-                            <span className="text-[10px] font-semibold px-2.5 py-1 rounded-full" style={{ background: "#fce7f3", color: "#be185d" }}>
-                              {selectedModalMood}
-                            </span>
-                          )}
-                          {savedNote && savedNote.split(",").filter(Boolean).map(s => (
-                            <span key={s} className="text-[10px] font-semibold px-2.5 py-1 rounded-full" style={{ background: "#f0fdf4", color: "#15803d" }}>
-                              {s.trim()}
-                            </span>
-                          ))}
-                        </div>
-
-                        {/* Insight */}
-                        <div className="rounded-3xl p-4 flex flex-col gap-3" style={{ background: "linear-gradient(135deg,#faf5ff,#fce7f3)" }}>
-                          <div className="flex items-center gap-2">
-                            <Sparkles className="w-4 h-4 text-purple-500" />
-                            <p className="text-xs font-bold uppercase tracking-wider text-purple-600">Luna's Insight</p>
-                          </div>
-                          <p className="text-sm text-foreground leading-relaxed">{cycleInsight.insight}</p>
-                        </div>
-
-                        {/* Suggestion */}
-                        <div className="rounded-2xl p-4 border border-emerald-100 flex gap-3 items-start" style={{ background: "#f0fdf4" }}>
-                          <span className="text-lg">🌿</span>
-                          <div>
-                            <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 mb-0.5">Self-care tip</p>
-                            <p className="text-xs text-emerald-900 leading-relaxed">{cycleInsight.suggestion}</p>
-                          </div>
-                        </div>
-
-                        {/* Reassurance */}
-                        <p className="text-xs text-muted-foreground text-center italic">{cycleInsight.reassurance}</p>
-
-                        <button
-                          onClick={closeCycleModal}
-                          className="w-full py-3.5 rounded-2xl text-white text-sm font-semibold shadow-md active:scale-[0.98] transition-transform"
-                          style={{ background: "linear-gradient(135deg,#7c3aed,#db2777)" }}
-                        >
-                          Done ✓
-                        </button>
-                      </motion.div>
-                    ) : null}
-                  </AnimatePresence>
+                {/* ── Loading state while Gemini thinks ── */}
+                {cycleInsightLoading && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="flex flex-col items-center gap-3 py-8"
+                  >
+                    <div className="flex items-center gap-2">
+                      {["#c4b5fd","#f9a8d4","#6ee7b7"].map((c, i) => (
+                        <motion.div
+                          key={c}
+                          className="w-2.5 h-2.5 rounded-full"
+                          style={{ background: c }}
+                          animate={{ scale: [1, 1.5, 1], opacity: [0.5, 1, 0.5] }}
+                          transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.2 }}
+                        />
+                      ))}
+                    </div>
+                    <p className="text-sm text-muted-foreground text-center">Luna is reading your log…</p>
+                  </motion.div>
                 )}
 
-                {/* ── Form (hidden while loading/showing insight) ── */}
-                {!cycleInsightLoading && !cycleInsight && <>
+                {/* ── Form (hidden while loading) ── */}
+                {!cycleInsightLoading && <>
 
                 {/* Mood picker */}
                 <div>
