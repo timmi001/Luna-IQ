@@ -359,6 +359,23 @@ export default function Cycle() {
                   ))}
                 </div>
               </div>
+
+              {/* Energy cards */}
+              <div className="grid grid-cols-2 gap-3">
+                {[
+                  { phase: "Menstrual",  energy: "Low",       tip: "Rest & restore",      color: "#f87171" },
+                  { phase: "Follicular", energy: "Rising",    tip: "Start new things",    color: "#86efac" },
+                  { phase: "Ovulation",  energy: "Peak",      tip: "Social & bold tasks", color: "#fdba74" },
+                  { phase: "Luteal",     energy: "Declining", tip: "Reflect & complete",  color: "#c4b5fd" },
+                ].map(e => (
+                  <div key={e.phase} className="bg-white rounded-2xl p-3 border border-card-border shadow-sm">
+                    <div className="w-2 h-2 rounded-full mb-2" style={{ background: e.color }} />
+                    <p className="text-xs font-semibold text-foreground">{e.phase}</p>
+                    <p className="text-[10px] text-muted-foreground">{e.energy} energy</p>
+                    <p className="text-[10px] text-purple-500 mt-1">{e.tip}</p>
+                  </div>
+                ))}
+              </div>
             </motion.div>
           )}
 
@@ -374,21 +391,6 @@ export default function Cycle() {
                     <span key={l} className="text-[9px] text-muted-foreground">{l}</span>
                   ))}
                 </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                {[
-                  { phase: "Menstrual",  energy: "Low",       tip: "Rest & restore",      color: "#f87171" },
-                  { phase: "Follicular", energy: "Rising",    tip: "Start new things",    color: "#86efac" },
-                  { phase: "Ovulation",  energy: "Peak",      tip: "Social & bold tasks", color: "#fdba74" },
-                  { phase: "Luteal",     energy: "Declining", tip: "Reflect & complete",  color: "#c4b5fd" },
-                ].map(e => (
-                  <div key={e.phase} className="bg-white rounded-2xl p-3 border border-card-border shadow-sm">
-                    <div className="w-2 h-2 rounded-full mb-2" style={{ background: e.color }} />
-                    <p className="text-xs font-semibold text-foreground">{e.phase}</p>
-                    <p className="text-[10px] text-muted-foreground">{e.energy} energy</p>
-                    <p className="text-[10px] text-purple-500 mt-1">{e.tip}</p>
-                  </div>
-                ))}
               </div>
             </motion.div>
           )}
