@@ -3,7 +3,7 @@ import { Link, useLocation } from "wouter";
 import { Bell, MessageCircleHeart, Wind, Droplets, ListChecks, Sparkles, X, Lightbulb, Heart, PlusCircle, ChevronRight, SendHorizonal } from "lucide-react";
 import { MOODS, MoodFlower } from "@/components/MoodFlower";
 import { motion, AnimatePresence } from "framer-motion";
-import { differenceInDays, format } from "date-fns";
+import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { addPoints } from "@/lib/points";
 import { storage } from "@/utils/storage";
@@ -11,6 +11,7 @@ import { getCycleDetails, getPhaseColor, CyclePhase } from "@/utils/cycle";
 import { LiveCycleRing } from "@/components/LiveCycleRing";
 import { PageTransition } from "@/components/PageTransition";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCycle } from "@/contexts/CycleContext";
 import { BirthdayBanner } from "@/components/BirthdayBanner";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -275,6 +276,13 @@ function InsightModal({
 export default function Home() {
   const [, setLocation] = useLocation();
   const { user, profile, refreshProfile } = useAuth();
+  const {
+    cycleData,
+    phase,
+    currentDay,
+    daysUntilNextPeriod,
+    saveCycle,
+  } = useCycle();
   const userId = user?.id ?? "guest";
 
   const { toast } = useToast();
@@ -300,11 +308,6 @@ export default function Home() {
   const symptomRef = useRef<HTMLInputElement>(null);
 
   const latestMood = storage.getLatestMood();
-  const cycleData = storage.getCycle();
-  const { phase, currentDay, nextPeriodDate } = getCycleDetails(cycleData.lastPeriodStart, cycleData.cycleLength);
-  const daysUntilNextPeriod = nextPeriodDate
-    ? Math.max(0, differenceInDays(nextPeriodDate, new Date()))
-    : null;
 
   const avatarIndex = profile?.avatar_index ?? 0;
   const avatar = AVATARS[avatarIndex] ?? AVATARS[0]!;
@@ -375,7 +378,11 @@ export default function Home() {
       toast({ title: "Invalid date", description: "Use MM/DD/YYYY format", variant: "destructive" }); return;
     }
     const updated = { lastPeriodStart: iso, cycleLength: cycleData.cycleLength };
-    storage.saveCycle(updated);
+    await saveCycle(updated);
+    const { phase: loggedPhase, currentDay: loggedDay } = getCycleDetails(
+      iso,
+      updated.cycleLength,
+    );
     if (user?.id) {
       addPoints(user.id, "cycle_log").then(({ awarded, bonus }) => {
         if (awarded) toast({
@@ -394,8 +401,8 @@ export default function Home() {
         body: JSON.stringify({
           userId: user?.id ?? "guest",
           date: iso,
-          cyclePhase: phase !== "Unknown" ? phase : "Menstrual",
-          dayOfCycle: currentDay > 0 ? currentDay : 1,
+          cyclePhase: loggedPhase !== "Unknown" ? loggedPhase : "Menstrual",
+          dayOfCycle: loggedDay > 0 ? loggedDay : 1,
           mood: selectedModalMood ?? "not_logged",
           symptoms: symptomList,
         }),
@@ -413,8 +420,8 @@ export default function Home() {
           mood: selectedModalMood,
           flow,
           date: iso,
-          cyclePhase: phase !== "Unknown" ? phase : "Menstrual",
-          dayOfCycle: currentDay > 0 ? currentDay : null,
+          cyclePhase: loggedPhase !== "Unknown" ? loggedPhase : "Menstrual",
+          dayOfCycle: loggedDay > 0 ? loggedDay : null,
           symptoms: symptomList,
         }),
       });

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { storage } from "@/utils/storage";
-import { getCycleDetails, getPhaseColor, CyclePhase } from "@/utils/cycle";
+import { getPhaseColor, CyclePhase } from "@/utils/cycle";
+import { useCycle } from "@/contexts/CycleContext";
 import { AppHeader } from "@/components/AppHeader";
 import { PageTransition } from "@/components/PageTransition";
 import { Flame, Sparkles, Droplets, RefreshCw, Heart, Lightbulb, PlusCircle, Zap } from "lucide-react";
@@ -11,10 +12,12 @@ import { useAuth } from "@/contexts/AuthContext";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
-async function syncTodayToBackend(userId: string) {
+async function syncTodayToBackend(
+  userId: string,
+  phase: CyclePhase,
+  currentDay: number,
+) {
   try {
-    const cycleData = storage.getCycle();
-    const { phase, currentDay } = getCycleDetails(cycleData.lastPeriodStart, cycleData.cycleLength);
     const latestMood = storage.getLatestMood();
 
     // Use local date (not UTC) so midnight-to-1am users in WAT/UTC+1 are handled correctly
@@ -64,10 +67,9 @@ type DailyUpdate = {
 
 export default function Insights() {
   const { user } = useAuth();
+  const { phase, currentDay } = useCycle();
   const userId = user?.id ?? "guest";
   const latestMood = storage.getLatestMood();
-  const cycleData = storage.getCycle();
-  const { phase, currentDay } = getCycleDetails(cycleData.lastPeriodStart, cycleData.cycleLength);
   const streak = storage.getMoodStreak();
   const [, navigate] = useLocation();
 
@@ -97,7 +99,7 @@ export default function Insights() {
       // Always sync current cycle phase + mood to backend first.
       // The backend deduplicates identical logs, so this only triggers
       // a Gemini regeneration when data has actually changed.
-      await syncTodayToBackend(userId);
+      await syncTodayToBackend(userId, phase, currentDay);
 
       if (forceRefresh) {
         // Force: bypass cache entirely and ask Gemini for a fresh insight
@@ -127,7 +129,7 @@ export default function Insights() {
     } finally {
       setLoading(false);
     }
-  }, [fetchUpdates, userId]);
+  }, [fetchUpdates, userId, phase, currentDay]);
 
   useEffect(() => {
     loadInsight(false);

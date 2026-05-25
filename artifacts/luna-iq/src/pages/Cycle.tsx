@@ -1,7 +1,8 @@
 import { useState, useRef } from "react";
 import { storage } from "@/utils/storage";
-import { getCycleDetails, CyclePhase } from "@/utils/cycle";
+import { CyclePhase } from "@/utils/cycle";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCycle } from "@/contexts/CycleContext";
 import { addPoints } from "@/lib/points";
 
 import { PageTransition } from "@/components/PageTransition";
@@ -220,8 +221,8 @@ function CycleCalendar({ lastPeriodStart, cycleLength }: { lastPeriodStart: stri
 // ── Main page ──────────────────────────────────────────────────────────────────
 export default function Cycle() {
   const { user } = useAuth();
+  const { cycleData, phase, currentDay, nextPeriodDate, saveCycle } = useCycle();
   const { toast } = useToast();
-  const [data, setData] = useState(storage.getCycle());
   const [showLogModal, setShowLogModal] = useState(false);
   const [flow, setFlow] = useState<string | null>(null);
   const [logDate, setLogDate] = useState(format(new Date(), "MM/dd/yyyy"));
@@ -229,17 +230,13 @@ export default function Cycle() {
   const [savedNote, setSavedNote] = useState(() => getTodaySymptomNote());
   const [showSaved, setShowSaved] = useState(false);
   const symptomRef = useRef<HTMLInputElement>(null);
-  const { currentDay, phase, nextPeriodDate } = getCycleDetails(data.lastPeriodStart, data.cycleLength);
-  const cycleLen = data.cycleLength;
+  const cycleLen = cycleData.cycleLength;
 
   const ovulationDay = Math.round(cycleLen / 2) - 1;
   const periodDays = 5;
   const nextPeriodStr = nextPeriodDate ? format(nextPeriodDate, "MMM d") : "--";
-  const daysUntilNextPeriod = nextPeriodDate
-    ? Math.max(0, Math.ceil((nextPeriodDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)))
-    : null;
-  const ovulationStr = data.lastPeriodStart
-    ? format(addDays(new Date(data.lastPeriodStart), ovulationDay), "MMM d")
+  const ovulationStr = cycleData.lastPeriodStart
+    ? format(addDays(new Date(cycleData.lastPeriodStart), ovulationDay), "MMM d")
     : "--";
 
   const handleSaveSymptom = () => {
@@ -262,8 +259,7 @@ export default function Cycle() {
       toast({ title: "Invalid date", description: "Use MM/DD/YYYY format", variant: "destructive" }); return;
     }
     const updated = { lastPeriodStart: iso, cycleLength: cycleLen };
-    storage.saveCycle(updated);
-    setData(updated);
+    await saveCycle(updated);
     toast({ title: "Cycle logged 🌸", description: `${flow} flow on ${logDate}` });
 
     if (user?.id) {
@@ -313,7 +309,7 @@ export default function Cycle() {
 
         {/* Flo-style Calendar */}
         <div className="bg-white rounded-3xl p-5 shadow-sm border border-card-border">
-          <CycleCalendar lastPeriodStart={data.lastPeriodStart} cycleLength={cycleLen} />
+          <CycleCalendar lastPeriodStart={cycleData.lastPeriodStart} cycleLength={cycleLen} />
         </div>
 
         {/* Cycle Summary */}

@@ -1,6 +1,12 @@
-import { addDays, differenceInDays } from "date-fns";
+import { addDays, differenceInDays, startOfDay } from "date-fns";
 
 export type CyclePhase = "Menstrual" | "Follicular" | "Ovulation" | "Luteal" | "Unknown";
+
+/** Days until next predicted period — always derived from lastPeriodStart, never stored. */
+export function getDaysUntilNextPeriod(nextPeriodDate: Date | null): number | null {
+  if (!nextPeriodDate) return null;
+  return Math.max(0, differenceInDays(startOfDay(nextPeriodDate), startOfDay(new Date())));
+}
 
 export const getCycleDetails = (lastPeriodStart: string | null, cycleLength: number) => {
   if (!lastPeriodStart) {

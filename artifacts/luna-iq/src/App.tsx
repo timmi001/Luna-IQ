@@ -8,8 +8,11 @@ import { motion } from "framer-motion";
 import { useEffect, type ReactNode } from "react";
 
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { CycleProvider } from "@/contexts/CycleContext";
 import Login from "@/pages/Login";
 import Signup from "@/pages/Signup";
+import ForgotPassword from "@/pages/ForgotPassword";
+import ResetPassword from "@/pages/ResetPassword";
 
 import Home from "@/pages/Home";
 import Chat from "@/pages/Chat";
@@ -89,6 +92,12 @@ function AppRoutes() {
       <Route path="/signup">
         <PublicRoute><Signup /></PublicRoute>
       </Route>
+      <Route path="/forgot-password">
+        <PublicRoute><ForgotPassword /></PublicRoute>
+      </Route>
+      <Route path="/reset-password">
+        <ResetPassword />
+      </Route>
 
       <Route path="/">
         <ProtectedRoute><Home /></ProtectedRoute>
@@ -136,7 +145,11 @@ function AppRoutes() {
 function AppShell() {
   const { user, loading } = useAuth();
   const [location] = useLocation();
-  const isAuthPage = location === "/login" || location === "/signup";
+  const isAuthPage =
+    location === "/login" ||
+    location === "/signup" ||
+    location === "/forgot-password" ||
+    location === "/reset-password";
   const isFullscreenPage = location === "/chat";
   const showNav = !loading && !!user && !isAuthPage && !isFullscreenPage;
 
@@ -156,7 +169,9 @@ function App() {
       <TooltipProvider>
         <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
           <AuthProvider>
-            <AppShell />
+            <CycleProvider>
+              <AppShell />
+            </CycleProvider>
           </AuthProvider>
         </WouterRouter>
         <Toaster />

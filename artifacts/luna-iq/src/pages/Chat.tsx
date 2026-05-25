@@ -5,8 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { SendHorizonal, Sparkles, RotateCcw, ArrowLeft } from "lucide-react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/contexts/AuthContext";
-import { storage } from "@/utils/storage";
-import { getCycleDetails } from "@/utils/cycle";
+import { useCycle } from "@/contexts/CycleContext";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -25,6 +24,7 @@ const SUGGESTIONS = [
 
 export default function Chat() {
   const { user } = useAuth();
+  const { phase: livePhase, currentDay: liveDayOfCycle } = useCycle();
   const [, setLocation] = useLocation();
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -52,13 +52,6 @@ export default function Chat() {
 
     const assistantIdx = messages.length + 1;
     setMessages((prev) => [...prev, { role: "assistant", content: "", streaming: true }]);
-
-    // Calculate live cycle phase from today's date and cycle start — never use a stored/cached value
-    const cycleData = storage.getCycle();
-    const { phase: livePhase, currentDay: liveDayOfCycle } = getCycleDetails(
-      cycleData.lastPeriodStart,
-      cycleData.cycleLength,
-    );
 
     try {
       const res = await fetch(`${BASE}/api/luna/chat`, {

@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
-import { ChevronLeft, ChevronRight, Crown, Palette, FileText, Shield, AlertCircle, LogOut, Check, Pencil, Mail } from "lucide-react";
+import { ChevronLeft, ChevronRight, Crown, Palette, FileText, Shield, AlertCircle, LogOut, Check, Pencil, Mail, Plus } from "lucide-react";
 import { storage } from "@/utils/storage";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { PageTransition } from "@/components/PageTransition";
@@ -18,7 +18,7 @@ const AVATARS = [
   { emoji: "🌻", bg: "#FEFCE8", label: "Sunny" },
 ];
 
-type SheetType = "privacy" | "policy" | "disclaimer" | "premium" | "theme" | null;
+type SheetType = "privacy" | "policy" | "disclaimer" | "premium" | "theme" | "avatar" | null;
 
 export default function Profile() {
   const [, setLocation] = useLocation();
@@ -31,6 +31,11 @@ export default function Profile() {
   const [savingName, setSavingName] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
 
+  useEffect(() => {
+    if (profile?.avatar_index !== undefined) {
+      setAvatarIndex(profile.avatar_index);
+    }
+  }, [profile?.avatar_index]);
 
   const avatar = AVATARS[avatarIndex] ?? AVATARS[0]!;
 
@@ -41,6 +46,7 @@ export default function Profile() {
       await supabase.from("profiles").update({ avatar_index: i }).eq("id", user.id);
       await refreshProfile();
     }
+    setActiveSheet(null);
   };
 
   const saveName = async () => {
@@ -89,56 +95,74 @@ export default function Profile() {
       <main className="flex-1 px-5 flex flex-col gap-5">
         {/* Avatar + Name card */}
         <div className="luna-glass rounded-3xl p-6 shadow-sm flex flex-col items-center gap-4">
-          <div
-            className="w-24 h-24 rounded-3xl overflow-hidden shadow-md flex items-center justify-center"
-            style={{ background: (avatar as any).image ? undefined : avatar.bg, fontSize: 48 }}
-          >
-            {(avatar as any).image
-              ? <img src={(avatar as any).image} alt="avatar" className="w-full h-full object-cover" />
-              : avatar.emoji}
-          </div>
-
-          {/* Name */}
-          {editingName ? (
-            <div className="flex items-center gap-2 w-full max-w-[240px]">
-              <input
-                autoFocus
-                value={displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
-                placeholder="Your full name"
-                maxLength={40}
-                className="flex-1 text-center text-lg font-semibold border-b-2 bg-transparent outline-none text-foreground placeholder:text-muted-foreground"
-                style={{ borderColor: "#7C3AED" }}
-              />
-              <button
-                onClick={saveName}
-                disabled={savingName}
-                className="w-8 h-8 rounded-full flex items-center justify-center disabled:opacity-50"
-                style={{ background: "rgba(180,232,224,0.40)" }}
+          <div className="flex flex-col items-center gap-3 w-full">
+            <div className="relative flex-shrink-0">
+              <div
+                className="w-24 h-24 rounded-3xl overflow-hidden shadow-md flex items-center justify-center"
+                style={{ background: (avatar as any).image ? undefined : avatar.bg, fontSize: 48 }}
               >
-                <Check className="w-4 h-4" style={{ color: "#4C1D95" }} />
+                {(avatar as any).image
+                  ? <img src={(avatar as any).image} alt="avatar" className="w-full h-full object-cover" />
+                  : avatar.emoji}
+              </div>
+              <button
+                type="button"
+                onClick={() => setActiveSheet("avatar")}
+                aria-label="Choose your avatar"
+                className="absolute -right-1 -bottom-1 w-8 h-8 rounded-full flex items-center justify-center shadow-md border-2 border-white active:scale-90 transition-transform"
+                style={{ background: "linear-gradient(135deg, #7C3AED, #EC4899)" }}
+              >
+                <Plus className="w-4 h-4 text-white" strokeWidth={2.5} />
               </button>
             </div>
-          ) : (
-            <button onClick={() => setEditingName(true)} className="flex items-center gap-2 group">
-              <span className="text-xl font-semibold text-foreground">
-                {profile?.full_name || "Add your name"}
-              </span>
-              <Pencil className="w-3.5 h-3.5 text-muted-foreground group-hover:text-luna-rose transition-colors" />
-            </button>
-          )}
 
-          {/* Email */}
-          {user?.email && (
-            <div className="flex items-center gap-1.5 -mt-2">
-              <Mail className="w-3 h-3 text-muted-foreground/60" />
-              <p className="text-xs text-muted-foreground">{user.email}</p>
+            <div className="flex flex-col items-center gap-1 w-full min-w-0">
+              {editingName ? (
+                <div className="flex items-center gap-2 w-full max-w-[260px]">
+                  <input
+                    autoFocus
+                    value={displayName}
+                    onChange={(e) => setDisplayName(e.target.value)}
+                    placeholder="Your full name"
+                    maxLength={40}
+                    className="flex-1 text-center text-lg font-semibold border-b-2 bg-transparent outline-none text-foreground placeholder:text-muted-foreground min-w-0"
+                    style={{ borderColor: "#7C3AED" }}
+                  />
+                  <button
+                    type="button"
+                    onClick={saveName}
+                    disabled={savingName}
+                    className="w-8 h-8 rounded-full flex items-center justify-center disabled:opacity-50 flex-shrink-0"
+                    style={{ background: "rgba(180,232,224,0.40)" }}
+                  >
+                    <Check className="w-4 h-4" style={{ color: "#4C1D95" }} />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setEditingName(true)}
+                  className="flex items-center gap-2 group justify-center max-w-full"
+                >
+                  <span className="text-xl font-semibold text-foreground text-center">
+                    {profile?.full_name || "Add your name"}
+                  </span>
+                  <Pencil className="w-3.5 h-3.5 text-muted-foreground group-hover:text-luna-rose transition-colors flex-shrink-0" />
+                </button>
+              )}
+
+              {user?.email && (
+                <div className="flex items-center gap-1.5 justify-center max-w-full">
+                  <Mail className="w-3 h-3 text-muted-foreground/60 flex-shrink-0" />
+                  <p className="text-xs text-muted-foreground text-center truncate">{user.email}</p>
+                </div>
+              )}
             </div>
-          )}
+          </div>
 
           {/* Luna Points inline badge — only shown when user has earned points */}
           {lunaPoints > 0 && (
-            <div className="flex items-center gap-2 rounded-2xl px-4 py-2" style={{ background: "rgba(230,197,127,0.20)", border: "1px solid rgba(230,197,127,0.40)" }}>
+            <div className="flex items-center gap-2 rounded-2xl px-4 py-2 w-full" style={{ background: "rgba(230,197,127,0.20)", border: "1px solid rgba(230,197,127,0.40)" }}>
               <span className="text-lg">✨</span>
               <div>
                 <p className="text-xs font-semibold text-foreground">{lunaPoints} Luna Points</p>
@@ -146,36 +170,6 @@ export default function Profile() {
               </div>
             </div>
           )}
-        </div>
-
-        {/* Avatar picker */}
-        <div className="luna-glass rounded-3xl p-5 shadow-sm">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Choose your avatar</p>
-          <div className="grid grid-cols-4 gap-3">
-            {AVATARS.map((av, i) => (
-              <button
-                key={i}
-                onClick={() => handleAvatarSelect(i)}
-                className="flex flex-col items-center gap-1 focus:outline-none"
-              >
-                <div
-                  className="w-14 h-14 rounded-2xl flex items-center justify-center transition-all overflow-hidden"
-                  style={{
-                    background: av.bg,
-                    fontSize: 28,
-                    border: avatarIndex === i ? "2.5px solid #7C3AED" : "2px solid transparent",
-                    boxShadow: avatarIndex === i ? "0 0 14px rgba(124,58,237,0.55)" : "none",
-                    transform: avatarIndex === i ? "scale(1.08)" : "scale(1)",
-                  }}
-                >
-                  {(av as any).image
-                    ? <img src={(av as any).image} alt={av.label} className="w-full h-full object-cover" />
-                    : av.emoji}
-                </div>
-                <span className="text-[9px] text-muted-foreground">{av.label}</span>
-              </button>
-            ))}
-          </div>
         </div>
 
         {/* Luna Points navigation card */}
@@ -256,6 +250,7 @@ export default function Profile() {
         <SheetContent side="bottom" className="rounded-t-3xl max-h-[70vh] overflow-y-auto pb-10" style={{ background: "linear-gradient(180deg, #F5E1E3 0%, #ECD5DC 100%)" }}>
           <SheetHeader>
             <SheetTitle>
+              {activeSheet === "avatar" && "Choose your avatar"}
               {activeSheet === "premium" && "Luna Premium 👑"}
               {activeSheet === "theme" && "Themes 🎨"}
               {activeSheet === "privacy" && "Privacy Policy 🔒"}
@@ -264,6 +259,34 @@ export default function Profile() {
             </SheetTitle>
           </SheetHeader>
           <div className="mt-4 text-sm text-muted-foreground leading-relaxed">
+            {activeSheet === "avatar" && (
+              <div className="grid grid-cols-4 gap-3 pb-2">
+                {AVATARS.map((av, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => void handleAvatarSelect(i)}
+                    className="flex flex-col items-center gap-1 focus:outline-none active:scale-95 transition-transform"
+                  >
+                    <div
+                      className="w-14 h-14 rounded-2xl flex items-center justify-center transition-all overflow-hidden"
+                      style={{
+                        background: av.bg,
+                        fontSize: 28,
+                        border: avatarIndex === i ? "2.5px solid #7C3AED" : "2px solid transparent",
+                        boxShadow: avatarIndex === i ? "0 0 14px rgba(124,58,237,0.55)" : "none",
+                        transform: avatarIndex === i ? "scale(1.08)" : "scale(1)",
+                      }}
+                    >
+                      {(av as any).image
+                        ? <img src={(av as any).image} alt={av.label} className="w-full h-full object-cover" />
+                        : av.emoji}
+                    </div>
+                    <span className="text-[9px] text-muted-foreground">{av.label}</span>
+                  </button>
+                ))}
+              </div>
+            )}
             {activeSheet === "premium" && (
               <div className="flex flex-col gap-4">
                 <p>Unlock the full Luna experience with Premium:</p>
