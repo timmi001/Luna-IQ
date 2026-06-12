@@ -1,0 +1,12 @@
+{
+  "buildCommand": "pnpm --filter @workspace/luna-iq run build",
+  "outputDirectory": "artifacts/luna-iq/dist/public",
+  "installCommand": "pnpm install",
+  "framework": null,
+  "env": {
+    "BASE_PATH": "/"
+  },
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}
